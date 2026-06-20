@@ -586,6 +586,321 @@ graph TD
 
 ---
 
+## 6. Wardley Mapping Suite
+
+The Wardley Mapping suite provides a focused strategic analysis pipeline. Value chain decomposition feeds into map creation, which then branches into three parallel analysis tracks.
+
+```mermaid
+graph TD
+    %% Prerequisites
+    A[requirements] --> B[wardley.value-chain]
+    C[principles] -.-> B
+    D[stakeholders] -.-> B
+
+    %% Core mapping
+    B --> E[wardley]
+
+    %% Analysis tracks (parallel after map creation)
+    E --> F[wardley.doctrine]
+    E --> G[wardley.climate]
+    E --> H[wardley.gameplay]
+
+    %% Cross-feed between analysis tracks
+    G -.-> H
+    F -.-> H
+
+    %% Downstream
+    E --> I[roadmap]
+    E --> J[strategy]
+    H -.-> J
+
+    style A fill:#90EE90
+    style B fill:#87CEEB
+    style C fill:#87CEEB
+    style D fill:#87CEEB
+    style E fill:#90EE90
+    style F fill:#9370DB
+    style G fill:#9370DB
+    style H fill:#9370DB
+    style I fill:#90EE90
+    style J fill:#90EE90
+```
+
+**Key:**
+
+- **Blue boxes** = Foundation inputs and value chain decomposition
+- **Green boxes** = Core workflow (requirements, wardley map, downstream)
+- **Purple boxes** = Wardley analysis tracks (doctrine, climate, gameplay)
+
+**Duration**: 1-3 weeks (within the Alpha phase)
+
+---
+
+## 7. Canada Federal Workflow
+
+> ⚠️ **[COMMUNITY]** Canada Federal Overlay — community-contributed by @tractorjuice, recruiting Canadian federal domain co-maintainer. Output should be reviewed by qualified DOJ counsel, departmental Privacy Officer / ATIP coordinator, and security officer before reliance.
+
+The Canada Federal Overlay ships 12 `ca-*` commands covering FITAA (Bill C-70 2024), Privacy Act PIA, ATIP reconciliation, Algorithmic Impact Assessment, Charter rights, ITSG-33, SOIA classified handling, sovereign cloud residency, GC Digital Standards, Official Languages Act, PSPC procurement, and OCAP® Indigenous data sovereignty. Two canonical execution chains apply depending on whether the system engages FITAA.
+
+### 7a. FITAA-class application (full overlay)
+
+For systems that fall in scope of the Foreign Influence Transparency and Accountability Act — registration tooling, foreign-principal exposure, public-office-holder interactions — the canonical chain runs all 12 `ca-*` commands.
+
+```mermaid
+graph TD
+    %% Foundation
+    A[principles] --> B[requirements]
+    B --> C1[ca-charter]
+    B --> C2[ca-pia]
+
+    %% FITAA core path
+    C1 --> D[ca-fitaa]
+    C2 --> D
+    C2 --> E[ca-atip]
+    B --> F[ca-aia]
+    C2 --> F
+    D --> G[ca-ocap]
+    C2 --> G
+
+    %% Security stream
+    B --> H[ca-itsg-33]
+    C2 --> H
+    D --> I[ca-soia]
+    H --> I
+    H --> J[ca-cloud-residency]
+
+    %% Service-side compliance
+    D --> K[ca-ola]
+    B --> L[ca-gc-digital-standards]
+
+    %% Procurement and cross-cutting
+    H --> M[ca-pspc]
+    J --> M
+    M --> N[adr]
+    D --> N
+    H --> N
+    N --> O[sobc]
+    D --> P[risk]
+    C2 --> P
+    F --> P
+    C1 --> P
+    H --> P
+    O --> Q[framework]
+    P --> Q
+
+    style A fill:#90EE90
+    style B fill:#90EE90
+    style C1 fill:#FFD700
+    style C2 fill:#FFB347
+    style D fill:#FF6961
+    style E fill:#FFB347
+    style F fill:#FFD700
+    style G fill:#9370DB
+    style H fill:#87CEEB
+    style I fill:#87CEEB
+    style J fill:#87CEEB
+    style K fill:#FFA07A
+    style L fill:#FFA07A
+    style M fill:#FFA07A
+    style N fill:#90EE90
+    style O fill:#90EE90
+    style P fill:#90EE90
+    style Q fill:#90EE90
+```
+
+**Key:**
+
+- **Green boxes** = Foundation inputs and standard cross-cutting outputs
+- **Red box** = FITAA flagship (Bill C-70 2024 foreign-influence registration)
+- **Orange boxes** = Privacy stream (Privacy Act PIA, ATIP reconciliation)
+- **Gold boxes** = Charter rights and Algorithmic Impact Assessment
+- **Purple box** = OCAP® First Nations data sovereignty (only when Indigenous data in scope)
+- **Blue boxes** = Security stream (ITSG-33, SOIA, sovereign cloud residency)
+- **Salmon boxes** = Service-side compliance and procurement (OLA, GC Digital Standards, PSPC)
+
+### 7b. Generic federal Canadian application (no FITAA exposure)
+
+For federal Canadian digital services that do not engage FITAA, drop `ca-charter` (run only if rights-engaging), `ca-fitaa`, and `ca-soia` (run only if classified leads in scope).
+
+```mermaid
+graph TD
+    A[principles] --> B[requirements]
+    B --> C[ca-pia]
+    C --> D[ca-atip]
+    B --> E[ca-aia]
+    C --> E
+    C --> F[ca-ocap]
+
+    B --> G[ca-itsg-33]
+    C --> G
+    G --> H[ca-cloud-residency]
+
+    B --> I[ca-ola]
+    B --> J[ca-gc-digital-standards]
+
+    G --> K[ca-pspc]
+    H --> K
+    K --> L[adr]
+    G --> L
+    L --> M[sobc]
+    C --> N[risk]
+    E --> N
+    G --> N
+    M --> O[framework]
+    N --> O
+
+    style A fill:#90EE90
+    style B fill:#90EE90
+    style C fill:#FFB347
+    style D fill:#FFB347
+    style E fill:#FFD700
+    style F fill:#9370DB
+    style G fill:#87CEEB
+    style H fill:#87CEEB
+    style I fill:#FFA07A
+    style J fill:#FFA07A
+    style K fill:#FFA07A
+    style L fill:#90EE90
+    style M fill:#90EE90
+    style N fill:#90EE90
+    style O fill:#90EE90
+```
+
+**Prerequisites**: Set `governance_framework: Canada Federal` and `classification_scheme: GC Security Categorization` in plugin userConfig before running. Each command's full guide is in [`docs/guides/`](guides/) (`ca-fitaa.md`, `ca-pia.md`, etc.).
+
+**Duration**: 6-10 weeks for a full FITAA-class build (procurement and OLA streams run in parallel with security and privacy). 3-5 weeks for the generic federal path.
+
+---
+
+## 8. UAE Federal Workflow
+
+For UAE federal entities, contracted suppliers, and CII operators, the canonical chain runs the 12 `uae-*` commands in sequence between the standard inputs (requirements, data-model, risk) and the cross-cutting outputs (sobc, wardley, framework).
+
+```mermaid
+graph TD
+    %% Foundation
+    A[principles] --> B[requirements]
+    A --> C[data-model]
+    B --> C
+    B --> D[risk]
+
+    %% UAE federal data + security
+    C --> E[uae-classification]
+    B --> F[uae-pdpl]
+    C --> F
+    D --> F
+    B --> G[uae-ias]
+    D --> G
+    E --> H[uae-cloud-residency]
+
+    %% UAE federal identity
+    B --> I[uae-uaepass]
+
+    %% UAE Cabinet instruments
+    B --> J[uae-zero-bureaucracy]
+    E --> K[uae-digital-records]
+    C --> K
+    E --> L[uae-data-sharing]
+    F --> L
+    J --> M[uae-priorities-alignment]
+    K --> M
+    L --> M
+
+    %% UAE AI governance
+    B --> N[uae-ai-charter]
+    D --> N
+    N --> O[uae-ai-autonomy-tier]
+
+    %% Procurement
+    B --> P[uae-procurement]
+
+    %% Cross-cutting downstream
+    M --> Q[sobc]
+    P --> Q
+    Q --> R[wardley]
+    Q --> S[framework]
+
+    style A fill:#90EE90
+    style B fill:#90EE90
+    style C fill:#90EE90
+    style D fill:#90EE90
+    style E fill:#FFB347
+    style F fill:#FFB347
+    style G fill:#FFB347
+    style H fill:#FFB347
+    style I fill:#87CEEB
+    style J fill:#9370DB
+    style K fill:#9370DB
+    style L fill:#9370DB
+    style M fill:#9370DB
+    style N fill:#FFD700
+    style O fill:#FFD700
+    style P fill:#FFA07A
+    style Q fill:#90EE90
+    style R fill:#90EE90
+    style S fill:#90EE90
+```
+
+**Key:**
+
+- **Green boxes** = Foundation inputs and standard cross-cutting outputs
+- **Orange boxes (light)** = UAE federal data and security (classification, PDPL, IAS, cloud residency)
+- **Blue boxes** = UAE federal identity (UAE Pass)
+- **Purple boxes** = UAE Cabinet instruments (Zero Bureaucracy, Digital Records, Data Sharing, National Priorities Alignment)
+- **Gold boxes** = UAE AI governance (Charter, Autonomy Tier)
+- **Salmon box** = UAE federal procurement (Decree-Law No. 11 of 2023)
+
+**Prerequisites**: Set `governance_framework: UAE Federal` and `classification_scheme: UAE Smart Data` in plugin userConfig before running. Full overlay guide at [`docs/guides/uae-overlay.md`](guides/uae-overlay.md).
+
+**Duration**: 4-8 weeks for a full federal pathfinder (the AI tier and procurement work runs in parallel with the data and security stream).
+
+---
+
+## 9. Government Code Discovery
+
+For UK Government projects, run these commands during Alpha/Beta to check for reusable code before building from scratch. Uses the govreposcrape MCP server (no API key required).
+
+```mermaid
+graph TD
+    %% Prerequisites
+    A[requirements] --> B[gov-reuse]
+    C[gov-code-search] -.-> B
+
+    %% Discovery flow
+    B -.-> D[research]
+    B -.-> E[adr]
+
+    %% Landscape analysis
+    F[gov-landscape] -.-> G[framework]
+    F -.-> H[wardley]
+    C -.-> B
+
+    style A fill:#90EE90
+    style B fill:#87CEEB
+    style C fill:#87CEEB
+    style D fill:#90EE90
+    style E fill:#FFA500
+    style F fill:#87CEEB
+    style G fill:#90EE90
+    style H fill:#90EE90
+```
+
+**Key:**
+
+- **Blue boxes** = Government code discovery commands (use govreposcrape MCP)
+- **Green boxes** = Standard workflow commands that consume discovery outputs
+- **Orange boxes** = Decision records informed by reuse assessment
+
+**When to use:**
+
+- Run `gov-code-search` first to find relevant existing code
+- Run `gov-reuse` after requirements to assess specific reuse opportunities before build-vs-buy
+- Run `gov-landscape` to understand the broader government code ecosystem for a domain
+
+**Duration**: 0.5-2 days (before or during research phase)
+
+---
+
 ## Command Dependency Legend
 
 ### Dependency Types in Diagrams
@@ -603,7 +918,7 @@ graph TD
 | 3 | Business Justification | sobc |
 | 4 | Requirements | requirements |
 | 5 | Strategic Planning & Synthesis | platform-design, roadmap, strategy, framework, glossary |
-| 6 | Detailed Design | data-model, data-mesh-contract, dpia, research, azure-research*, aws-research*, gcp-research*, datascout, dfd, wardley, diagram, adr |
+| 6 | Detailed Design | data-model, data-mesh-contract, dpia, research, azure-research*, aws-research*, gcp-research*, datascout, gov-reuse†, gov-code-search†, gov-landscape†, dfd, wardley, wardley.value-chain, wardley.doctrine, wardley.gameplay, wardley.climate, diagram, adr |
 | 7 | Procurement | sow, dos, gcloud-search, gcloud-clarify, evaluate, score |
 | 8 | Design Reviews | hld-review, dld-review |
 | 9 | Implementation | backlog |
@@ -615,6 +930,7 @@ graph TD
 
 > **\*** `azure-research` and `aws-research` are alternatives to `research` for cloud-specific projects. Each requires its respective MCP server.
 > **datascout** discovers external data sources (APIs, datasets, open data portals) and feeds into data-model and research.
+> **†** `gov-reuse`, `gov-code-search`, and `gov-landscape` use the govreposcrape MCP server (no API key required) to search 24,500+ UK government repositories.
 
 ---
 
@@ -757,14 +1073,16 @@ graph LR
 
 ## Version
 
-- **ArcKit Version**: 1.2.0
-- **Document Date**: 2026-02-25
+- **ArcKit Version**: 1.3.0
+- **Document Date**: 2026-03-16
 - **Based On**: DEPENDENCY-MATRIX.md (with Phase 2 R-level dependencies)
-- **Commands Documented**: 44
+- **Commands Documented**: 48
 - **Key Changes**:
-  - Added conformance node to all 5 workflow paths (between principles-compliance and analyze)
+  - Added Wardley Mapping Suite workflow diagram (wardley.value-chain, wardley.doctrine, wardley.climate, wardley.gameplay)
+  - Updated Tier 6 Detailed Design to include 4 new Wardley suite commands
+  - Previous: Added conformance node to all 5 workflow paths (between principles-compliance and analyze)
   - Added conformance to Compliance-Only Path and Gantt chart
   - Updated Tier 13 Compliance to include conformance
   - Previous: Added missing style definitions for finops nodes in all workflow diagrams
-  - Previous: Updated Tier Groupings table to include all 40 commands across 16 tiers
+  - Previous: Updated Tier Groupings table to include all 68 commands across 16 tiers
   - Previous: Added principles-compliance to Operations & Quality tier

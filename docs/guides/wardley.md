@@ -2,7 +2,30 @@
 
 > **Guide Origin**: Official | **ArcKit Version**: [VERSION]
 
-`/arckit.wardley` creates strategic Wardley Maps for architecture decisions and build vs buy analysis.
+`/arckit:wardley` creates strategic Wardley Maps for architecture decisions and build vs buy analysis.
+
+---
+
+## Wardley Mapping Suite
+
+ArcKit provides a full suite of Wardley Mapping commands that work together as a strategic analysis pipeline:
+
+| Command | Purpose | Output |
+|---------|---------|--------|
+| `/arckit:wardley.value-chain` | Decompose user needs into value chains | WVCH |
+| `/arckit:wardley` | Create positioned Wardley Maps | WARD |
+| `/arckit:wardley.doctrine` | Assess organizational doctrine maturity | WDOC |
+| `/arckit:wardley.climate` | Assess 32 climatic patterns | WCLM |
+| `/arckit:wardley.gameplay` | Analyze 60+ strategic gameplay patterns | WGAM |
+
+**Recommended workflow order:**
+
+1. **Value Chain** -- Decompose domain into components ([guide](wardley-value-chain.md))
+2. **Wardley Map** -- Position components on evolution axis (this guide)
+3. **Doctrine** -- Assess organizational maturity ([guide](wardley-doctrine.md))
+4. **Climate** -- Understand external forces ([guide](wardley-climate.md))
+5. **Gameplay** -- Identify strategic plays ([guide](wardley-gameplay.md))
+6. **Strategy / Roadmap** -- Synthesise findings into actionable plans
 
 ---
 
@@ -20,7 +43,7 @@
 ## Command
 
 ```bash
-/arckit.wardley Create Wardley Map for <initiative>
+/arckit:wardley Create Wardley Map for <initiative>
 ```
 
 Output: `projects/<id>/ARC-<id>-WARD-001-v1.0.md` (uses multi-instance numbering)
@@ -87,11 +110,11 @@ Output: `projects/<id>/ARC-<id>-WARD-001-v1.0.md` (uses multi-instance numbering
 
 | Phase | Key Activities | ArcKit Commands |
 |-------|----------------|-----------------|
-| Discovery | Identify user needs and components | `/arckit.requirements`, `/arckit.stakeholders` |
-| Mapping | Create Wardley Map | `/arckit.wardley` |
+| Discovery | Identify user needs and components | `/arckit:requirements`, `/arckit:stakeholders` |
+| Mapping | Create Wardley Map | `/arckit:wardley` |
 | Analysis | Identify strategic plays | Review workshop |
-| Sourcing | Research market options | `/arckit.research`, `/arckit.gcloud-search` |
-| Decision | Build vs buy recommendations | `/arckit.sow`, `/arckit.evaluate` |
+| Sourcing | Research market options | `/arckit:research`, `/arckit:gcloud-search` |
+| Decision | Build vs buy recommendations | `/arckit:sow`, `/arckit:evaluate` |
 
 ---
 
@@ -122,6 +145,14 @@ evolution Genesis->Custom->Product->Commodity
 ```
 
 Visualize at: https://create.wardleymaps.ai
+
+---
+
+## Viewing Your Map
+
+**OnlineWardleyMaps** (primary): Copy the `wardley` code block and paste into [https://create.wardleymaps.ai](https://create.wardleymaps.ai) for an interactive editor with drag-and-drop repositioning.
+
+**Mermaid** (secondary): Expand the `<details>` block in your generated artifact to see the Mermaid `wardley-beta` equivalent. This will render inline in GitHub, VS Code, and other Mermaid-enabled viewers once Mermaid ships `wardley-beta` in a stable release. The Mermaid version includes sourcing strategy markers (`build`/`buy`/`outsource`/`inertia`) as visual decorators on each component.
 
 ---
 

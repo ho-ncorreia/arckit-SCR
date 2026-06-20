@@ -56,13 +56,17 @@
 
 @media (max-width: 48em) {
     .app-nav-bar__icons {
-        position: absolute;
-        right: 0.5rem;
-        top: 0.5rem;
+        order: 2;
+        margin-left: auto;
+        margin-right: 0.5rem;
     }
 
-    .app-nav-bar__inner {
-        position: relative;
+    .app-nav-bar__toggle {
+        order: 3;
+    }
+
+    .app-nav-bar__list {
+        order: 4;
     }
 }
 
@@ -124,6 +128,21 @@ html.dark-mode .govuk-phase-banner__text {
 
 html.dark-mode .govuk-inset-text {
     border-left-color: #555555;
+    color: #e8e8e8;
+}
+
+html.dark-mode .govuk-back-link,
+html.dark-mode .govuk-back-link:link,
+html.dark-mode .govuk-back-link:visited {
+    color: #e8e8e8;
+}
+
+html.dark-mode .govuk-back-link:hover {
+    color: #ffffff;
+}
+
+html.dark-mode .govuk-back-link::before {
+    border-color: #e8e8e8;
 }
 
 html.dark-mode .govuk-section-break--visible {
@@ -141,6 +160,26 @@ html.dark-mode .govuk-details__text {
 html.dark-mode .govuk-warning-text__icon {
     border-color: #f0f0f0;
     color: #f0f0f0;
+}
+
+html.dark-mode .govuk-warning-text__text {
+    color: #f0f0f0;
+}
+
+html.dark-mode .app-contributor-card {
+    background: #2a2a2a;
+}
+
+html.dark-mode .app-contributor-card:hover {
+    background: #333333;
+}
+
+html.dark-mode .app-contributor-card__name a {
+    color: #f0f0f0;
+}
+
+html.dark-mode .app-contributor-card__highlights li {
+    color: #d0d0d0;
 }
 
 html.dark-mode .govuk-main-wrapper {

@@ -7,6 +7,1169 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.15.0] — 2026-06-19
+
+### Added
+
+- **Self-Harness autoresearch implementation.** Added a Self-Harness enhanced
+  autoresearch program based on arXiv:2606.09498v1, plus tracer, weakness-miner,
+  harness-proposer, and harness-validator utilities for iterative harness
+  improvement.
+- **Open Knowledge Format interoperability.** Added `/arckit:export-okf` and
+  `/arckit:import-okf` plus shared OKF frontmatter helpers. Export writes copied
+  OKF-compatible Markdown bundles without mutating source ARC files. Import scans
+  OKF Markdown, writes `.arckit/tmp/okf-import-report.json`, and materializes
+  valid non-duplicate entries as `RSCH` review notes by default.
+- **Optional OKF source frontmatter stamping.** `provenance-stamp.mjs` can now
+  merge OKF metadata into native ARC artifacts when explicitly enabled with
+  `ARCKIT_OKF_FRONTMATTER=1` or `.arckit/config.json` containing
+  `{ "okfFrontmatter": true }`. Stamping is off by default and idempotent.
+
+### Changed
+
+- **OKF documentation coverage.** Updated remaining extension READMEs, getting
+  started docs, guide index, remote-control docs, MCP setup docs, and copied
+  dependency matrices so all current documentation surfaces mention the OKF
+  import/export workflow consistently.
+
+## [5.14.0] — 2026-06-17
+
+### Added
+
+- **Mistral Vibe CLI extension support (#598).** ArcKit now ships a Vibe
+  extension with converted ArcKit skills, Vibe agent TOML, bundled templates,
+  scripts, schemas, references, and MCP configuration. The generated payload is
+  published to the standalone
+  [`tractorjuice/arckit-vibe`](https://github.com/tractorjuice/arckit-vibe)
+  repository, matching the existing separate Codex, Gemini, OpenCode, Copilot,
+  and Paperclip extension repo model.
+
+## [5.13.2] — 2026-06-17
+
+### Fixed
+
+- **STALE-EXT scans `external/` recursively (#595).** `/arckit:health` now
+  includes files nested under project `external/` subdirectories and reports
+  their relative paths, instead of only checking direct children. Claude, Codex,
+  and Gemini session/context external-document listings use the same recursive
+  scan.
+- **Documentation site search metadata improved.** The generated site now ships
+  refreshed SEO metadata, cache headers, sitemap entries, and the AI CLI harness
+  article so search and social previews index the current documentation.
+- **External context supports subtitle/transcript files (#600).** Project
+  `external/` guidance, scaffolding, and project context handling now include
+  `.srt` and `.vtt` transcript files alongside PDFs, Word documents, Markdown,
+  images, CSV, and SQL references.
+- **Manifest auto-update tolerates legacy entries without `documentId` (#601).**
+  `hooks/update-manifest.mjs` now deduplicates existing manifest entries by
+  `documentId` when present and falls back to the entry path basename when
+  older `docs/manifest.json` rows omit `documentId`, avoiding non-blocking
+  PostToolUse warnings after `/arckit:principles` writes global artifacts.
+
+## [5.13.1] — 2026-06-11
+
+### Changed
+
+- **Claude Code minimum-version floor raised v2.1.156 → v2.1.172.** v2.1.172 fixed wildcard-domain `WebFetch` permission rules (`WebFetch(domain:*.gov.uk)`) that never matched subdomains on earlier clients — the exact shape ArcKit's security-hooks guide recommends for confining research-agent traffic in OFFICIAL-SENSITIVE deployments, so the floor makes that shipped guidance actually hold. v2.1.172 also carries the Claude Fable 5 runtime (GA in v2.1.170); ArcKit defaults to the latest model tier. Updated every floor reference: `version-check.mjs` (`MIN_CLAUDE_CODE_VERSION` + warning bullets), `CLAUDE.md`, `README.md`, `docs/guides/enterprise-scale.md` (`requiredMinimumVersion` example), `hooks/README.md`, and the repo/test-repo `.claude/settings.json` `minimumVersion` (#593).
+
+## [5.13.0] — 2026-06-10
+
+### Added
+
+- **arckit-uk-gcloud** (13th marketplace plugin) — Proprietary, Claude-Code-only supplier-side G-Cloud bid-authoring overlay: 11 commands (supplier-profile, service-design, sdd-lot1/2/3, declaration, pricing, security, gcloud-competitors, review, submission-pack), 8 doc-types (SUPP/SVCD/SDD/DECL/PRIC/SECA/GCMP/GCRV), 3 skills (gcloud-framework, cloud-security, sfia-skills), and the uk-gcloud-submission build recipe. Requires arckit core. Ported from the standalone gcloud-kit plugin. Not distributed to the non-Claude extension formats (proprietary).
+
+## [5.12.1] — 2026-06-10
+
+### Fixed
+
+- **Secret scanner no longer false-positives on code/IaC references to secrets**
+  (#590). The generic key-value rules in `secret-file-scanner.mjs` and
+  `secret-detection.mjs` matched any non-whitespace value, so legitimate
+  assignments that *reference* a secret rather than hardcoding it —
+  `secret = module.sm.secret_ids["x"]` (Terraform), `password = var.db_password`,
+  `api_key = process.env.API_KEY`, Pulumi `config.requireSecret(...)`, Kubernetes
+  `secretKeyRef.name`, CDK `Token.fromAsset(...)` — were blocked. A structural
+  reference guard now exempts values that are an identifier followed by a property
+  access, index, or call, or a `${...}`/`$(...)` interpolation. Literal/unquoted
+  secrets and provider token formats (`sk-`, `ghp_`, `AIza`, PEM, …) are still
+  caught. The two hooks' pattern libraries were realigned to be byte-identical and
+  are now covered by `tests/plugin/scanner-reference-guard.test.mjs`, which also
+  guards against future drift between them.
+
+## [5.12.0] — 2026-06-09
+
+### Added
+
+- **`arckit-fde` plugin (12th marketplace plugin)** — a lean, Claude Code only ArcKit
+  plugin with one command, `/arckit-fde:create`, that interviews the user and renders a
+  brandable, GitHub-Pages-ready Forward Deploy Engineering consulting website into `docs/`.
+  Clone-and-substitute templates (scalar `{{TOKEN}}`s plus `<!-- BEGIN/END -->` list
+  regions; brand colour via a single `:root` CSS custom property), `uk-public-sector` and
+  `generic` market presets, a saved `fde-site.config.yaml` for repeatable re-renders, and
+  discovery metadata (`llms.txt`, `sitemap.xml`, `robots.txt`, `.nojekyll`). Not wired into
+  the converter (Claude-only), no governance doc-types, no dependencies. Includes a
+  `scripts/tests/test-fde-templates.mjs` consistency guard and a launch article. The
+  officially-maintained command baseline is unchanged; `/arckit-fde:create` is a tooling
+  command.
+
+## [5.11.2] — 2026-06-08
+
+### Changed
+
+- **Generated non-Claude extension dirs moved under `extensions/`.** The five converter-output dirs (`arckit-codex`, `arckit-opencode`, `arckit-copilot`, `arckit-gemini`, `arckit-paperclip`) now live under `extensions/` instead of the repo root, decluttering the top level and mirroring the `plugins/` grouping used for Claude Code plugin sources. The dirs remain gitignored generated content (only hand-authored files per extension are tracked); `arckit-claude` is still the single source of truth — run `python scripts/converter.py` after pulling. Build tooling (`scripts/converter.py`, `scripts/bump-version.sh`, `scripts/push-extensions.sh`), packaging (`pyproject.toml` shared-data, CLI data-path resolution — installed wheel layout now `share/arckit/extensions/<ext>`), CI, tests and docs were updated accordingly. Published-extension repos and install commands are unchanged.
+
+## [5.11.1] — 2026-06-07
+
+Maintenance release — repository restructure and hygiene only. **Plugin content is unchanged**; installation and usage are identical to 5.11.0.
+
+### Changed
+
+- **Plugin sources moved under `plugins/`** (#585). All 11 Claude Code plugin source directories (`arckit-claude` + 10 community overlays) now live under `plugins/` (e.g. `plugins/arckit-claude/`); `marketplace.json` points each entry at `./plugins/<name>`. The generated, gitignored non-Claude extension dirs stay at the repo root. Release tooling, CI, tests and docs were updated accordingly.
+- **Generated distribution formats are no longer tracked** (#581). The five non-Claude extension dirs (`arckit-codex`, `arckit-opencode`, `arckit-copilot`, `arckit-gemini`, `arckit-paperclip`) are regenerated by `scripts/converter.py` and published to their own repos by `scripts/push-extensions.sh`, so their ~2,600 generated files are now gitignored rather than committed. `arckit-claude` is the single source of truth — run `python scripts/converter.py` after pulling.
+- Gitignored the `docs/superpowers/` dev-workflow process artefacts (#583); noted that `tools/wardley-lsp/` now lives in its own repository (#582).
+
+### Removed
+
+- **`docs/proposals/`** confidential partnership material removed from the public repo and gitignored (#584).
+
+## [5.11.0] — 2026-06-05
+
+### Added
+
+- **End-of-turn traceability nudge** (#578). The `Stop` hook (`session-learner.mjs`) now emits one gentle, non-blocking next-step suggestion via `hookSpecificOutput.additionalContext` when a session's commits leave a curated traceability-chain gap — `REQ`→no `TRAC` (`/arckit:traceability`), `STKE`→no `REQ` (`/arckit:requirements`), `REQ`→no `DATA` (`/arckit:data-model`), `ADR`→no `DIAG` (`/arckit:diagram`). It reacts to the just-finished turn, distinct from the SessionStart stale-artifact monitor and `/arckit:navigator`/`health`. Version-gated to Claude Code v2.1.163+ (older clients treat a `Stop` `additionalContext` as a hook error): `version-check.mjs` persists the detected client version to `.arckit/memory/.cc-version` at SessionStart and the nudge stays silent below the gate, on `StopFailure`, or when `ARCKIT_NO_NUDGE` is set. The decision logic is the pure, unit-tested `selectNudge` in `session-nudge.mjs`.
+- **Per-agent telemetry attribution** (#579). `telemetry.mjs` stamps `agent_id`/`agent_type` (Claude Code v2.1.145+) onto latency and MCP records when a tool runs inside a subagent, so the session summary and `docs/telemetry.json` now break tool activity down **by agent** (e.g. `arckit-research` vs the main thread). New pure `telemetry-rollup.mjs` (`summariseTelemetry`/`rollupTelemetry`) adds a `byAgent` breakdown and the `/arckit:pages` "Recent Sessions" panel surfaces the busiest subagent. `parent_agent_id` is not exposed to hooks, so activity is attributed per agent rather than reconstructing the dispatch tree.
+- **`minimumVersion` floor guidance** (#575). The below-floor `version-check.mjs` warning now recommends adding `"minimumVersion"` to `.claude/settings.json` so background auto-updates / `claude update` cannot drift below ArcKit's Claude Code floor — distinct from the org-only managed `requiredMinimumVersion`. Dogfooded in this repo and the test-repo scaffold.
+
+### Changed
+
+- **Documentation — Claude Code v2.1.161–v2.1.163 adoption** (#576). New "Fleet & Version Governance (managed settings)" section in the enterprise-scale guide (`requiredMinimumVersion`/`requiredMaximumVersion`, `pluginSuggestionMarketplaces`, `OTEL_RESOURCE_ATTRIBUTES`); the MCP guide notes the sub-1000 ms per-server `timeout` floor and that `claude mcp` now redacts secrets; the autoresearch guide documents `--fallback-model`; the security-hooks guide documents scoping research-agent `WebFetch` to approved domains; the custom-commands guide documents the `\$` literal-dollar escape; `/plugin list --enabled` noted in the install guide.
+- **Documentation — effort-tier accuracy** (#577). Corrected the `effort:` frontmatter description: `max` is supported on Opus 4.6/4.7/4.8 and `xhigh` is the tier Opus 4.7/4.8 add. Verified ArcKit's `effort: max` commands run as `max` on Opus 4.8 (no code change needed).
+
+## [5.10.0] — 2026-06-04
+
+### Added
+
+- **AU Federal visual-evidence enrichment** (derived from #569). The `arckit-au` Federal commands and templates now compose with ArcKit's existing architecture and evidence tooling — `/arckit:diagram`, `/arckit:dfd`, `/arckit:data-model`, `/arckit:servicenow`, `/arckit:risk`, `/arckit:traceability`, `/arckit:graph-report` and `/arckit:maturity-model` — via embedded enrichment handoffs and an "ArcKit Architecture Evidence Map" section in each command. A standard **Visual Evidence Decision Rule** is applied across all ten Federal templates: generate companion visuals only when the evidence has enough structure for real nodes and relationships; generate a clearly marked draft visual with `Pending Input` labels when evidence is partial but structurally useful; otherwise record a **Visual Evidence Gap** and list the minimum inputs needed. The guidance stays cross-sector (SOCI/OT is not made energy-specific). The `au-federal` recipe gains default visual/evidence targets (DIAG, DFD, ServiceNow, maturity, traceability) and a `graph-report` post-build hook, plus synthetic eval fixtures for the complete / partial / sparse evidence scenarios.
+- **`MMOD` (Maturity Model Assessment) doc-type registered.** The core `/arckit:maturity-model` command has always emitted `ARC-*-MMOD-*` document IDs, but `MMOD` was never registered in `config/doc-types.mjs` or the `/arckit:pages` allow-list, so maturity artefacts were not recognised by graph-inject or the documentation site. Registered as a regime-neutral `Governance` type (severity `HIGH`, matching sibling governance types such as `RISK` and `TRAC`).
+
+### Fixed
+
+- **`findRepoRoot` no longer mis-detects an unrelated `projects/` directory as the repo root** (#572). Hooks now treat a `projects/` directory as the ArcKit repo root only when it contains a numbered project entry (`NNN` / `NNN-…`, e.g. `000-global`), so an empty or unrelated `projects/` higher up the tree is ignored. Also normalises Windows path separators in `allow-plugin-internals` so the plugin-internals allowlist works on Windows. Adds a dedicated `findRepoRoot` unit test, wired into CI.
+
+### Changed
+
+- **All command cross-references standardised on the colon namespace `/arckit:<command>`** (~5,600 references across ~600 files). This matches the official Claude Code plugin invocation syntax (plugin skills use a `plugin-name:skill-name` namespace) and replaces the previous mixed convention where templates, guides, the README, scripts and several overlays used the non-runnable dot form `/arckit.<command>`. Wardley sub-commands correctly keep the dot before the sub-command (`/arckit:wardley.gameplay`). File paths and the Codex/OpenCode `arckit.<name>.md` filenames are unaffected; Codex (`$arckit-<command>`) and Copilot (`/arckit-<command>`) per-target forms are unchanged. `CLAUDE.md`, `AGENTS.md` and `CONTRIBUTING.md` are corrected (they had wrongly documented Claude and OpenCode as using the dot form). A CI guard (`scripts/standardise-colon.py --check`) now fails the build if a dot-form reference is reintroduced. Historical CHANGELOG entries and published articles are intentionally left as written.
+
+## [5.9.2] — 2026-06-03
+
+### Fixed
+
+- **`CMPT` and `TNDR` now sequence correctly in `generate-document-id.sh`** (#566). The bundled helper hardcoded `MULTI_INSTANCE_TYPES` without `CMPT` or `TNDR` (both added in 5.9.0), so `/arckit:competitors` and `/arckit:tenders` received document IDs with **no sequence number** (e.g. `ARC-001-CMPT-v1.0`) and collided on every run. The plugin copy (`arckit-claude/scripts/bash/`) — the one the plugin cache actually executes — had drifted from the already-fixed CLI copy (`scripts/bash/`), despite the script's own "keep in sync with `doc-types.mjs`" comment. Added `TNDR CMPT` after `DSCT` to match `config/doc-types.mjs MULTI_INSTANCE_TYPES` and regenerated the codex / copilot / opencode / gemini copies via the converter.
+
+### Changed
+
+- **Writer-subagent writes pre-authorised in the dev repo** (#566). The five writer subagents (`competitors` / `tenders` / `gov-reuse` / `datascout` / `grants`) hold `Write`/`Edit` but run non-interactively, so a gated `Write` is auto-denied — a subagent cannot surface an approval prompt. Added scoped `Write(//workspaces/arc-kit/projects/**)` + `Edit(...)` rules to `.claude/settings.json`. Least-privilege: the writers have no web/MCP tools and the orchestrator schema-validates payloads before they run, so this only authorises the boundary the reader/writer split already enforces.
+
+## [5.9.1] — 2026-06-03
+
+### Fixed
+
+- **All MCP-backed subagents can now reach their plugin MCP servers** (#564, #565). `/arckit:tenders` and `/arckit:competitors` (#564), and then every other MCP-backed agent (#565), were falling through to empty/degraded paths because their reader/research subagents could not call the bundled MCP servers. Two root causes, both required, confirmed against the Claude Code docs:
+  - **Tool-name prefix.** Plugin-bundled MCP tools surface at runtime as `mcp__plugin_arckit_<server>__<tool>`, but the agents' `tools:` allowlists used the bare `mcp__<server>__` form, which matches nothing in a subagent allowlist. Prefixed the tool names in 8 agents: `arckit-tenders-reader` (#564) plus `arckit-aws-research`, `arckit-azure-research`, `arckit-gcp-research`, `arckit-gov-code-search`, `arckit-gov-landscape`, `arckit-gov-reuse-reader`, `arckit-datascout-reader` (#565).
+  - **Deferred servers don't reach subagents.** A deferred (non-`alwaysLoad`) plugin MCP server is not injected into subagent context — only the main agent can load it on demand — so a subagent needs `alwaysLoad: true` to see it. Added `alwaysLoad` to `uk-tenders` (#564), `govreposcrape`, `google-developer-knowledge` and `datacommons-mcp` (#565), joining `aws-knowledge` / `microsoft-learn` which already had it. For the two keyed servers, a keyless user's session attempts the connection at startup; per the docs an auth failure marks the server failed and the session continues, bounded by the 5s connect timeout.
+- **Codex extension `sync-guides.mjs` drift** (#562). Re-synced the hand-maintained `sync-guides.mjs` between `arckit-claude` and `arckit-codex` — restored the NHS clinical-safety block and the `{{REPO_OWNER}}` substitution that had drifted out of the Codex copy.
+
+### Changed
+
+- **Per-page canonical / Open Graph metadata for arckit.org viewers** (#561), plus the `pages-template.html` head, so generated documentation sites and the article viewers emit correct canonical and OG tags.
+- **`/arckit:start` workflow-trigger note** corrected for the Claude Code v2.1.160 `workflow` → `ultracode` keyword rename (#522 item 59, #560).
+
+## [5.9.0] — 2026-06-02
+
+### Added
+
+- **`/arckit:competitors` — Competitor Landscape** (#556). Rival suppliers, awarded-value market share, head-to-head and concentration analysis from the same ~677,000 UK contracting processes as `/arckit:tenders`. Shares the `arckit-tenders-reader` subagent (same MCP reader, different orchestrator/writer lens). Outputs `CMPT` artefact; feeds into `risk` (supplier-concentration/single-supplier-dependency risk), `sobc` (market-context benchmark), `research` (award-evidence grounding), `score` (Company Experience evidence) — all regime-gated handoffs under `governance_framework: UK Gov`.
+- **Assurance wiring — TNDR/CMPT artefacts** (#556). Four existing commands now consume TNDR and/or CMPT artefacts as optional inputs: `risk` (supplier-concentration risk section), `sobc` (Economic Case market-context benchmarks), `research` (award-evidence grounding in the build-vs-buy analysis), `score` (Company Experience evidence in the vendor-evaluation scorecard). All wiring is regime-gated (UK Gov `governance_framework`) and added as optional `handoffs:` to the producing commands, plus `## Context` blocks in the consuming commands.
+- **`/arckit:tenders` — Procurement Market Intelligence** (#556). Award-value benchmarks, top suppliers, incumbency and concentration from ~677,000 UK contracting processes (Find a Tender Service, Contracts Finder, Public Contracts Scotland, Sell2Wales, eTendersNI). Three-tier reader/orchestrator/writer subagent split; reader allowlists 7 read-only tools; `query_sql` never allowlisted (prompt-injection surface). Outputs `TNDR` artefact; feeds into `sobc` (Economic Case benchmarks), `risk` (concentration risk), `research` (build-vs-buy context). Shares `arckit-tenders-reader` with `/arckit:competitors`.
+- **`uk-tenders` bundled MCP server** (#556). Keyless `http` MCP at `https://tenders.run.cns.me/mcp`, deferred (no `alwaysLoad`). 11 tools; 7 allowlisted by `arckit-tenders-reader`; `query_sql` documented-only and never allowlisted. Nightly refresh, best-effort single Cloud Run, no formal SLA — degrades gracefully. Data re-published under OGL v3.0.
+- **`TNDR` + `CMPT` doc-types** (#556). `TNDR` (Procurement Market Intelligence, regime UK) and `CMPT` (Competitor Landscape, regime UK) registered in `config/doc-types.mjs` and `commands/pages.md`. Both now live.
+
+## [5.8.0] — 2026-06-01
+
+### Added
+
+- **`arckit-au-energy` community overlay — first Australian sector overlay (11th marketplace plugin).** Adds the Australian Energy Sector overlay as a standalone sector plugin layered on the `arckit-au` jurisdiction baseline, mirroring how `arckit-uk-finance` / `arckit-uk-nhs` layer sectors on the UK baseline (rather than bundling the sector menu inside the jurisdiction overlay). Two commands — `au-aescsf` (AESCSF maturity assessment) and `au-energy-compliance` (AER ring-fencing, AEMC NER/NGR, AEMO interfaces, DERMS/DOE, CSIP-AUS, SOCI escalation) — plus the `au-energy` build recipe (22 targets, optional default-off `SERVICE_INVENTORY`). The recipe composes federal-layer targets (`AU_E8`, `AU_ISM`, `AU_OT`, `AU_SOCI`, `AU_PIA`, `AU_NDB`) from `arckit-au`, so the plugin manifest declares dependencies on **both** `arckit` core and `arckit-au` — the marketplace's first community→community plugin dependency. Doc types `AUAESCSF` + `AUENERGY` (regime AU, HIGH severity). Ships public synthetic evaluation fixtures (`tests/fixtures/au-energy/`) — an applicable DNSP case and a non-SOCI supplier negative case — with deterministic pytest coverage. Register/evidence-heavy energy review composes existing skills (`data-model`, `servicenow`, `dfd`, `diagram`, `risk`, `maturity-model`, `traceability`, `graph-report`) instead of a new inventory command. Original work by @royster70 (#549), repackaged from a stacked-on-#539 draft into a clean standalone sector plugin. Also corrected the `arckit-au` marketplace description from "8 commands" to "10 commands" (OT security + SOCI/CIRMP landed in #539).
+- **govreposcrape dependency-intelligence tools wired into the gov agents** (#550). Following the upstream expansion of the `govreposcrape` MCP server from 1 tool to 9, two of the new dependency-intelligence tools are now consumed by ArcKit:
+  - **`dependency_compare` → `/arckit:gov-reuse`.** The `arckit-gov-reuse-reader` subagent runs pairwise dependency-overlap between candidate repositories that share a capability and emits the results in a new optional `dependency_comparisons` array on the gov-reuse handoff schema. The orchestrator (`commands/gov-reuse.md`) uses overlap ≥ 60% to collapse near-duplicate / forked candidates — keeping the higher-scored repo as the primary recommendation and avoiding double-counting effort savings — and the writer renders a new **Dependency Overlap Analysis** section in the GOVR artefact. Reader budget capped at 3 `dependency_compare` calls / 5 comparison entries per dispatch.
+  - **`vulnerability_exposure` → `/arckit:gov-landscape`.** The `arckit-gov-landscape` agent now scans the domain's major organisations and dominant packages for known-CVE blast-radius (via the SBOM graph + live OSV.dev) and renders a new **Supply-Chain & Vulnerability Exposure** section (exposure by organisation, exposure by dominant package, end-of-life flags). Flagged as a landscape-level signal, not a per-repo audit — points users to `/arckit:secure` / `/arckit:risk` for adoption decisions.
+  - Both tools added to the respective agents' `tools:` frontmatter allowlists. `docs/MCP-CATALOGUE.md` updated to mark them as consumed (17 of 23 tools now wired). Non-Claude formats regenerated via `scripts/converter.py`.
+- **Cross-sector OT security and SOCI/CIRMP commands added to the `arckit-au` federal overlay** (#539), taking it to 10 commands. `au-ot-security` (ASD operational technology cyber security assessment for connected OT/ICS/SCADA environments) and `au-soci-cirmp` (SOCI Act Critical Infrastructure Risk Management Program governance + evidence pack). Both are general Australian critical-infrastructure capabilities — optional default-off `AU_OT` / `AU_SOCI` targets in the `au-federal` recipe — and are reused (not redefined) by the new `arckit-au-energy` overlay. Doc types `AUOT` + `AUSOCI` (regime AU, HIGH severity).
+
+### Fixed
+
+- **Windows validation paths** (#548). Normalised plugin-root path comparisons in `allow-plugin-internals.mjs` and the generated `arckit-codex-hook.mjs` (`\` → `/` before prefix-matching, a no-op on POSIX) so the `isUnderPluginRoot` gate works on Windows; imported `doc-types.mjs` via `pathToFileURL()` in the dual-registration validator so Node ESM dynamic import works on Windows absolute paths. Also ignores local `.agents/skills/` and `.claude/worktrees/` dev folders.
+
+### Changed
+
+- **Removed references to the retired `tractorjuice/arckit-book` repository** (#536/#554). The repo is no longer available, so the README link 404'd. Dropped the "ArcKit Book" section from `README.md` and repointed the `.devin/wiki.json` authoritative-overview note at `CLAUDE.md` + `README.md` (the live canonical sources). Historical CHANGELOG entries recording the original move (#324/#325) left intact.
+- Documentation: noted Claude Code v2.1.157's "workflow" keyword trigger on the start guide (#552); split the homepage stat cards into Jurisdictions / Sectors / Agents (#547).
+
+## [5.7.0] — 2026-05-29
+
+### Fixed
+
+- **US regime registration** (#545, #546). `regime: 'US'` was declared on 10 doc-types (FedRAMP/FISMA/NIST 800-53/CISA Zero Trust/ICAM/AI RMF/PIA/SBOM) but `'US'` was missing from the exported `REGIMES` array and `REGIME_LABELS` in `arckit-claude/config/doc-types.mjs`. The sole consumer, `hooks/graph-inject.mjs`, iterates `REGIMES` directly, so US compliance artefacts were silently dropped from the "Compliance Artifact Presence" listing and never scored in the readiness scorecard despite validating on disk. Added `'US'` + `US: 'USA Federal'`. Same failure class as the CA omission fixed in #441.
+- **`arckit-uk-finance` restored to extension conversion** (#546). `scripts/converter.py` `PLUGIN_SOURCES` omitted `arckit-uk-finance`, so its four `uk-fs-*` commands were absent from all five non-Claude extensions (Codex/OpenCode/Gemini/Copilot/Paperclip) from v5.3.0 onward. Added it and regenerated every extension. Also mirrored the eight `uk-fs` templates into `.arckit/templates/` (CLI package data — `arckit init` users had missed them) and removed a stray tracked `arckit-uk-finance/templates/.gitkeep` the converter was copying into extension dirs as noise.
+- Refreshed stale overlay-enumeration lists in the test suite (`tests/plugin/test_template_consistency.py`, `tests/paperclip/test_commands_json.py`, `tests/codex/test_codex_extension.py`) to include the `us` / `uk-finance` / `uk-nhs` overlays.
+
+### Added
+
+- **Regime-registration guard test** (`scripts/tests/test-regime-registration.mjs`, wired into CI `lint-markdown.yml`). Asserts every declared doc-type `regime:` is present in both `REGIMES` and `REGIME_LABELS` — the invariant whose absence let the US gap (and the earlier CA gap) ship silently.
+
+## [5.6.0] — 2026-05-29
+
+### Changed
+
+- **Minimum Claude Code version bumped to v2.1.156** (from v2.1.144). The new floor pulls in two Opus 4.8-era improvements ArcKit now depends on: the **v2.1.156** fix for Opus 4.8 thinking blocks being modified and causing API errors (relevant to `/arckit:*` commands and the research agents that use extended thinking), and **v2.1.154** which shipped Opus 4.8 GA plus the `defaultEnabled` plugin manifest field (below). Updated in `arckit-claude/hooks/version-check.mjs`, `README.md` (install note, "Why v2.1.156?" callout, requirements line), `CLAUDE.md` (monitors floor note), and `docs/getting-started.html`.
+- **Opus 4.7 → Opus 4.8 documentation refresh** (items 43/44 of #522). `CLAUDE.md` now describes the `effort:` `xhigh` tier as covering Opus 4.7 and 4.8 (4.8 defaults to `high`) and the `/fast` backing model as Opus 4.8 as of v2.1.154 (was 4.7 on v2.1.142–v2.1.153). The `start.md` getting-started guide's token-constrained recommendation updated from "Opus 4.6 or 4.7" to "Opus 4.7 or 4.8" across all distribution copies. (Historical feature-gate references to Opus 4.7 in the README "Why?" callouts and `version-check.mjs` are intentionally left as-is — they record which version first shipped 4.7's `xhigh`/`/context`.)
+
+### Added
+
+- **`defaultEnabled: false` on all 9 community overlays** (`arckit-uae`, `arckit-fr`, `arckit-ca`, `arckit-eu`, `arckit-at`, `arckit-au`, `arckit-us`, `arckit-uk-finance`, `arckit-uk-nhs`). Adopts the Claude Code v2.1.154 plugin manifest field so installing the marketplace surfaces the overlays without auto-enabling all nine. Users now opt in to only the jurisdiction or sector they need; core `arckit` stays default-enabled. Formalises the "install only what you need" model already documented in `CLAUDE.md`. Addresses item 42 of #522.
+
+### Fixed
+
+- **UK accessibility target corrected from WCAG 2.1 AA to WCAG 2.2 AA.** UK public sector bodies are now monitored against WCAG 2.2 AA — GDS has tested against 2.2 since October 2024, and the *Public Sector Bodies (Websites and Mobile Applications) Accessibility (Amendment) (EU Exit) Regulations 2022* (SI 2022/1097) replaced the fixed WCAG version reference with a rolling reference to "the latest published version of WCAG" (currently 2.2). The `/arckit:service-assessment` command (GDS Service Standard Point 5 evidence checks) and several core templates were still hard-coded to "WCAG 2.1 AA", causing generated UK artefacts to cite the superseded standard. Updated: `service-assessment` (5 references), `backlog` command, and the `requirements`, `sow`, `research-findings`, `platform-design`, and `backlog` templates, plus the NHS example on `docs/use-cases.html`. Non-Claude formats regenerated via `scripts/converter.py`.
+  - **Jurisdictional overlays intentionally left unchanged** (verified against current 2026 mandates): France `fr-dinum` correctly maps RGAA 4.1.2 → WCAG **2.1** AA (RGAA 5 / 2.2 expected end-2026, not yet in force); Canada `ca-gc-digital-standards` correctly anchors WCAG **2.1** AA via CAN/ASC-EN 301 549:2024; Australia `au-dss` already targets WCAG **2.2** AA (Digital Experience Policy, 1 Jan 2025).
+
+## [5.5.0] — 2026-05-28
+
+### Brand reposition
+
+Significant identity refresh. No functional changes to commands, agents, hooks, or recipes — purely brand surfaces, assets, and positioning copy.
+
+### Changed
+
+- **Tagline**: "Enterprise Architecture Governance & Vendor Procurement Toolkit" → **"The Enterprise Architecture Governance Harness"**. Drops the loaded "Toolkit" category and elevates "Harness" — the structural metaphor that better matches how ArcKit actually behaves (it harnesses an AI assistant against a template-driven governance frame). Updated across every brand surface: root `README.md`, plugin `plugin.json`, marketplace `marketplace.json`, Gemini extension JSON, Codex / Copilot / OpenCode / Paperclip READMEs, `CLAUDE.md`, `docs/llms.txt`, `docs/index.html` (meta description + OG + Twitter + JSON-LD + footer + hero), all 10 docs `*.html` pages, all 6 start guides, the published article on government code discovery, the FDE pitch deck, the business plan, the CLI `__init__.py` docstring + `TAGLINE` constant + Typer help text, and the SDG repo scaffold script.
+- **Category positioning**: "Architecture · Vendor Procurement · Compliance" → **"Strategy · Architecture · Delivery · Assurance"**. Reflects the actual 71-command surface, where procurement is one cluster of ~6 commands among seven; the new four-bucket framing makes Strategy (principles/SOBC/risk/Wardley/roadmap/story/framework), Architecture (ADRs/diagrams/HLD-DLD/data-mesh-contract/platform-design/data-model/backlog/servicenow), Delivery (devops/mlops/finops/operationalize/pages/presentation), and Assurance (analyze/conformance/traceability/health/navigator/maturity-model + all compliance commands) each load-bear an equivalent share of the surface. Procurement (sow, dos, evaluate, score, gcloud-*) is preserved as functional content — the SOW command, plan-template Gantt phases, procurement guide, use-case index entry — but no longer leads positioning.
+
+### Added
+
+- **New logo family — Bracket-B2**. Replaces the previous arc-with-three-nodes "arc-kit" mark. Built from three semantic elements that depict an AI harness: angle brackets `⟨ ⟩` (harness frame / prompt structure), inner caret `^` (prompt indicator), linchpin cursor (teal terminal anchors flanking a navy centre pin — the AI output baseline). Selected from six concept directions explored under `docs/assets/concepts/` (Bracket A/B/C, Linchpin A/B, Hybrid) and three Bracket-B grafts (B1 anchor-nodes / B2 linchpin-cursor / B3 linchpin-fan). Full asset family in production paths: `ArcKit_Mark_Light/Dark.svg`, `ArcKit_Logo_Horizontal_Light/Dark.svg`, `ArcKit_Logo_Stacked_Light/Dark.svg`, `arckit-banner-light/dark.svg`, `og-card.svg`, `favicon.svg` (large, navy 96-radius tile), `favicon-small.svg` (16/32 stripped variant).
+- **Dark banner** — `arckit-banner-dark.svg` was missing from the library entirely. Added.
+- **OG card** — `docs/assets/og-card.svg` 1200×630 hero with the new mark, wordmark, tagline, and four-bucket subtitle. Replaces `docs/og-image.png` content so the existing `https://arckit.org/og-image.png` URL serves the new design without breaking inbound shares.
+- **Favicon set** — `favicon.svg`, `favicon-512.png`, `favicon-192.png`, `favicon-32.png`, `favicon-16.png`, plus a simplified `favicon-small.svg` for the 16/32 sizes. Wired into all 10 docs `*.html` pages via `<link rel="icon">` block placed after each page's canonical link.
+- **Render script** — `scripts/render-brand-pngs.py` (uses `cairosvg`) regenerates all 22 PNG exports from the SVG sources. Run after any SVG edit to keep raster exports in sync.
+- **Concept directory retained** — `docs/assets/concepts/` (six initial concept thumbnails + three B-grafts + `v2/` full Bracket-B2 family pre-promotion) kept in-repo as design source-of-truth for future iteration.
+- **Brand-motif documentation** — `docs/assets/README.md` "Brand motif" section rewritten to describe the Bracket-B2 design and its colour-role assignments (`#0B1F33` navy for structure, `#1ED3C6` teal for the AI/active layer).
+
+### Changed (external)
+
+- GitHub repo description updated via `gh repo edit` to match the new tagline.
+- **Not done by this release**: GitHub social-preview image. The repo's social-preview image is not exposed via `gh` CLI or REST API. Upload `docs/assets/og-card.png` manually at GitHub → Settings → General → Social preview.
+
+## [5.4.0] — 2026-05-27
+
+### Fixed
+
+- **`desktop_notifications` SessionStart hook no longer raises `plugin option "desktop_notifications" isnt set` on fresh installs.** The `${user_config.desktop_notifications}` argv substitution in `arckit-claude/hooks/hooks.json` aborts the hook when the user has never set the field, even with a `"default": "false"` declared in the userConfig (the default does not propagate through argv substitution on at least some Claude Code versions). The hook now reads the value from the `CLAUDE_PLUGIN_OPTION_DESKTOP_NOTIFICATIONS` env var — the documented parallel access path — which degrades cleanly to `undefined` when the field is unset. Opt-in behaviour for users who set `desktop_notifications: "true"` is unchanged.
+- **`/arckit:pages` now surfaces NHS clinical-safety artefacts**. Marcus Baw's `SAFETY.md` / `SAFETY-CASE.md` / `HAZARD-LOG.md` files (and their `clinical-safety/deployment/` companions from `/arckit:uk-nhs-dcb0160`) deliberately do not carry the `ARC-` prefix, so they were skipped by the manifest scanner in `arckit-claude/hooks/sync-guides.mjs`. The scanner now picks up any `.md` file in `projects/{NNN}/clinical-safety/` and `projects/{NNN}/clinical-safety/deployment/` under category `Clinical Safety`, using the file's first heading as the title. Marcus's filenames are preserved verbatim — only the manifest entry is added.
+
+### Added
+
+- **`arckit-uk-nhs` community plugin** — second **sector-specific** ArcKit overlay (following [`arckit-uk-finance`](#530--2026-05-27) which shipped in v5.3.0; jurisdiction overlays continue to cover legal territories). 4 commands covering NHS clinical safety (`uk-nhs-dcb0129` manufacturer, `uk-nhs-dcb0160` deployer), NHS DTAC v3 (`uk-nhs-dtac`), and UK MDR 2002 + EU MDR 2017/745 software-as-medical-device classification (`uk-mdr-classification`). Adopts [Dr Marcus Baw's SAFETY.md spec](https://github.com/pacharanero/SAFETY.md) verbatim for DCB0129/0160 file naming and YAML-frontmatter hazard log (3-file output: `SAFETY.md`, `SAFETY-CASE.md`, `HAZARD-LOG.md` inside `projects/{NNN}/clinical-safety/`). Closes part of #424.
+- **`uk-nhs-clinical-safety` build recipe** (44 targets across 8 build waves) — composes with the UK SaaS baseline rather than replacing it (NHS digital products still need TCoP, Secure by Design, DPIA, ATRS).
+- **2 new doc-type codes** registered in `arckit-claude/config/doc-types.mjs`: `NHSDTAC`, `NHSMDR`. Both regime `UK`, category `Compliance`, severity `HIGH`. Dual-registered in `arckit-claude/commands/pages.md` allow-list per existing dual-registration pattern.
+- **Spec doc and decision log** at [`docs/superpowers/specs/2026-05-19-uk-nhs-overlay-design.md`](docs/superpowers/specs/2026-05-19-uk-nhs-overlay-design.md) — every locked decision traces back to its source; §0 written specifically for Marcus Baw to review before committing as proposed domain co-maintainer.
+
+### Changed
+
+- **Top-level command count** moves from **139** to **143** (71 official + 72 community-contributed). Community count: `arckit-uae` 12 + `arckit-fr` 12 + `arckit-ca` 12 + `arckit-eu` 7 + `arckit-at` 3 + `arckit-au` 8 + `arckit-us` 10 + `arckit-uk-finance` 4 + `arckit-uk-nhs` 4 = 72.
+- **`scripts/bump-version.sh`** — added `arckit-uk-nhs` to jurisdictions loop and to verification output.
+- **`scripts/converter.py`** — added `arckit-uk-nhs` to `PLUGIN_SOURCES`. All extension formats (Codex Extension, Codex Skills, OpenCode CLI, Gemini CLI, Copilot, Paperclip) now include the 4 NHS commands.
+- **`.claude-plugin/marketplace.json`** — added 10th plugin entry for `arckit-uk-nhs` (alongside `arckit-uk-finance` from v5.3.0).
+
+### Notes for Marcus Baw
+
+Marcus's SAFETY.md / SAFETY-CASE.md / HAZARD-LOG.md files deliberately do NOT carry the `ARC-` prefix or a doc-type code — they pass through the `validate-arc-filename` hook untouched and are cross-referenced by relative path (`clinical-safety/SAFETY-CASE.md`) rather than document ID. This preserves his spec's "convention over configuration" principle while keeping the files inside an ArcKit project subdirectory so multi-project monorepos work. The Document Control block prepended to each file is the only addition to his spec.
+
+## 5.3.0 — 2026-05-27
+
+### Added
+
+- **`arckit-uk-finance` community plugin** — first sector-specific overlay. Jurisdictional overlays cover countries (UAE, France, Canada, EU, Austria, Australia, USA federal civilian); sector overlays cover industry verticals. Four commands for architects at established UK PSPs / EMIs / PIs scaling regulated payment operations: SCA-RTS exemption design (`uk-fs-sca-rts`, `FSSCA`), EMI/PI safeguarding assessment (`uk-fs-safeguarding`, `FSSAFE`, CRITICAL severity flag), FCA Consumer Duty board report (`uk-fs-consumer-duty`, `FSCD`), Critical Third Parties dependency assessment (`uk-fs-ctp-dependency`, `FSCTP`). Recipe: `uk-fs-payments` (multi-wave payment system modernization). Ships EXPERIMENTAL; help-wanted call open for a UK FS domain co-maintainer (regulatory counsel / MLRO / Head of Architecture background welcome). See spec: `docs/superpowers/specs/2026-05-26-arckit-uk-finance-overlay-design.md`. See plan: `docs/superpowers/plans/2026-05-26-arckit-uk-finance-overlay.md`.
+- Four new doc-types registered in `arckit-claude/config/doc-types.mjs`: `FSSCA` (SCA-RTS), `FSSAFE` (Safeguarding), `FSCD` (Consumer Duty), `FSCTP` (Critical Third Parties).
+- New recipe `uk-fs-payments.yaml` in `arckit-claude/skills/arckit-build/recipes/`.
+- Five user-facing guides in `docs/guides/uk-fs-*.md` (one per-command + one overlay-level maintenance guide with citation register).
+- Site integration: UK Finance sector card on landing page (`docs/index.html`), accordion section in guides (`docs/guides.html`), filter option and 4 command rows on commands page (`docs/commands.html`).
+
+## 5.1.0 — 2026-05-23
+
+### Added
+
+- **`arckit-us`** community plugin — USA Federal Civilian Overlay with 10 commands (`us-fisma-categorization`, `us-nist-800-53`, `us-fedramp-ssp`, `us-fedramp-readiness`, `us-zero-trust`, `us-icam`, `us-ai-rmf`, `us-ai-impact`, `us-privacy-pia`, `us-sbom-eo-14028`) and the `us-federal` recipe. See [`arckit-us/CHANGELOG.md`](arckit-us/CHANGELOG.md).
+- 10 new doc-type codes registered in `arckit-claude/config/doc-types.mjs`: `FIPS199`, `NIST`, `FRSSP`, `FRRR`, `ZTA`, `ICAM`, `AIRMF`, `AIIA`, `USPIA`, `SBOM`.
+- 11 central guides under `docs/guides/us-*.md` (10 per-command + 1 overlay-level maintenance guide with citation register).
+- USA section in `docs/guides.html`, `docs/commands.html`, `docs/index.html`.
+
+### Changed
+
+- All 8 plugin manifests now at lockstep `5.1.0` (was 5.0.5).
+- Community overlay count: 6 → 7. Total command count: 125 → 135 (71 official + 64 community).
+- `scripts/bump-version.sh` jurisdiction loop now includes `us`; verification block now includes `arckit-au` and `arckit-us` (the `arckit-au` addition fixes a pre-existing verification gap).
+- `scripts/converter.py` `AGENT_CONFIG` extended with `arckit-us` source.
+
+### Statutory currency note
+
+This release ships the USA overlay against the **post-EO-14110-revocation** policy landscape: OMB M-24-10 (use of AI) and OMB M-25-21 (acquisition of AI) are the active AI assurance mandates, FedRAMP completed the Rev 5 transition in 2024, and OMB M-22-18 / M-23-16 secure-software attestation has been active since 2024.
+
+## [5.0.5] - 2026-05-23
+
+### Fixed
+
+- `owm-to-mermaid.mjs` no longer mis-parses `evolve` lines whose quoted component name contains an embedded number (#508). The target-evolution regex is now anchored at end-of-line, so `evolve "Foo (Project 003)" 0.74` is converted faithfully instead of truncating the name and dropping the real target.
+- `owm-to-mermaid.mjs` now passes inline `(build)` / `(buy)` / `(outsource)` decorators through to the Mermaid output (#508), alongside the existing `(inertia)` support. Authors no longer need to add trailing standalone `build "<Name>"` / `buy "<Name>"` / `outsource "<Name>"` directives to get sourcing decorators on the converted Mermaid map.
+- `/arckit:health` now flags **DRAFT staleness** and **overdue reviews** — the two signals the session-start `stale-artifact-scan` monitor was already reporting (#509). Adds two detection rules: `STALE-DRAFT` (MEDIUM, status=DRAFT unchanged for > 30 days by default, configurable via `STALE_DRAFT_DAYS=N`) and `REVIEW-OVERDUE` (HIGH, Document Control `Next Review Date` in the past on non-DRAFT/SUPERSEDED/ARCHIVED artifacts). The monitor's draft threshold moves from 14 days to 30 to match. Both surfaces now agree on the same set of artifacts.
+
+## [5.0.4] - 2026-05-22
+
+### Added
+
+- **Opt-in OWM label tidying** for `/arckit:wardley`. New `--tidy-owm` flag rewrites the canonical ` ```wardley ` (OnlineWardleyMaps) block's component `label [x, y]` offsets so labels do not overlap when rendered at <https://create.wardleymaps.ai>. Backed by `owm-tidy.mjs` — a sibling of the mermaid `wardley-tidy.mjs` that reuses the same placement engine with the OnlineWardleyMaps renderer geometry (recovered from `tractorjuice/onlinewardleymaps`). Opt-in by design: the OWM block is the author-edited source of truth and OWM is an interactive drag editor, so it is never rewritten by a silent hook (unlike the Mermaid `wardley-beta` block). Collision-free authored offsets are kept; only overlapping or untuned labels move.
+
+## [5.0.3] - 2026-05-22
+
+### Added
+
+- **Auto-tidy Wardley Map labels** (#506). New `tidy-wardley-labels` PostToolUse hook rewrites Mermaid `wardley-beta` component-label offsets after every Write/Edit, so clustered components no longer collide into an unreadable pile. Backed by a pure, deterministic placement engine that projects the map to pixels, generates 32 candidate slots per label, scores each against a weighted collision penalty, places the most-constrained labels first, and converges to an idempotent result.
+
+### Documentation
+
+- New articles: the v5 plugin-split token budget (#502) and the Wardley label-tidy placement algorithm (#500, #506). Per-article `sitemap.xml` and `llms.txt` entries backfilled (#503, #504, #505).
+
+## [5.0.2] - 2026-05-19
+
+### Added
+
+- **`desktop_notifications` userConfig flag + `notify-stale-artifacts` SessionStart hook** (#497). Opt-in `terminalSequence` (Claude Code v2.1.141+) desktop notifications when stale ArcKit artefacts are detected at session start. Stacks OSC 9 (iTerm2 / Windows Terminal / WezTerm / ConEmu) and OSC 777 (urxvt / Ghostty / Warp) escapes; terminals silently drop unsupported codes per the documented allowlist. Complements (does not replace) the existing `stale-artifact-scan` background monitor.
+- **"What it costs" README section** (#499). Documents the measured plugin footprint from `claude plugin details arckit`: ~10,042 always-on tokens per session plus on-invoke costs tiered (Lightweight <2K, Standard 2–7K, Heavy 7–15K, Research-heavy 15–25K, Specialist >25K).
+
+### Changed
+
+- **All 6 community-overlay READMEs** (`arckit-uae`, `arckit-fr`, `arckit-ca`, `arckit-eu`, `arckit-at`, `arckit-au`) now call out the v2.1.143 plugin dependency enforcement: `claude plugin disable arckit` surfaces a disable-chain hint instead of silently breaking the overlay (#497).
+
+### Fixed
+
+- **32 AU community-plugin guide files** under `arckit-{codex,copilot,opencode,paperclip}/docs/guides/au-*.md` are now tracked. They had been generated by `scripts/converter.py` and pushed to the published extension repos via `push-extensions.sh`, but stayed untracked in the monorepo, causing 32 "new" files at every release (#498).
+- **Runtime cache `.gitignore` cleanup** (#498). `.arckit/memory/.last-session`, `.arckit/memory/.telemetry.jsonl`, and `docs/telemetry.json` are now gitignored — closes the loose end from the #494 close discussion. `.last-session` was previously tracked one commit deep; `git rm --cached` untracks it while leaving the file on disk for the running hook.
+
+## [5.0.1] - 2026-05-19
+
+### Changed
+
+- **Minimum Claude Code version bumped to v2.1.144** (from v2.1.139). Adopts items 1, 3, 5, 8 from #495 — see `arckit-claude/CHANGELOG.md` for the full plugin entry.
+
+### Fixed
+
+- `CLAUDE.md` and `README.md` agent-count corrected from "13 agents" to **16 agents** (10 single-tier + 6 reader/writer subagents). Discovered during the #495 item 10 subagent-slug audit.
+
+## [5.0.0] - 2026-05-18
+
+### BREAKING
+
+- **Community overlays moved to separate plugins**. The monolithic `arckit` plugin shipped 117 commands (71 core + 46 community). v5.0.0 splits community commands into six per-jurisdiction marketplace plugins: `arckit-uae` (12 commands + 2 recipes), `arckit-fr` (12), `arckit-ca` (12 + 1 recipe), `arckit-eu` (7), `arckit-at` (3), and `arckit-au` (8 + 1 recipe — new in v5.0.0). Users now install only the jurisdictions they need. Total surface: 125 commands across 7 plugins.
+  - **Migration:** after upgrading, install the community plugins you previously used. A one-shot SessionStart banner reads `.arckit/manifest.json` and prints the exact `claude plugin install ...` command for your project. Acknowledge with `touch .arckit/v5-migration-acked`.
+  - **Token savings:** UK-only users save ~5K tokens per SessionStart system reminder (estimate — to be replaced with measured figures in Task 16).
+  - **No functional change** for users who install all 6 plugins — the full 117-command surface is intact, just spread across plugins.
+
+### Added
+
+- `scripts/check_recipes.py` — CI gate validating every recipe's structure and dep references.
+- `scripts/check_doctype_collisions.py` — CI gate asserting every doc-type code in `arckit-claude/config/doc-types.mjs` is unique.
+- `scripts/tag-plugins.sh` — creates native `<plugin>--vX.Y.Z` tags per release (idempotent).
+- `arckit-claude/hooks/v5-migration-banner.mjs` — one-shot SessionStart hook suggesting per-jurisdiction installs based on prior project artefacts.
+- 6 new plugin directories: `arckit-uae/`, `arckit-fr/`, `arckit-ca/`, `arckit-eu/`, `arckit-at/`, `arckit-au/`, each with their own `plugin.json`, `README.md`, `VERSION`, `commands/`, `templates/`, and (where applicable) `recipes/`.
+- **`arckit-au`** Australian Federal / DISP-supplier overlay — 8 commands (`au-e8-posture`, `au-pia`, `au-dss`, `au-ism-controls`, `au-ndb-playbook`, `au-pspf`, `au-ai-assurance`, `au-disp-attestation`), 8 templates, and the `au-federal` recipe (35 targets, 9 waves). 8 new doc-type codes registered in `arckit-claude/config/doc-types.mjs` (`AUE8`, `AUISM`, `AUPIA`, `AUNDB`, `AUDSS`, `AUPSPF`, `AUAIA`, `AUDISP`). Adds `AU` regime; also adds `CA` retroactively (CA shipped doc-types in v4.15.0 but was missing from `REGIMES`). Domain co-maintainer: @royster70. Supersedes #441.
+
+### Changed
+
+- `arckit-build` skill: new three-tier recipe lookup precedence — project override → core plugin → sibling community plugins via glob.
+- `scripts/converter.py` walks all 6 plugin source dirs and merges into one extension output per non-Claude format. Non-Claude extensions stay monolithic per the v5 design.
+- `scripts/bump-version.sh` updates 6 plugin manifests + `marketplace.json` (all `.plugins[]` entries) instead of just one.
+- `docs/RELEASING.md` updated with multi-plugin release flow.
+- `CONTRIBUTING.md` adds a two-part PR rule for new doc-types (command in community plugin, doc-type registration in core).
+
+### Note on doc-types
+
+All doc-type codes remain in `arckit-claude/config/doc-types.mjs` — community plugins ship commands and recipes only. This keeps `validate-arc-filename.mjs` single-sourced.
+
+### Note on plugin dependencies (Claude Code v2.1.110+)
+
+All 6 community plugins (`arckit-uae`, `arckit-fr`, `arckit-ca`, `arckit-eu`, `arckit-at`, `arckit-au`) declare an exact (`=`) dependency on the `arckit` core plugin. Installing any community plugin auto-installs core; uninstalling with `--prune` cleans it up. The exact pin keeps the 6 plugins shipping as a coherent set — `scripts/bump-version.sh` updates `.version` and `.dependencies[arckit].version` in lockstep on every release.
+
+## [4.22.0] - 2026-05-17
+
+### Added
+
+- **New build recipe: `uae-agentic-transformation`**. Focused 24-month playbook for the 23 April 2026 UAE Cabinet framework targeting 50% of federal services on agentic AI by April 2028. Distinct from the broader `uae-federal-ai` recipe — ADRs reshaped around agentic architecture (orchestration framework, human-in-the-loop boundaries, foundation-model selection, observability for autonomous decisions, kill-switch / rollback), `UAE_ZERO_BUREAUCRACY` positioned as the framework-mandated process-redesign artefact, `PLAN` + `ROADMAP` timeboxed to the 24-month window with the 50%-portfolio target. Includes all 12 UAE community commands plus core ArcKit governance; uses canonical doc-type codes from `config/doc-types.mjs`. 49 targets.
+
+## [4.21.0] - 2026-05-15
+
+### Added
+
+- **PostCompact hook re-injects project context** (#475). Companion to `keep-coding-instructions: true` — static command bodies were already preserved across `/compact`, but dynamic filesystem-derived state (active projects, ARC-* artefacts, external docs, global policies) was lost. The new `postcompact-rehydrate.mjs` hook closes that gap by reusing `buildProjectContext` from the existing context-injection builder.
+- **Effort tier captured + surfaced** (#471). `session-learner.mjs` and `telemetry.mjs` now read the session's effort tier from hookInput `effort.level` or `$CLAUDE_EFFORT` (Claude Code v2.1.133+); recorded per-event in the telemetry JSONL, per-session in `sessions.md` and `docs/telemetry.json`. The `/arckit:pages` dashboard's Session Telemetry panel gains an "Effort mix" row and a per-session effort chip.
+- **Autoresearch explicit stop conditions** (#474). The optimisation loop now self-terminates on score-target hit (`best >= 9.5`), iteration budget (`iter >= 30`), or double-plateau detection. No more loop-forever — token budget bounded by default; thresholds tunable inline.
+- **Cross-reference linter** (#464). `scripts/check_references.py` validates `${CLAUDE_PLUGIN_ROOT}` paths, `handoffs[].command` slugs, and `${user_config.KEY}` keys against disk. Wired into `.github/workflows/lint-markdown.yml`.
+- **MCP catalogue** (#465). Documentation listing the 5 bundled MCP servers, what they're for, and how each plugs into the relevant ArcKit command. Closes #442 item 15.
+
+### Changed
+
+- **Hook config migrated to `args: string[]` exec form** (#467). All 16 entries in `arckit-claude/hooks/hooks.json` use the v2.1.139 exec form (`command: "node"` + `args: ["..."]`) instead of the legacy shell-string. The harness now execs `node <path>` directly, eliminating shell-quoting and metacharacter pitfalls in `${CLAUDE_PLUGIN_ROOT}`-substituted paths.
+- **PostToolUse hooks set `continueOnBlock: true`** (#470). The 4 observational PostToolUse entries (`update-manifest`, `provenance-stamp` ×2, `telemetry`) can no longer derail the user's turn if they ever emit `decision: block`. Block-as-gate semantics retained for the genuine PreToolUse / UserPromptSubmit guards.
+- **Minimum Claude Code version bumped to v2.1.139** (from v2.1.129). Required by the `args` exec form and `continueOnBlock`. Also picks up v2.1.133 subagent skill discovery fix (relevant to ArcKit's 13 agents) and v2.1.136 SessionStart env staleness fix.
+- **Docs: `/fast` Opus 4.7 default + `MCP_TOOL_TIMEOUT` env var** (#473). CLAUDE.md captures the v2.1.142 `/fast` default change. New "Optional: MCP per-request timeout" section in `docs/guides/mcp-servers.md` recommends `MCP_TOOL_TIMEOUT=300000` for corporate networks with TLS-inspecting proxies; one-line cross-references added to each of the 3 cloud-research guides.
+- **AGENTS.md repository guidelines** (#463). New top-level `AGENTS.md` documenting the agent-development conventions used in this repo.
+
+### Site
+
+- **Launch ArcKit FDE** (#460), nav/footer link to FDE (#458), GOV.UK Design System credit removed from footers (#459), opening-paragraph polish + "agentic AI" positioning (#461, #462).
+
+## [4.20.3] - 2026-05-11
+
+### Fixed
+
+- **Plugin `monitors` key wrapped under `experimental` block** (#453). Claude Code v2.1.129 moved the `monitors` (and `themes`) keys under a top-level `experimental` block in plugin manifests. ArcKit's `stale-artifact-scan` background monitor was declared at the top level and would not load on v2.1.129+ clients. The manifest is now compliant with the new schema.
+- **`validate-arc-filename` hook now soft-blocks via `{decision, reason}` JSON** (#454). The unknown-doc-type-code rejection path previously used `process.exit(2)` + stderr, surfacing as a hard permission error visible only to the user. The model received nothing actionable and could not self-correct. Migrated to the modern soft-block pattern (already used by `score-validator.mjs`) so Claude is told the rejection reason — including the offending filename, the valid-codes list, and an explicit "rename and retry" instruction — and can self-correct on the next turn without human intervention.
+
+### Changed
+
+- **Minimum Claude Code version bumped to v2.1.129** (from v2.1.121). Required by the `monitors`-under-`experimental` migration above. Also picks up the v2.1.129 fix to `ENABLE_PROMPT_CACHING_1H` (which was silently downgrading the 1-hour prompt cache TTL back to 5 minutes on earlier versions). The SessionStart version-check hook and the README/CLAUDE.md/PLATFORM-COMPARISON.md docs all reflect the new floor.
+
+## [4.20.2] - 2026-05-11
+
+### Changed
+
+- **Wardley Mermaid rendering now targets Mermaid 11.15.0.** Generated ArcKit pages load `mermaid@11.15.0`, picking up the latest `wardley-beta` fixes for unquoted hyphenated component names and Wardley label text handling. Wardley guidance and templates now describe `wardley-beta` as available from Mermaid 11.14.0 onward while continuing to quote non-simple names for cross-version compatibility.
+
+## [4.20.0] - 2026-05-10
+
+### Added
+
+- **Codex plugin bundle with lifecycle hooks.** `arckit-codex/` now ships a Codex plugin manifest, MCP config, hook wiring, and a native hook runner for context injection, prompt secret checks, file guardrails, MCP approval policy, artifact graph context, provenance stamping, manifest maintenance, and Stop-session memory.
+- **Codex marketplace metadata and CI.** Adds `.agents/plugins/marketplace.json` pointing at the standalone `tractorjuice/arckit-codex` repo, plus a focused Codex plugin workflow that checks hook syntax, CLI syntax, and Codex extension tests.
+- **Codex schemas and validators.** The Codex bundle now includes deterministic handoff schemas, scoring rubrics, `validate-handoff.mjs`, and `owm-to-mermaid.mjs` so research and Wardley workflows work in standalone extension installs.
+
+### Changed
+
+- **Extension generation now preserves Codex-native behavior.** The converter generates Codex plugin metadata, Codex MCP config, hook-enabled `config.toml`, hyphen-safe skill names, rewritten template override paths, and refreshed standalone extension assets.
+- **Release tooling now fails on extension push errors.** `scripts/push-extensions.sh` now treats commit or push failures as real failures instead of reporting a false success.
+
+### Fixed
+
+- **Codex CLI project scaffolding now installs hooks and validators.** `arckit init --ai codex` copies `.codex/hooks/`, `.arckit/schemas/`, and `.arckit/scripts/validate-handoff.mjs`, and keeps `.codex/agents/**` and `.codex/hooks/**` unignored.
+
+## [4.19.2] - 2026-05-07
+
+### Changed
+
+- **`/arckit:wardley` now invokes a vendored OWM → wardley-beta converter instead of regenerating Mermaid syntax by hand.** Adds `arckit-claude/scripts/owm-to-mermaid.mjs` (363 lines, kebab-cased). The script originated as `tests/mermaid-wardley/convert.mjs` in this repo (PRs #339, #340, #341, #344), was untracked in #348, and evolved at `tractorjuice/wardleymap_math_model` with explicit-block pipeline handling and evolution-stage quoting before being re-vendored here. The wardley command's "Mermaid Wardley Map (Enhanced)" section (previously 30 lines of fragile syntax-translation rules) is replaced with a three-step procedure: write OWM to a temp file, run `node ${CLAUDE_PLUGIN_ROOT}/scripts/owm-to-mermaid.mjs <file>`, paste stdout verbatim into the `<details>` block. Sourcing decorators (`build`/`buy`/`outsource`/`inertia`) flow from OWM directives the converter already reads. Hand-rolled `wardley-beta` was brittle — the parser eagerly tokenises hyphens as `->`, treats bare numeric words (`NIS 2031`) as numeric literals, and matches keywords (`label`, `evolve`, `pipeline`) at any word boundary. The converter sidesteps all of these by emitting every name as a double-quoted STRING.
+
+### Notes
+
+- Claude-only this release. Non-Claude extensions (Codex / Gemini / OpenCode / Copilot) of `/arckit:wardley` reference `${CLAUDE_PLUGIN_ROOT}/scripts/owm-to-mermaid.mjs`, which gets path-rewritten by `scripts/converter.py` but the script itself is not yet copied to those extensions (the converter currently propagates `scripts/{bash,python}` only). Follow-up patch will widen the converter's copy list to include `arckit-claude/scripts/`.
+
+## [4.19.1] - 2026-05-07
+
+### Fixed
+
+- **Auto-allow hook now matches `gov-reuse` tempfiles.** The v4.18.1 broadened regex in `allow-plugin-internals.mjs` accepted tempfile patterns like `/tmp/grants-handoff*.json` and `/tmp/datascout-handoff-energy.json`, but its agent-name segment `[a-z][a-z0-9]*` excluded hyphens — so `/tmp/gov-reuse-handoff*.json` (and any future hyphenated agent name) failed to match, triggering a permission prompt for every per-capability dispatch in `/arckit:gov-reuse`. Widened to `[a-z][a-z0-9-]*` to allow hyphens in the agent name while still rejecting paths starting with hyphen, hidden files, and other negative cases. Verified against 18 path patterns including `/tmp/gov-reuse-handoff-appointment-booking.json`, `/tmp/aws-research-handoff.json`, `/tmp/gov-code-search-handoff.json` (positive) and `/etc/passwd`, `/tmp/-handoff.json`, hidden files (negative).
+
+## [4.19.0] - 2026-05-07
+
+### Added
+
+- **`/arckit:gov-reuse` reader/orchestrator/writer split** (Claude Code plugin only — non-Claude extensions remain at the prior single-tier shape until a follow-up release). Third command after `/arckit:datascout` (v4.16.0) and `/arckit:grants` (v4.18.0) to adopt the three-tier subagent pattern. Reader (`arckit-gov-reuse-reader`, `WebFetch` + `mcp__govreposcrape__search_uk_gov_code` only — no Write/Edit/Bash/Agent/WebSearch) searches govreposcrape per capability and fetches GitHub repo evidence. Orchestrator validates each reader payload via `validate-handoff.mjs`, scores deterministically from the YAML rubric, assigns a reuse strategy band (`Fork` / `Library` / `Reference` / `None`) by score thresholds (`>= 80 / 60-79 / 40-59 / < 40`) with licence overrides for AGPL/Proprietary/Unlicensed → forced `None`. Writer (`arckit-gov-reuse-writer`, `Read`/`Write`/`Edit` only) renders the GOVR artefact and spawns one tech-note per Fork or Library candidate.
+- **Gov-reuse handoff schema** (`arckit-claude/schemas/gov-reuse-handoff.schema.json`). 19 licence types in the allowlist, 22 languages, 28 framework hints, 15 installation methods. No `score`, `rank`, or `recommended_strategy` field — there is nowhere for a judgement to land.
+- **Gov-reuse scoring rubrics** (`arckit-claude/schemas/scoring-rubrics/gov-reuse-{generic,uk-gov}.yaml`). 5 weighted criteria summing to 100: `license_compatibility` 25 / `code_quality` 20 / `documentation` 20 / `tech_stack_alignment` 20 / `activity_maintenance` 15. UK-Gov overlay bumps OGL above MIT/Apache and adds a `trusted_org_bonus` (alphagov, NHSDigital, dfe-digital, hmrc-digital, ministryofjustice, ONSdigital, etc.) applied additively to the `code_quality` per-criterion score before weighting.
+- **CI coverage for gov-reuse schema.** New `tests/plugin/test_validate_gov_reuse_handoff.mjs` runs 2 valid + 5 reject fixtures (extra-property, oversized-summary, off-allowlist licence, injection-inflated-score, injection-extra-language) through the shared `validate-handoff.mjs`. Wired into `.github/workflows/lint-markdown.yml`.
+
+### Removed
+
+- Single-tier `arckit-claude/agents/arckit-gov-reuse.md` (Claude plugin only). The orchestrator role moved to the slash command body; reader and writer live in their own subagent files.
+
+## [4.18.2] - 2026-05-07
+
+### Added
+
+- **`inject-agent-context.mjs` PreToolUse hook** — closes the gap where ArcKit subagents dispatched via the `Agent` tool ran without project context. UserPromptSubmit hooks fire only on real user prompts, so any orchestrator-style subagent whose body assumed "the ArcKit Project Context hook has already detected all projects, artifacts" silently lost that context when invoked indirectly. The new PreToolUse hook (matcher: `Agent`) builds the same context block as `arckit-context.mjs` and prepends it to `tool_input.prompt` via `updatedInput` (the only PreToolUse return-field that propagates into the dispatched subagent's context — `additionalContext` stays in the parent thread). Scoped to `arckit-*` subagent_types; skips reader/writer subagents (their schema-validated JSON payloads must stay clean) and skips general-purpose / Plan / Explore / claude-code-guide / etc. (no spam).
+- **`project-context-builder.mjs`** — extracted the project-scanning logic from `arckit-context.mjs` into a shared module so both the UserPromptSubmit hook and the new PreToolUse hook produce identical context blocks.
+
+## [4.18.1] - 2026-05-07
+
+### Fixed
+
+- **Auto-allow hook now matches per-bucket grants tempfiles.** `allow-plugin-internals.mjs` previously only matched `/tmp/datascout-handoff*.json` and `/tmp/arckit-{name}-handoff*.json`, but at runtime the LLM names per-funder-category dispatch tempfiles like `/tmp/grants-handoff-open-data.AbCdEf.json` (suffixing the bucket name for traceability across multiple Bash invocations). The regex now broadens to `(?:arckit-)?[a-z][a-z0-9]*-handoff(?:-[a-z][a-z0-9-]*)?...`, accepting an optional `arckit-` prefix and an optional hyphenated qualifier between `-handoff` and the random tail. Read auto-allow remains scoped to /tmp and read-only.
+
+## [4.18.0] - 2026-05-07
+
+### Added
+
+- **`/arckit:grants` reader/orchestrator/writer split.** Second command (after `/arckit:datascout` in v4.16.0) to adopt the three-tier subagent pattern documented in `arckit-claude/agents/READER-PATTERN.md`. The reader (`arckit-grants-reader`, WebSearch+WebFetch only, no Write/Edit/Bash/Agent) fetches programme evidence per `funder_category` bucket; the orchestrator (in the slash-command body, since plugin subagents cannot dispatch further subagents) validates the reader's JSON via `validate-handoff.mjs`, scores deterministically from a YAML rubric, then dispatches the writer (`arckit-grants-writer`, Read+Write+Edit only) which renders the GRNT artefact and one tech-note per scored programme.
+- **Grants handoff schema** (`arckit-claude/schemas/grants-handoff.schema.json`). 15-value `funder_type` allowlist, allowlist enums for organisation type / sector / geography / application status / complexity. No `score`, `rank`, or `recommendation` field — there is nowhere for a judgement to land in the schema even if the reader is overridden.
+- **Grants scoring rubrics** (`arckit-claude/schemas/scoring-rubrics/grants-{generic,uk-gov}.yaml`). Six criteria summing to 100: `eligibility_fit` 35 (composite of organisation type / sector overlap / TRL band) / `funding_size_fit` 20 / `timing_fit` 15 (status + deadline proximity) / `complexity_burden` 10 / `historic_traction` 10 / `match_funding_burden` 10. UK-Gov overlay adds `funder_type_bonus` (UKRI / Innovate UK / NIHR / DSIT / DASA preferred) and `geography_bonus` (uk-wide preferred) as additive adjustments to the eligibility_fit per-criterion score before weighting.
+- **CI coverage for the grants schema.** New `tests/plugin/test_validate_grants_handoff.mjs` (mirrors the datascout validator test) runs 2 valid + 5 reject fixtures (extra-property, oversized-field, off-allowlist funder_type, injection-inflated-score, injection-extra-org-type) through the shared `validate-handoff.mjs`. Wired into `.github/workflows/lint-markdown.yml`.
+
+### Removed
+
+- Single-tier `arckit-claude/agents/arckit-grants.md` and the stale generated extension agent files (`arckit-codex/agents/arckit-grants.{md,toml}`, `arckit-copilot/agents/arckit-grants.agent.md`, `arckit-gemini/agents/arckit-grants.md`, `arckit-opencode/agents/arckit-grants.md`). The orchestrator role lives in `arckit-claude/commands/grants.md` from this release onward.
+
+## [4.17.1] - 2026-05-06
+
+### Fixed
+
+- **`/arckit:pages` now enumerates data-source profiles** introduced in v4.17.0. Wired the new `data-sources/{provider-slug}-profile.md` files through `sync-guides.mjs` (manifest scan + count + llms.txt entries), `pages-template.html` (sidebar section + search index category), and `commands/pages.md` (KPI table + manifest schema docs).
+
+## [4.17.0] - 2026-05-06
+
+### Added
+
+- **Datascout spawns per-source profile files.** `/arckit:datascout` now produces one `projects/{P}-{NAME}/data-sources/{provider-slug}-profile.md` per scored data source (in addition to the main DSCT artefact), mirroring the `Spawned Knowledge` pattern from `/arckit:research`. Each profile carries the full reader-extracted evidence with citation links, the deterministic weighted score breakdown, and the project requirement IDs that pointed to that source. Re-running datascout on the same project applies merge rules (preserving narrative prose, replacing factual evidence + scores with the current run, appending project references). New template at `arckit-claude/templates/data-source-profile-template.md`.
+
+## [4.16.6] - 2026-05-06
+
+### Fixed
+
+- **Telemetry now collects in plugin-only test repos.** `telemetry.mjs` and `session-learner.mjs` were silently exiting when `.arckit/` didn't exist — but plugin-only installs (test repos that use `extraKnownMarketplaces` and never run `arckit init`) only have `projects/`. Both hooks now treat either directory as a valid "ArcKit project" indicator and create `.arckit/memory/` on demand for the first telemetry write.
+
+## [4.16.5] - 2026-05-06
+
+### Fixed
+
+- **Auto-allow hook now matches `${CLAUDE_PLUGIN_ROOT}` literal in commands** (was previously only matching the resolved absolute path; the orchestrator emits the env-var form which Claude Code passes through unexpanded to the hook).
+- **Auto-allow `Read` of `/tmp/datascout-handoff*.json` tempfiles** so the orchestrator can re-inspect its own validator payloads without per-file prompts.
+- **Forbid orchestrator from writing ad-hoc helper scripts.** LLM was hallucinating `dsct-score.mjs`, `dsct-build-writer-input.mjs`, etc. — added an explicit guardrail. All scoring math and payload assembly happens directly in conversation; the only bundled executables are the validator and `scripts/bash/*.sh` helpers.
+
+## [4.16.4] - 2026-05-06
+
+### Fixed
+
+- **Auto-allow hook for plugin-internal Read/Bash now actually fires.** v4.16.2 registered `allow-plugin-internals.mjs` under `PermissionRequest`, but that event only fires for some tools and only when a permission dialog is about to show. Switched to `PreToolUse` with `permissionDecision: "allow"` in `hookSpecificOutput` — the documented pattern for blanket auto-allow on built-in Read/Bash. The datascout slash command's plugin-internal `Read`s and `Bash` invocations of bundled scripts now auto-approve.
+
+## [4.16.3] - 2026-05-06
+
+### Fixed
+
+- **Datascout orchestrator moved from agent file to slash command.** Earlier 4.16.x releases placed orchestration in a subagent that dispatched reader/writer subagents — but Claude Code plugins forbid nested subagent dispatch (*"Subagents cannot spawn other subagents"*), so users hit *"Agent tool unavailable"* errors. Resolution: orchestration moved to `arckit-claude/commands/datascout.md` (the slash command runs in the main thread where `Agent` works). Reader and writer subagents and all security allowlists unchanged. `arckit-claude/agents/arckit-datascout.md` deleted.
+
+## [4.16.2] - 2026-05-06
+
+### Added
+
+- `arckit-claude/hooks/allow-plugin-internals.mjs` — `PermissionRequest` hook that auto-approves the plugin's own internal Read/Bash patterns (any file under `${CLAUDE_PLUGIN_ROOT}/`, plus invocations of the bundled validator and `scripts/bash/*.sh` helpers). Stops the per-session permission prompts that the datascout orchestrator (and any future helper-script-using command) was triggering; non-plugin Read/Bash still falls through to the normal prompt.
+
+## [4.16.1] - 2026-05-06
+
+### Fixed
+
+- **datascout: validator no longer requires `npm install` in plugin cache.** Rewrote `validate-handoff.mjs` as a pure-Node JSON Schema 2020-12 partial validator with zero npm dependencies, and removed `ajv` / `ajv-formats` from runtime deps. v4.16.0 had them in `package.json` but the plugin marketplace doesn't run `npm install`, so users hit `Error: Cannot find module 'ajv'` on first `/arckit:datascout` run. Also drops the orchestrator's "ajv-missing → legacy single-agent fallback" path, which had been surfacing a confusing secondary error about `.arckit/templates/`.
+
+## [4.16.0] - 2026-05-06
+
+### Security
+
+- **datascout reader/orchestrator/writer split (#442 item 1).** `arckit-datascout` is now a three-tier agent: a reader subagent fetches external content with allowlist `WebSearch/WebFetch/MCP/Read` only (no `Write`/`Bash`/`Agent`), an orchestrator validates each reader's output against a JSON Schema and scores deterministically using a YAML rubric, and a writer subagent holds the only `Write` tool. Falls back to legacy single-agent mode when ajv is not installed. New files: `arckit-claude/agents/arckit-datascout-{reader,writer}.md`, `arckit-claude/agents/READER-PATTERN.md`, `arckit-claude/schemas/datascout-handoff.schema.json`, `arckit-claude/schemas/scoring-rubrics/{generic,uk-gov}.yaml`, `arckit-claude/scripts/validate-handoff.mjs`. New deps: `ajv` ^8, `ajv-formats` ^3.
+
+### Added
+
+- `arckit-claude/agents/READER-PATTERN.md` — reference doc for applying the three-tier split to other research agents.
+- `arckit-claude/scripts/validate-handoff.mjs` — shared Node + ajv validator for any future handoff schema.
+
+- **Prompt-injection hardening across all 10 research agents (#442).** Adopts patterns from `anthropics/financial-services` reference plugins:
+  - **Tools allowlist (item 18).** Every research agent (`research`, `datascout`, `grants`, `aws-research`, `azure-research`, `gcp-research`, `gov-reuse`, `gov-code-search`, `gov-landscape`, `framework`) migrated from `disallowedTools: ["Edit"]` (denylist) to explicit `tools:` allowlist. New tools added to the Claude Code harness in future versions no longer auto-grant to existing agents. MCP entries enumerated per server (glob unsupported in plugin agent frontmatter — verified against current Claude Code docs).
+  - **Guardrails section (item 1, partial).** Each agent body now opens with `## Guardrails` covering three primitives: untrusted-input boundary (web/MCP results never executed as instructions), citation discipline (every figure traceable to a URL or `[UNSOURCED]`), and human-decision boundary (named accountable officer per agent — SRO for research, bid director for grants, architecture board for cloud-research, etc.). The third financial-services primitive — write-tool isolation — defers to the future reader/orchestrator/writer split (#442 item 1, full).
+  - **`What you produce` output contract.** Each agent body now front-loads its deliverable spec — "Given X, you deliver: 1, 2, 3" — replacing the scattered output description that previously lived inside `Your Core Responsibilities` and the Process steps.
+  - **`Toolchain` trailing index.** Each agent body now ends with a flat list of templates, helper scripts, MCP servers, external tools, and related ArcKit commands — the equivalent of financial-services' `Skills this agent uses` adapted to ArcKit's reality (our agents don't dispatch sub-skills).
+  - **Converter:** `tools` added to `CLAUDE_ONLY_AGENT_FIELDS` so the allowlist strips cleanly when generating Codex/OpenCode/Gemini/Copilot/Paperclip extensions (which have their own tool models). `Guardrails`, `What you produce`, and `Toolchain` body sections propagate unchanged to all 6 downstream formats.
+  - **CLAUDE.md:** corrected outdated guidance — `tools` is now a valid plugin agent frontmatter field (allowlist), with `disallowedTools` applied first then the allowlist resolved against what remains.
+
+## [4.15.2] - 2026-05-05
+
+Documentation-only patch.
+
+### Fixed
+
+- **Citation traceability now covers MCP queries and web fetches (#283, #437).** `arckit-claude/references/citation-instructions.md` previously only covered files under `external/`, `policies/`, `vendors/`, leaving the External References section empty for the 10 research agents (`gov-reuse`, `research`, `datascout`, `aws-research`, `azure-research`, `gcp-research`, `gov-code-search`, `gov-landscape`, `grants`, `framework`) whose evidence is mostly MCP-sourced or web-fetched. The same Document Register / Citations / Unreferenced Documents tables now cover three source types: **Document** (unchanged), **MCP Query** (per-server prefix `GRSC` / `AWSK` / `MSL` / `GDK` / `DC` plus `Q`-index, one row per unique query), and **Web URL** (`WEB-N`, one row per unique fetched URL). WebSearch remains exploratory and does not produce citations. Two new categories added: `Reuse Evidence` and `Market Evidence`. No template changes — the existing 5-column structure is reused; only the per-cell semantics extend. No agent file changes — all 10 research agents already point at `citation-instructions.md` via a shared one-line directive. Extension copies regenerated by `scripts/converter.py`.
+
+## [4.15.1] - 2026-05-05
+
+Documentation-only patch.
+
+### Documentation
+
+- **Remote Control + push notifications adoption (#426, closes #369).** Adds a "Long runs: Remote Control + push notifications" section to the six research-heavy command guides (`research`, `datascout`, `aws-research`, `azure-research`, `gcp-research`, `grants`) — each tailored to that command's typical decision points. Adds a "Phone pings via Remote Control" subsection to `autoresearch.md`, sibling to the existing Monitor guidance, oriented at overnight runs paired with `ENABLE_PROMPT_CACHING_1H=1`. Adds a "Remote Control + push notifications (user-facing)" section to `CLAUDE.md` under the Monitor Tool docs, including pairing with the `stale-artifact-scan` monitor. Floor reference correctly states v2.1.121 (current minimum) covers the v2.1.110 RC requirement.
+
+## [4.15.0] - 2026-05-05
+
+Ships the Canada Federal Overlay alongside the v4.14.0 platform-capability adoption from earlier the same day.
+
+### Added
+
+- **Canada Federal Overlay (community)** — 12 new `ca-*` commands covering FITAA, PIA, ATIP, AIA, Charter, ITSG-33, SOIA, GC sovereign cloud residency, GC Digital Standards, Official Languages Act, federal procurement (PSPC + PSAB), and First Nations OCAP®.
+- 12 new templates (`.arckit/templates/ca-*-template.md` plus plugin mirrors).
+- 12 new guides (`docs/guides/ca-*.md` plus plugin mirrors).
+- 12 new type codes registered in `arckit-claude/config/doc-types.mjs`: `FITAA`, `PIA`, `ATIP`, `AIA`, `CHRT`, `ITSG`, `SOIA`, `CACR`, `DIGSTD`, `OLA`, `PROC`, `OCAP`.
+- `ca-federal-fitaa` build recipe with execution chains and Mermaid flow diagrams.
+- Codex / OpenCode / Copilot / Paperclip extension formats regenerated.
+
+### Changed
+
+- Total command count: 104 → 116 (70 official + 46 community).
+
+## [4.14.0] - 2026-05-05
+
+Adopts Claude Code v2.1.117–v2.1.128 high-value capabilities (#427). Plugin minimum bumped to **v2.1.121**; plugin auto-update applies the new floor on next `claude plugin update`.
+
+### Added
+
+- **MCP `alwaysLoad` on `aws-knowledge` and `microsoft-learn` (#428, v2.1.121+).** Skips tool-search deferral so research commands see the MCP tools on turn 1 of `/arckit:aws-research` and `/arckit:azure-research`. Removes a discovery round-trip per session.
+- **PostToolUse `hookSpecificOutput.updatedToolOutput` on `provenance-stamp.mjs` and `update-manifest.mjs` (#429, v2.1.121+).** The model now sees a one-line summary of what each silent file-mutating hook did — effort requested vs. effective (with downgrade reason if any), manifest sync confirmation. Closes a long-standing visibility gap; the auditable downgrade signal that issue #407 was filed for is now in-band, not just stamped on disk.
+- **Session telemetry — `telemetry.mjs` hook + session-learner aggregation (#430, v2.1.84 / v2.1.119+).** Captures `duration_ms` for every tool call, `mcp__govreposcrape__*` calls (server, tool, sanitised args), and `TaskCreated` agent spawns. Aggregated into a one-line `**Telemetry:**` summary on every `sessions.md` entry — p50/p95 latency, top-3 agents, MCP call counts.
+- **Dashboard surface for telemetry (#431).** Two new panels on the Architecture Governance Dashboard — *Session Telemetry* (aggregate KPIs across last 10 sessions) and *Recent Sessions* (last 5 with detail). Fed by `docs/telemetry.json` written by `session-learner.mjs` when `docs/` exists.
+- **Community-recipes call article (#425).** "Wanted: Community Recipes" published at `docs/articles/` with hero PNG.
+
+### Changed
+
+- **Documented Claude Code minimum bumped from v2.1.117 to v2.1.121 (#430).** `version-check.mjs` SessionStart hook updated; warning copy lists the four new feature dependencies (`alwaysLoad`, `updatedToolOutput`, `duration_ms`, `claude plugin tag`).
+- **Release flow uses `claude plugin tag --dry-run` (#428, v2.1.118+).** Validates plugin/marketplace version agreement before `git tag` runs — catches version drift across the 15 version files. `claude plugin prune --dry-run` also documented for orphaned-dependency cleanup.
+- **`scripts/converter.py` filters `alwaysLoad` from generated Codex `config.toml` (#428).** Claude-only MCP fields no longer leak into other extensions; introduces a `CLAUDE_ONLY_MCP_FIELDS` set for future Claude-only keys.
+- **Session housekeeping (#419).** Memory log cleanup, plugin enablement, and `.gitignore` refinement.
+
+## [4.13.1] - 2026-05-03
+
+Same-day follow-up to v4.13.0. All additive enhancements to the build harness.
+
+### Added
+
+- **`uae-federal-ai` recipe (#414).** Third built-in recipe for UAE Cabinet agentic AI decree compliance: 48 targets, all 12 UAE community commands, integrated research wave.
+- **Research wave on `uk-saas` and `uk-mod-sovereign` (#417).** Default-on per-project research targets (RESEARCH, AWS, Azure, GCP, GOV_REUSE for UK only, DATASCOUT optional). Both recipes now ship 38 targets each.
+- **`ORG_RESEARCH` upstream target (#417, #414 amendment).** New first-wave target on all three built-in recipes. Researches the target organisation once per repo, output to `projects/000-global/research/`, shared across every project.
+
+### Documentation
+
+- `/arckit:build` listed in `commands.html`, `guides.html`, and `DEPENDENCY-MATRIX.md` (#416).
+- `sitemap.xml`, `llms.txt`, and `getting-started.html` refreshed for v4.13.0+ (#415).
+- Getting-started recipe-count banner updated to reflect the post-research-wave shape.
+
+## [4.13.0] - 2026-05-03
+
+### Added
+
+- **`/arckit:build` parallel build harness (#410).** New plugin skill and slash command for end-to-end ArcKit artefact generation. Reads a YAML recipe, dispatches one subagent per target per wave in parallel, commits each wave as one atomic git commit, and persists progress to `projects/{P}/.arckit/state.json` for resumability. Ships two built-in recipes: `uk-saas` (31 targets) and `uk-mod-sovereign` (32 targets). Custom recipes go in `.arckit/recipes/{name}.yaml`. Claude Code only — depends on parallel Agent tool dispatch which other targets do not support.
+- **Provenance stamping hook (#409).** `provenance-stamp.mjs` injects a machine-readable `## Build Provenance` block into every ArcKit artefact, recording build recipe / wave / target plus requested vs effective effort levels. Auditable trail for governance reviewers.
+- **Build harness launch article (#411).** New essay at `docs/articles/2026-05-03-build-harness-parallel-architecture-generation.md` with hero image. Surfaced on `articles.html` and `index.html`.
+- **`uk-mod-sovereign` recipe.** Sovereign / air-gapped variant for MOD and accredited environments. Replaces civilian SbD with MOD Secure by Design, adds JSP 936 AI assurance, drops Service Standard assessment, rewrites all eight ADR topics for sovereign deployment.
+
+### Fixed
+
+- **CLAUDE.md ADR/DIAG path documentation (#408).** The project structure tree now shows ADRs in `decisions/` and diagrams in `diagrams/` subfolders, matching what `/arckit:adr` and `/arckit:diagram` actually produce.
+
+## [4.12.3] - 2026-05-01
+
+### Fixed
+
+- **`/arckit:traceability` actually now reports correct coverage (#389).** Previous v4.12.2 attempt fixed regex namespace collisions but the actual bug was elsewhere: `formatTraceability` reads `node.reqIds` for every non-REQ artifact to build the coverage `refMap`, but `node.reqIds` is only assigned by `scanAllArtifacts` when the caller passes `withNodeMetadata: true`. The traceability recipe did not request that flag, so `reqIds` was always `undefined` and `refMap` always empty. Verified end-to-end against the issue's reproduction repo: coverage now reports 41 of 53 requirements (77%) with proper citation lists per requirement.
+
+## [4.12.2] - 2026-05-01
+
+### Fixed
+
+- **`/arckit:traceability` reported 0% coverage on legacy projects with 1-2 digit REQ IDs (#389).** The v4.12.1 fix loosened the REQ-doc heading extractor but kept the universal `REQ_ID_PATTERN` strict at `\d{3}` to avoid namespace collisions with non-REQ artifacts. Side-effect: cross-references like `BR-1, FR-3, NFR-SEC-7` in `RSCH` / `RISK` / `STKE` / `SOBC` / `WARD` / UAE-overlay compliance assessments were not extracted, so `node.reqIds` came back empty and `formatTraceability` reported zero coverage even when 14 sibling artifacts genuinely cited the requirements. Universal scanner now also accepts `\d{1,3}`.
+- **`templates/azure-research-template.md`** — Azure Security Benchmark "Backup & Recovery (BR)" row renamed to `BCK-N` to remove the namespace collision with Business-Requirement IDs. Previously `BR-1, BR-2, BR-3` in the ASB control table would, after the loose-pattern fix, be picked up as REQ cross-references. AWS and GCP research templates checked and confirmed clean (no equivalent collisions).
+
+### Known limitations
+
+- `templates/fr-anssi-carto-template.md` line 144 still uses `INT-01` for network-interconnection IDs, which collides with the REQ Integration namespace. Currently affects only French ANSSI cartography artifacts. Will be addressed in a follow-up.
+
+## [4.12.1] - 2026-05-01
+
+### Fixed
+
+- **Templates aligned to 3-digit REQ IDs** — `requirements-template.md`, `traceability-matrix-template.md`, `hld-review-template.md`, and `jsp-936-template.md` previously used `BR-1` / `FR-1` / `NFR-P-1` placeholder form. 24 of 27 surveyed test-repo REQ documents already use 3-digit zero-padded form (`BR-001`); only the most recent 3 followed the templates literally and broke the hook. Templates now consistently use the 3-digit form. Affects all template copies (`arckit-claude`, `.arckit`, and the five extension templates regenerated by `scripts/converter.py`). `azure-research-template.md` (Azure Security Benchmark `BR-N` namespace) and `fr-anssi-carto-template.md` (`INT-NN` network-interconnection IDs) were intentionally left unchanged — different namespaces (#386).
+- **`hooks/hook-utils.mjs`** — `extractRequirementDetails` heading regex now accepts 1-3 digit numeric suffixes (`### BR-1:`, `#### FR-12:`, `### BR-001:`). Previously hardcoded `\d{3}`, which silently dropped requirements from any REQ document using non-padded IDs — leaving `/arckit:traceability` with an empty graph and forcing the manual fallback. The universal `REQ_ID_PATTERN` scanner stays strict at `\d{3}` to avoid false positives in non-REQ artifacts that use the same prefix in a different namespace (#386).
+- **`hooks/graph-inject.mjs`** — `formatTraceability` now emits a diagnostic message when no requirements can be extracted from a project that has artifacts, instead of returning `null` silently. The hook bail-out is now visible in the prompt context so the failure mode looks like a hook problem rather than a missing hook (#386).
+- **`hooks/graph-inject.mjs`** — `DR-\d{3}` data-requirement detector loosened to `DR-\d{1,3}` so the "missing data-model" recommendation correctly fires for projects with shorter `DR-N` IDs.
+
+## [4.12.0] - 2026-05-01
+
+### Added
+
+- **Document Map + Dashboard graph health rollups (#383).** The `/arckit.pages` dashboard now visualises the same health/coverage/compliance signals that `/arckit.navigator` and `/arckit.graph-report` compute, sourced from a shared rollup module so there is no duplicate scan.
+  - **`arckit-claude/hooks/graph-rollups.mjs`** — new shared module exporting `tagNodeHealth()`, `computeAllProjectRollups()`, and the canonical `HIGH_SEVERITY_TYPES` / `ESSENTIAL_TYPES` / `CONTEXTUAL_TYPES` / `STALE_THRESHOLD_DAYS` constants used by both `graph-inject.mjs` and `sync-guides.mjs`.
+  - **`manifest.json` enrichments** (written by `sync-guides`):
+    - `dependencyGraph.nodes[*].health = { stale, draft, orphan, ageDays }` per node.
+    - `manifest.projectHealth` block with per-project coverage %, compliance readiness %, density, recommendations (top 3), stale/draft/orphan counts.
+  - **Document Map** tints nodes by health (stale = red border, draft = amber dashed, orphan = existing dashed); legend extended with three health swatches; tooltip shows a `⚠ Stale (151d) · Draft` row when any flag is set.
+  - **New "Project Health & Next Steps" dashboard panel** renders one card per project with coverage / compliance gauges, health badges, and the top 3 recommended commands.
+  - **`docs/llms.txt`** gains an opt-in `## Project status` section — one line per project with coverage %, compliance %, draft/stale/orphan counts, and the top recommended next command. Lets external agents fetch llms.txt and answer "where is this repo at" without scraping the dashboard.
+
+### Changed
+
+- **`graph-inject.mjs` constants extracted** to `graph-rollups.mjs` (no behaviour change). All `/arckit.navigator`, `/arckit.graph-report`, `/arckit.health`, `/arckit.analyze`, `/arckit.traceability` outputs are byte-stable.
+- **`sync-guides.mjs`** now passes `{ withNodeMetadata: true }` to `scanAllArtifacts` so dependency-graph nodes carry version, owner, classification, and `reqIds`. Manifest size grows roughly 50–60% on typical projects (e.g. 80 KB → 127 KB for a 38-artifact project).
+- **Hooks guide** (`docs/guides/hooks.md` + `arckit-claude/docs/guides/hooks.md`) refreshed: the per-command `*-scan.mjs` rows that were superseded in v4.11.0 are now replaced with a single `graph-inject` row listing all seven matchers; `graph-rollups.mjs` added to the Utility Files table; `sync-guides` description updated to mention the new manifest enrichments.
+
+### Internal
+
+- All seven `pages-template.html` copies (plugin + `.arckit/templates/` + 5 generated extension copies) propagated via `python scripts/converter.py` after the plugin source change. The `.arckit/templates/` CLI fallback was 10 days behind the plugin source and has been re-synced.
+
+### Breaking changes
+
+None. Manifest schema is additive — older dashboard JS that does not read `dependencyGraph.nodes[*].health` or `manifest.projectHealth` continues to render correctly. Non-Claude distributions (Codex / Copilot / OpenCode / Gemini / Paperclip) ship the new template but do not run the hook, so `manifest.projectHealth` is absent and the new panel renders nothing — no regression. Wiring those distributions into the rollup is a separate piece of work.
+
+## [4.11.0] - 2026-05-01
+
+### Added
+
+- **`/arckit.navigator` (Live, Utility)** — project-level GPS that surfaces coverage against the essential ArcKit baseline, flags DRAFT / stale / orphan artifacts, and recommends the next slash command to run. Read-only diagnostic; no files written. Driven by the new `graph-inject` hook.
+- **`/arckit.graph-report` (Live, Utility)** — governance metrics dashboard across every working project under `projects/`. Reports coverage by category, cross-reference density, compliance readiness, and project comparison. Read-only diagnostic; no files written.
+- **`graph-inject.mjs` hook** (`arckit-claude/hooks/graph-inject.mjs`) — single graph-builder pass that consolidates what used to be five per-command scan hooks (`search-scan`, `impact-scan`, `traceability-scan`, `health-scan`, `governance-scan`). Search / impact / traceability / health / analyze commands now consume the unified graph.
+- **`graph-utils` v2** (`arckit-claude/hooks/graph-utils.mjs`) — additive opts for the graph-builder API: `withNodeMetadata`, `withContent`, `withPreview`. Backward compatible — existing callers continue to work without change; the new opts are opt-in only.
+- New guides: `docs/guides/navigator.md`, `docs/guides/graph-report.md` (mirrored to `arckit-claude/guides/`).
+
+### Changed
+
+- **Hook architecture consolidation.** `/arckit.search`, `/arckit.impact`, `/arckit.traceability`, `/arckit.health`, and `/arckit.analyze` migrated from per-command scan hooks onto the unified `graph-inject` pipeline. Net effect: one graph build per session instead of five separate scans, simpler maintenance, identical user-visible output.
+- Officially-maintained baseline: 68 → **70 commands**. Community-contributed overlays unchanged at 34 (EU 7 + FR 12 + AT 3 + UAE 12). Total commands available across all tiers: 104.
+
+### Internal
+
+- 8 PRs merged earlier today: #360, #362, #363, #364, #365, #366, #367, plus replacement PRs #377 (search) and #378 (matrix doc). All source code already on `main` before this docs/release follow-up.
+
+### Breaking changes
+
+None. All hook migrations are output-equivalent; the new commands are additive.
+
+## [4.10.1] - 2026-04-30
+
+### Changed
+
+- **UAE Federal Overlay reclassified from official-baseline to community-contributed.** The 12 `uae-*` commands shipped earlier today as part of the officially-maintained baseline (68 → 80). Within hours the maintainer reclassified them to community-contributed; v4.10.1 lands the corrective metadata. Officially-maintained baseline returns to 68; community-contributed overlays grow from 21 (EU + FR + AT) to 33; total commands available across all tiers stays at 101.
+
+  Reason: solo CODEOWNERS at the official tier is not a sustainable maintenance posture for fast-moving UAE federal regulatory text without a UAE domain co-maintainer. The official-tier citation-accuracy SLA (quarterly review across the federal corpus, regression sweep across 47 reference repositories, output that an architect can hand to counsel without a paragraph of caveats) needs more than one pair of eyes on regulatory text that is still settling. The community marker is the responsible reading frame; recruiting a UAE domain co-maintainer remains the v4.11 priority. Once one joins, the overlay becomes a candidate for official-tier promotion in a future release.
+
+  What changed (metadata only):
+  - `[COMMUNITY]` prefix added to the `description:` frontmatter on all 12 `uae-*` command files (matching the `eu-*`, `fr-*`, `at-*` pattern).
+  - Inline warning banner added immediately after the YAML frontmatter on each command body, listing UAE Cabinet / PDPL / IAS / Cybersecurity Council as the citation authorities to verify against.
+  - `Template Origin: Community` set on all 24 `uae-*` template files (12 in `arckit-claude/templates/`, 12 in `.arckit/templates/`).
+  - `EXPERIMENTAL` status tag in place of `LIVE` on the two UAE guides on `docs/guides.html`, and on the 12 UAE rows on `docs/commands.html` (`data-status="experimental"`, prefixed `[COMMUNITY]` descriptions, matching the existing 21 community rows).
+  - README "UAE Federal Overlay" section heading changed from "(Official Baseline)" to "(Community-contributed)" with updated banner copy; `docs/index.html`, `docs/articles.html`, and the launch and decree articles in `docs/articles/` updated to community framing.
+  - `arckit-claude/config/doc-types.mjs` UAE block comment updated to reflect community-contributed status with co-maintainer recruiting note.
+  - `.github/CODEOWNERS` UAE block comment updated to flag community-contributed status with promotion gated on co-maintainer commitment.
+
+  What did NOT change (fully backwards-compatible):
+  - All 12 command names (`/arckit.uae-*`).
+  - All UAE doc-type codes (`PDPL`, `IAS`, `SDC`, `NCSP`, `UPS`, `ZBUR`, `DREC`, `DSHR`, `NPRA`, `AICH`, `AAUT`, `UPRC`).
+  - All frontmatter `handoffs:` chains.
+  - All template structures and section bodies.
+  - The Document Control conditional rendering rules and the `<!-- DOC-CONTROL-HEADER -->` marker mechanism.
+  - The Smart Data classification ladder rendering when `governance_framework: UAE Federal` and `classification_scheme: UAE Smart Data` are set.
+  - The canonical chain across the 12 commands.
+  - The dual-registration test (`scripts/tests/test-doc-types-dual-registration.mjs`).
+  - The `arckit migrate-classification` one-time CLI helper.
+
+## [4.10.0] - 2026-04-30
+
+### Added
+
+- 12-command UAE Federal Overlay as official baseline (68 → 80 commands):
+  - Federal data + security: `uae-classification`, `uae-pdpl`, `uae-ias`, `uae-cloud-residency`
+  - Federal identity: `uae-uaepass`
+  - Cabinet instruments: `uae-zero-bureaucracy`, `uae-digital-records`, `uae-data-sharing`, `uae-priorities-alignment`
+  - AI governance: `uae-ai-charter`, `uae-ai-autonomy-tier`
+  - Procurement: `uae-procurement`
+- New `classification_scheme` plugin userConfig (UK or UAE Smart Data).
+- `arckit migrate-classification` one-time CLI helper for migrating existing artefacts from UK ladder to UAE Smart Data.
+- Dual-registration CI test catching `doc-types.mjs`/`pages.md` drift.
+- New guide `docs/guides/uae-overlay.md` and maintenance doc `docs/guides/uae-overlay-maintenance.md`.
+
+### Changed
+
+- `governance_framework` userConfig description extended to recommend `UAE Federal` as a third value.
+- All ~83 templates per directory: Document Control table replaced with `<!-- DOC-CONTROL-HEADER -->` marker resolved at command-execution time.
+
+### Breaking changes
+
+None. Non-UAE projects produce byte-identical Document Control output to v4.9.4.
+
+### Deferred to v4.11 / v5.0
+
+- Bilingual Arabic / English (`uae-translate`).
+- Federal Mandate doc-types category (currently the four Cabinet instruments sit under `Governance`).
+- Sector overlays (ADHICS, Dubai ISR) as community contributions.
+
+## [4.9.4] - 2026-04-28
+
+### Docs
+
+- Added `arckit-claude/docs/guides/custom-commands.md` (mirrored to `docs/guides/custom-commands.md`) — authoring guide for contributors adding new `/arckit.*` commands. Covers the converter fan-out from the plugin source to six target formats, frontmatter reference, the `$ARGUMENTS` placeholder rewriting table, template-handling differences between Paperclip (embedded) and other targets (verbatim copy), a worked `/arckit.sla` example, the commands/skills/agents/hooks decision table, and a testing checklist. Indexed in `docs/README.md` under a new Contributing subsection. Authored by @Yumstezy (#111, #357)
+
+### Fixed
+
+- `arckit-claude/hooks/allow-mcp-tools.mjs` now auto-allows `mcp__govreposcrape__` tool calls. Four of the five bundled MCPs were already in the auto-allow list — govreposcrape was missing, so every `/arckit.gov-reuse`, `/arckit.gov-code-search`, and `/arckit.gov-landscape` run was hitting a permission dialog on every tool call (#215, #358)
+- `scripts/converter.py` no longer recreates `arckit-paperclip/scripts/bash` and `arckit-paperclip/scripts/python` on every run. PR #353 deleted these script directories in favor of the TS-native `src/lib/arckit.ts`, but the converter's `copy_extension_files` loop kept blindly copying them back. New `copy_scripts_to_extension` flag (defaults `True`) on `AGENT_CONFIG` is set to `False` for paperclip; other extensions are unaffected (#356)
+
+## [4.9.3] - 2026-04-28
+
+### Added
+
+- `/arckit.pages` dashboard now surfaces HTML deck artifacts (e.g. `ARC-001-DECK-v1.0.html`) alongside markdown documents in project artifact lists. New `DECK` doc-type code registered in `arckit-claude/config/doc-types.mjs` and the `sync-guides` hook (#354)
+
+### Changed
+
+- `arckit-paperclip` plugin restructured to align with the Paperclip TS plugin authoring-guide spec. Helper bash and python scripts replaced by `src/lib/arckit.ts` library; `manifest.ts`, `command-tools.ts`, `utility-tools.ts`, and `worker.ts` simplified accordingly. Net `-2,507` LOC across the plugin, removes script-execution surface, unblocks future TS-native tool additions (#353)
+- `arckit-claude/.claude-plugin/plugin.json` declares `"$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json"` for editor autocomplete and IDE-side validation. Recognised by `claude plugin validate` since Claude Code v2.1.120; forward-compatible because Claude Code ignores `$schema` at load time, so no minimum-version bump (#215, #355)
+
+## [4.9.2] - 2026-04-24
+
+### Changed
+
+- Documented minimum Claude Code version bumped from v2.1.112 to **v2.1.117**. The v2.1.117 release fixes Opus 4.7's `/context` calculation to use the model's native 1M window (was 200K, causing ArcKit's long deep-research and synthesis sessions to autocompact prematurely) and loads agent frontmatter `mcpServers` for `--agent` sessions (lets research agents declare their own MCP surface). Also pulls in the v2.1.116 `gh` rate-limit hint surfacing (benefits 10 research agents and govreposcrape callers), faster MCP startup with multiple stdio servers, and the WebFetch hang fix on very large HTML pages. Updated: `arckit-claude/hooks/version-check.mjs` (`MIN_CLAUDE_CODE_VERSION`), README "Why" blocks, and `mcp-servers.md` prerequisites in plugin + 5 extension dirs (#215, #352)
+- `/guides` page now lists all 110 guides; articles page font and hero colour fixed (#350)
+
+### Postmortem context
+
+The v2.1.117 floor independently clears all three Claude Code regressions described in [Anthropic's April 23 postmortem](https://www.anthropic.com/engineering/april-23-postmortem) (effort default lowered Mar 4 – Apr 7, thinking-cache clearing bug Mar 26 – Apr 10 fixed in v2.1.101, "≤25 words between tool calls" verbosity rule Apr 16 – Apr 20 fixed in v2.1.116). Users on v2.1.117+ are clear of all three. ArcKit users who saw thin or context-disconnected outputs from `/arckit.requirements`, `/arckit.research`, `/arckit.sobc`, or `/arckit.autoresearch` between Mar 26 and Apr 20 should re-run on v2.1.117+ for restored quality.
+
+## [4.9.1] - 2026-04-22
+
+### Fixed
+
+- `/arckit.wardley` and `/arckit.wardley.value-chain` quoting rule now treats any whitespace-separated pure-digit word as non-simple, forcing quotes on names like `NIS 2031 FDI Outcomes Reporting`, `ISO 27001 Controls`, `Windows 11 Deployment`, and `Log4j 2024 CVE`. The mermaid `wardley-beta` parser tokenises bare numeric words as numeric literals and fails rendering with `Expecting token of type '[' but found '2031'` (#349)
+- `validate-wardley-math.mjs` Stop-hook now runs a 4th check against `mermaid` / `wardley-beta` blocks: scans `component` / `anchor` / `evolve` / `pipeline` / `->` lines, strips quoted and decorator segments, and blocks Stop on any remaining bare-digit word — catches regressions before the rendered page errors (#349)
+
+### Changed
+
+- `docs/guides/enterprise-scale.md` now copied into the 4 extension directories (`arckit-codex`, `arckit-copilot`, `arckit-opencode`, `arckit-paperclip`) that were missing it (converter catch-up) (#349)
+
+## [4.9.0] - 2026-04-21
+
+### Added
+
+- OWM → Mermaid `wardley-beta` conversion fidelity suite: `tests/mermaid-wardley/test-fidelity.mjs` parses every Wardley map in `swardley/WARDLEY-MAP-REPOSITORY`, converts via `convert.mjs`, re-parses, and reports component / anchor / link retention, `|Δε|`, `|Δν|`, pooled drift distribution. Methodology modelled on `tractorjuice/wardleymap_math_model/skills/wardley-map-workspace/compare_all_25.py`. Current result: 100% component / anchor / link retention, `|Δε|` = 0 exactly across 4,905 matched pairs (#339)
+
+### Fixed
+
+- Wardley converter now handles OWM's hybrid `pipeline X [min, max] { 1-D children }` syntax and `evolve` names containing `/.X`. Real-world parse rate 144/147 → 146/147 (the remaining failure is an upstream source-data typo unfixable at the converter layer) (#340)
+- Wardley command guidance (`/arckit.wardley`, `/arckit.wardley.value-chain`) plus converter adopt **conditional quoting** based on the `wardley-beta` grammar's `NAME_WITH_SPACES` terminal. Quote names that fall outside `[A-Za-z][A-Za-z0-9_()&]*(?:[ \t]+[A-Za-z(][A-Za-z0-9_()&]*)*` — hyphens, dots, slashes, leading digits — or whose first word matches / prefixes a reserved keyword (`labelling`, `marketplace`, `evolved`, `build release cycle`). Previously-unquoted hyphenated names like `Real-Time Data Processing` or `GPT-4 LLM Service` broke rendering because Mermaid's lexer read the `-` as the start of `->` (#341)
+- Wardley converter preserves `label [x, y]` offsets from OWM sources across all three emission sites (top-level components, explicit pipeline-block children, auto-injected pipeline children). Previously every label was silently dropped — 20 lost in `sustainability/introduction example` alone. Respects the three `wardley-beta` grammar rules found along the way: label offsets must be integers (rounded at emission), `anchor` doesn't accept `label` (dropped silently), and `label` must precede decorators on a component line (#344)
+
+### Changed
+
+- Pages-template CDN bumped `mermaid@11.4.1` → `mermaid@11.14.0` across all six `pages-template.html` files (plugin + 5 extensions + `.arckit/templates/`). Mermaid 11.14.0 (2026-04-01) ships the `wardley-beta` diagram type, so generated `docs/index.html` pages now render Wardley maps inline (#337)
+- Test suite `tests/mermaid-wardley/` moves from the `pkg.pr.new/mermaid@7147` pre-release build to official `mermaid@^11.14.0`. No behaviour drift — 18/18 synthetic fixtures + 144/147 real-world maps pass, same as pre-release (#338)
+
+### Companion
+
+- Published [`tractorjuice/wardley-maps-mermaid`](https://github.com/tractorjuice/wardley-maps-mermaid) — a public mirror of `swardley/WARDLEY-MAP-REPOSITORY` with each of the 147 maps converted to Mermaid `wardley-beta` alongside the OWM source. All 147 render cleanly under Mermaid 11.14.0. Includes `tools/convert.mjs` + `tools/regenerate.mjs` for local regeneration. Content licensed CC-BY-SA 4.0 matching upstream
+
+## [4.8.0] - 2026-04-20
+
+### Added (Community-contributed)
+
+> ⚠️ The 3 Austrian regulatory commands below are a seed contribution. The verification pass in #333 resolved the majority of `[NEEDS VERIFICATION]` markers with domain-authoritative citations (NISG BGBl. I Nr. 94/2025, VO 2023/2495 thresholds, three-tier CERT reporting, §107 BVergG accessibility). Remaining flagged items (DSB enforcement positions, Land competence boundaries, command-prompt internals) should still be reviewed by an Austrian practitioner (DPO / CISO / Vergabejurist) before external reliance. See #304 for the overlay design.
+
+- `/arckit.at-dsgvo` — [COMMUNITY] assess Austrian DSG / DSGVO obligations — Datenschutzbehörde patterns, §§12–13 DSG image processing, ELGA/GTelG health, §96a ArbVG employee monitoring, age 14 consent
+- `/arckit.at-nisg` — [COMMUNITY] assess Austrian NISG (idF BGBl. I Nr. 94/2025 — NIS2 transposition) — Essential/Important designation, three-tier CERT reporting (Sectoral → CERT.at → GovCERT), KSÖ, AT sectoral authorities
+- `/arckit.at-bvergg` — [COMMUNITY] generate Austrian BVergG 2018 procurement documentation — Oberschwellen/Unterschwellen (€221K / €443K / €5,538K per VO 2023/2495), ANKÖ, Bestbieterprinzip, BVwG review
+- `/arckit.fr-irn` — [COMMUNITY] structure an IRN (Indice de Résilience Numérique) self-assessment following the aDRI framework — 8 resilience pillars × 5 organisational layers. References the official methodology at gitlab.com/digitalresilienceinitiative/adri-irn rather than reproducing scoring criteria (CC BY-NC-ND 4.0 licence incompatible with ArcKit's MIT licence; living standard that evolves actively). Generates `ARC-{id}-IRN-v1.0.md` with scoring scaffold, pre-populated context from existing project artifacts, and clear handoff to the official aDRI evaluation grid (#322)
+
+Registered 3 new doc type codes (ATDSG, ATNISG, BVERGG) in both `arckit-claude/config/doc-types.mjs` and `arckit-claude/commands/pages.md` (dual-registration pattern established in #317). @gtonic added as Austrian domain maintainer; CODEOWNERS lines for `at-*` staged but left commented pending explicit acceptance.
+
+### Fixed
+
+- Extensions: propagate the `.guide-status.community` CSS rule to `pages-template.html` so community-contributed guides render with the correct visual marker in the generated dashboard (#327)
+- `sync-guides` hook: register the 18 EU/FR community guide stems so `/arckit.pages` includes them when syncing guide cards into the dashboard
+- AT DSG template drift: `arckit-claude/templates/at-dsgvo-template.md` was left at the 220-line seed after #333 enriched only the `.arckit/` copy, which would have served plugin and extension users the pre-verification template. Mirrored the enriched `.arckit/` copy into `arckit-claude/` and re-ran `scripts/converter.py` to propagate to the 4 extension copies
+
+### Docs
+
+- Added @gtonic as a code contributor and Austrian domain maintainer in `docs/contributors.html` (hero stat 8 → 9, Community Impact refreshed to include Austrian regulatory coverage) (#328)
+- Moved the architecture book, research, and plan content out to a dedicated `tractorjuice/arckit-book` repo and updated pointers in `wiki.json` accordingly (#324, #325)
+- Added `.devin/wiki.json` to steer DeepWiki generation
+- Added a Star History chart to `README.md` above Quick Start, with cache-buster query to keep the badge fresh
+- Tidied `docs/superpowers/`: deleted shipped plans/specs and added a README explaining the directory's purpose (#326)
+- Added design spec and implementation plan for consolidating the dual artifact-type registry (`arckit-claude/config/doc-types.mjs` + the `/arckit.pages` allow-list) into a single source of truth — design only, not yet implemented
+
+## [4.7.2] - 2026-04-19
+
+### Added
+
+- `## Key References` tables in all 18 EU/French community commands pointing to authoritative regulatory sources (EUR-Lex, ANSSI, CNIL, EDPB, ENISA, MITRE), following the existing pattern used by official ArcKit commands (#321)
+- 36 new usage guides (18 commands × 2 locations: `docs/guides/` + `arckit-claude/docs/guides/`) for the EU/FR community commands, all carrying `Guide Origin: Community` to preserve provenance. Each guide follows the standard ArcKit guide format: inputs table, syntax, document structure, one-page workflow, review checklist (#321)
+- `tests/plugin/test_template_consistency.py` — parametrised test asserting every command-referenced template exists in both `arckit-claude/templates/` and `.arckit/templates/`, and that the two directories stay in sync (#321)
+- `tests/plugin/test_commands_structure.py` — `STRICT_COMMANDS` set covering the 18 community commands; enforces presence of `## User Input`, `## Instructions`, `## Success Criteria`, `## Example Usage`, labelled code fences, and no trailing spaces (#321)
+- Spec and implementation plan for adding a dedicated community-commands table to `docs/commands.html` (not yet implemented)
+
+### Fixed
+
+- Multiple stale command-count references across `docs/`: `commands.html` hero stat, `<h2>` heading, meta tags, schema, and filter UI all showed `67` instead of the correct baseline of `68` (the `/arckit.grants` row was also missing from the main table and has been added). `docs/getting-started.html` updated from "67 commands" to "68 commands" in 5 locations
+- Internal inconsistency in `docs/DEPENDENCY-MATRIX.md`: REQ fan-in was listed as "36 commands" in one place and "37 commands" in another (list contains 37); stakeholders fan-out was listed as both "22 commands" and "23 commands" (list contains 23). Corrected to match the actual lists
+- Stale historical reference "all 40 commands across 16 tiers" in `docs/WORKFLOW-DIAGRAMS.md` updated to 68
+
+### Changed
+
+- `README.md` and `docs/DEPENDENCY-MATRIX.md` updated to document the 18 EU/FR community commands: README adds a `### Phase 14.5: Compliance Assessment (EU and French Government)` workflow section (top-line count stays at 68 — community counted separately per policy); DEPENDENCY-MATRIX adds a `2026-04-19` changelog entry with dependency graph and typical compliance paths (#321)
+- Regenerated extension artefacts for the 18 community commands via `scripts/converter.py`: Paperclip `src/data/commands.json` refreshed to include new Key References; 90 community guide files copied into extension directories (`arckit-codex/docs/guides/`, `arckit-copilot/docs/guides/`, `arckit-gemini/docs/guides/`, `arckit-opencode/docs/guides/`, `arckit-paperclip/docs/guides/`)
+
+## [4.7.1] - 2026-04-19
+
+### Fixed
+
+- `/arckit.pages` was silently omitting the 18 v4.7.0 community-contributed type codes (RGPD, NIS2, AIACT, DORA, CRA, DSA, DATAACT, CNIL, SECNUM, MARPUB, DINUM, EBIOS, ANSSI, CARTO, DR, ALGO, PSSI, REUSE) from the rendered dashboard. The `update-manifest.mjs` hook correctly recorded the artifacts in `docs/manifest.json` (it reads from `arckit-claude/config/doc-types.mjs`), but the `/arckit.pages` prompt has its own hardcoded "Only include these known artifact types" allow-list at `arckit-claude/commands/pages.md:198` that was missing the new codes. Added all 18 to the table grouped by category, plus a note pointing back to `doc-types.mjs` as the single source of truth (#317)
+
+### Documentation
+
+- `arckit-claude/config/doc-types.mjs` — added a prominent `⚠️ DUAL REGISTRATION REQUIRED` warning at the top so future contributors know to update both `doc-types.mjs` and `pages.md` when adding new type codes (#317)
+
+## [4.7.0] - 2026-04-19
+
+### Added (Community-contributed)
+
+> ⚠️ The 18 EU and French regulatory commands below are community-contributed and have not yet been validated against current ANSSI / CNIL / EU regulatory text. Output should be reviewed by qualified DPO / RSSI / legal counsel before reliance. Citations may lag the current source — verify before use. Domain maintainer: [@thomas-jardinet](https://github.com/thomas-jardinet) — auto-requested for review on `eu-*` / `fr-*` changes via `.github/CODEOWNERS`.
+
+- `/arckit.eu-rgpd` — [COMMUNITY] generate GDPR (EU 2016/679) compliance assessment for EU/EEA data processing — member-state-neutral, covers all DPAs, cross-border transfers, breach notification
+- `/arckit.eu-nis2` — [COMMUNITY] assess NIS2 Directive compliance obligations for EU member state operators of essential services and important entities
+- `/arckit.eu-ai-act` — [COMMUNITY] assess EU AI Act (Regulation 2024/1689) compliance, risk classification, and conformity requirements
+- `/arckit.eu-dora` — [COMMUNITY] assess DORA (EU 2022/2554) compliance for financial sector entities operating in the EU
+- `/arckit.eu-cra` — [COMMUNITY] assess EU Cyber Resilience Act (Regulation 2024/2847) for products with digital elements
+- `/arckit.eu-dsa` — [COMMUNITY] assess EU Digital Services Act (Regulation 2022/2065) for online intermediaries, platforms, and VLOPs
+- `/arckit.eu-data-act` — [COMMUNITY] assess EU Data Act (Regulation 2023/2854) for connected products, data holders, and DAPS
+- `/arckit.fr-secnumcloud` — [COMMUNITY] assess SecNumCloud 3.2 qualification for French sovereign cloud procurement and OIV/OSE obligations
+- `/arckit.fr-marche-public` — [COMMUNITY] generate French public procurement documentation aligned with code de la commande publique, UGAP catalogue, and DINUM standards
+- `/arckit.fr-dinum` — [COMMUNITY] assess French digital administration standards: RGI, RGAA, RGESN, RGS, and DINUM doctrine cloud de l'État
+- `/arckit.fr-rgpd` — [COMMUNITY] French CNIL-specific GDPR layer: cookies, HDS, age 15, CNIL référentiels — supplements `/arckit.eu-rgpd`
+- `/arckit.fr-ebios` — [COMMUNITY] EBIOS Risk Manager 5-workshop study following the ANSSI methodology
+- `/arckit.fr-anssi` — [COMMUNITY] assess compliance with the ANSSI Guide d'hygiène informatique (42 measures) and cloud recommendations
+- `/arckit.fr-anssi-carto` — [COMMUNITY] ANSSI-methodology IS cartography across business / application / system / network levels
+- `/arckit.fr-dr` — [COMMUNITY] Diffusion Restreinte handling compliance (II 901/SGDSN/ANSSI)
+- `/arckit.fr-algorithme-public` — [COMMUNITY] public algorithm transparency notice (Article L311-3-1 CRPA)
+- `/arckit.fr-pssi` — [COMMUNITY] generate an Information System Security Policy (PSSI) per ANSSI/RGS
+- `/arckit.fr-code-reuse` — [COMMUNITY] public code reuse assessment (code.gouv.fr, SILL, EUPL) before building
+
+### Added
+
+- `.github/CODEOWNERS` — establishes domain ownership; `@thomas-jardinet` is auto-requested for review on changes to `eu-*` / `fr-*` commands and templates. Repo owner `@tractorjuice` remains final approver via the default `*` rule.
+- README — new "EU & French Regulatory Compliance (Community)" section listing all 18 commands with maintainer credit (#316)
+- `docs/contributors.html` — new card for `@thomas-jardinet` (Code Contributor + Domain Maintainer EU & FR); contributor count 7 → 8 (#316)
+
+### Fixed
+
+- `validate-arc-filename.mjs` PreToolUse hook was blocking every Write call from the new EU and FR commands with exit code 2 ("Unknown document type code"). Registered all 18 codes (RGPD, NIS2, AIACT, DORA, CRA, DSA, DATAACT, CNIL, SECNUM, MARPUB, DINUM, EBIOS, ANSSI, CARTO, DR, ALGO, PSSI, REUSE) in `arckit-claude/config/doc-types.mjs` — the single source of truth that all 6 ArcKit hooks import for display names and categorisation. The 7 EU commands shipped via #314 had been broken at the hook layer until #316 hotfixed them (#316)
+
+## [4.6.13] - 2026-04-19
+
+### Fixed
+
+- `stale-artifact-scan` monitor exited 1 mid-loop in real ArcKit repos. Two bundled fixes in `arckit-claude/scripts/bash/detect-stale-artifacts.sh`: (a) dropped an unused `source common.sh` line that was leaking `errexit + pipefail` into the monitor and aborting the script the first time a `grep | sed | tr` pipeline returned no match; (b) made the Document Control `Status` grep robust to `**markdown bold**` and anchored it so it no longer accidentally matches `| status |` rows in entity-attribute tables further down the file. Net effect: monitor now exits 0 and surfaces both review-overdue *and* DRAFT-unchanged artifacts (the latter were silently skipped before) (#307)
+
+## [4.6.12] - 2026-04-18
+
+### Fixed
+
+- Plugin manifest rejected by Claude Code v2.1.114 with `userConfig.*.type` and `userConfig.*.title` validation errors. Added the newly-required `title` and `type: "string"` fields to all five `userConfig` entries in `arckit-claude/.claude-plugin/plugin.json`. Without this fix the plugin fails to install on Claude Code v2.1.114+ (#302)
+
+## [4.6.11] - 2026-04-18
+
+### Added
+
+- `keep-coding-instructions: true` on 5 long-running commands (`requirements`, `research`, `sobc`, `datascout`, `framework`) — persists the command's instructions across `/compact` so Claude Code doesn't drop the template and traceability rules mid-run. Requires Claude Code v2.1.94+; the converter already strips the field for non-Claude extensions (Phase 1 work, now activated) (#215, #301)
+
+## [4.6.10] - 2026-04-18
+
+### Added
+
+- Plugin `monitors` manifest key (Claude Code v2.1.105+) with a `stale-artifact-scan` monitor that runs at session start. The monitor (`arckit-claude/scripts/bash/detect-stale-artifacts.sh`) scans `projects/` for ARC-*.md artifacts whose Document Control `Next Review Date` is overdue or whose `Status: DRAFT` is 14+ days old, emitting one notification per stale file (capped at 10). Silent in non-ArcKit repos (#215, #300)
+- Autoresearch guide documents the built-in `Monitor` tool (v2.1.98+) for streaming overnight autoresearch progress from a second session without blocking the experiment loop (#215, #300)
+
+## [4.6.9] - 2026-04-18
+
+### Added
+
+- SessionStart version check now warns when the Claude Code client is below the documented minimum (v2.1.112). Detection prefers `$CLAUDE_CODE_VERSION` env var and falls back to `spawnSync('claude', ['--version'])` with a 2s timeout. Warning lists features lost on older clients (userConfig, hook `if:`, skill `paths:`, Opus 4.7 `xhigh`/Auto mode). Silent on detection failure (#215, #299)
+
+## [4.6.8] - 2026-04-18
+
+### Added
+
+- Plugin `userConfig` (Claude Code v2.1.83+) — plugin prompts at enable time for `GOOGLE_API_KEY` / `DATA_COMMONS_API_KEY` (both sensitive, stored in system keychain) plus org defaults (`organisation_name`, `default_classification`, `governance_framework`). `.mcp.json` uses `${user_config.KEY}` placeholders; the converter rewrites these to `${KEY}` shell env vars for Codex/Gemini/OpenCode/Copilot targets (#215, #298)
+
+### Changed
+
+- Existing users enabling v4.6.8+ in Claude Code will be prompted once for MCP API keys and org defaults; existing `GOOGLE_API_KEY` / `DATA_COMMONS_API_KEY` shell env vars continue to work for non-plugin contexts (Codex / Gemini / OpenCode / Copilot).
+
+## [4.6.7] - 2026-04-18
+
+### Added
+
+- `docs/llms.txt` — LLM-friendly site index for arckit.org following the [llmstxt.org](https://llmstxt.org/) standard. Indexes the homepage, getting started, command/guide catalogue, DDaT role guides, use cases, and source distributions. Added to `sitemap.xml`.
+- `/arckit.pages` now generates `docs/llms.txt` in downstream ArcKit project repositories alongside `index.html` and `manifest.json`. Uses `raw.githubusercontent.com` URLs for project markdown artifacts and relative paths for the site-local dashboard and guides. Hand-curated `docs/llms.txt` files (without the ArcKit generation marker) are preserved across re-runs.
+- Document `ENABLE_PROMPT_CACHING_1H=1` (Claude Code v2.1.108+) recommendation in MCP setup and autoresearch guides for long ArcKit workflows and overnight optimisation runs (#215)
+- Phase 1 adoption of Claude Code v2.1.84+ plugin capabilities (#215, #297):
+  - `paths:` globs on all 4 plugin skills (`architecture-workflow`, `mermaid-syntax`, `plantuml-syntax`, `wardley-mapping`) for sharper auto-activation on ArcKit artifact patterns
+  - `if:` conditions (v2.1.85+) on `validate-arc-filename`, `score-validator`, and `update-manifest` hooks to narrow triggering to `projects/**` writes and avoid unnecessary Node process spawns
+  - `CLAUDE.md` documents new command frontmatter (`keep-coding-instructions`, `xhigh` effort value), agent frontmatter (`initialPrompt`), skill frontmatter (`paths:`), and hook `if:` field with permission rule syntax examples
+
+### Changed
+
+- Bump minimum Claude Code version to v2.1.112 to unlock Opus 4.7 `xhigh` effort tier and Auto mode for deep-research agents and synthesis commands (#215)
+- `scripts/converter.py` extends Claude-only-field stripping for non-Claude targets: commands drop `keep-coding-instructions` and `paths`; agents drop `initialPrompt`, `maxTurns`, and `disallowedTools` in addition to `effort`; reference skills copied to extension dirs have `paths:` stripped post-copy (#215, #297)
+
+## [4.6.6] - 2026-04-09
+
+### Added
+
+- Managed agent deployment — deploy any of the 10 ArcKit agents as Claude Managed Agents via the Anthropic API (`scripts/managed-agents/arckit-agent.py`) (#282)
+- 3 MCP servers registered on managed agents with `always_allow` permission (AWS Knowledge, Microsoft Learn, govreposcrape)
+- 4 custom skills uploaded to managed agents (architecture-workflow, mermaid-syntax, plantuml-syntax, wardley-mapping)
+
+### Changed
+
+- Bump minimum Claude Code version to v2.1.97 (#215)
+
+## [4.6.5] - 2026-04-08
+
+### Fixed
+
+- Pages dashboard not showing global project documents from subdirectories (research, diagrams, decisions, wardley-maps, data-contracts, reviews)
+
+## [4.6.4] - 2026-04-07
+
+### Added
+
+- `/arckit.grants` command (68th command) — research UK government grants, charitable funding, and accelerator programmes with eligibility scoring (#277)
+- `arckit-grants` agent (10th agent) — autonomous web research across UKRI, Innovate UK, NIHR, DSIT, DASA, Wellcome, Nesta, Health Foundation, 360Giving/GrantNav, and accelerators
+- `GRNT` document type for grants research reports (Research category, `research/` subdirectory)
+- Grants template with project funding profile, per-grant eligibility scoring, comparison table, recommended strategy, and citation traceability
+
+## [4.6.3] - 2026-04-06
+
+### Added
+
+- Document version badges in pages sidebar — every document shows its version (e.g., v1.0) with an inline dropdown selector when multiple versions of the same document exist
+- Citation traceability for external documents — inline citation markers (`[DOC-CN]`) and structured "External References" section with Document Register, Citations, and Unreferenced Documents tables (#158, #207)
+- Shared citation instructions file referenced by all 43 commands and 7 research agents
+
+## [4.6.2] - 2026-04-05
+
+### Added
+
+- Mermaid `wardley-beta` test suite — 98% pass rate on 147 real-world maps, ArcKit syntax 100% valid (#271)
+- Hooks documentation guide (`docs/guides/hooks.md`) across all distribution formats
+- Paperclip plugin scaffolding with TypeScript source, bash/python scripts, and VERSION file
+
+### Fixed
+
+- Resolve 6 hook bugs and add hooks documentation (#271)
+- Add `name` field to generated Codex agent `.toml` files — Codex CLI requires a non-empty name (#269)
+- Flatten `[agents.roles.X]` to `[agents.X]` in Codex `config.toml` to prevent `roles` being misinterpreted as a malformed agent role (#269)
+- Bump minimum Claude Code version to v2.1.90 across all documentation
+
+## [4.6.1] - 2026-03-28
+
+### Fixed
+
+- Trim all 4 skill descriptions to under 250 characters for Claude Code v2.1.86 context cap (#215)
+
+## [4.6.0] - 2026-03-24
+
+### Changed
+
+- All 9 agents now use `model: inherit` instead of hardcoded `sonnet` — agents use whatever model the user is running (Opus users get Opus, Sonnet users get Sonnet)
+- Added `effort: high` to 10 commands: analyze, dfd, diagram, gcloud-clarify, gcloud-search, impact, principles, principles-compliance, servicenow, story (58 of 67 commands now have effort set)
+- Autoresearch: `effort:` and `model:` are now tuneable parameters alongside prompt text
+- Autoresearch: plateau threshold increased from 5 to 15 consecutive discards
+- Autoresearch: results.tsv now tracks effort and model columns
+
+### Fixed
+
+- Preserve accented characters in `slugify()` function — use locale-aware `[:alnum:]` instead of `[a-z0-9]`
+
+## [4.5.3] - 2026-03-24
+
+### Fixed
+
+- Update agent count from 6 to 9 in README, plugin README, and remote-control guides
+- Update MCP server count from 4 to 5 in plugin README (add govreposcrape)
+- Update automation hook count from 4 to 5 in README
+- Update Copilot prompt file and agent counts in README
+- Merge optimised gov agent prompts (gov-reuse 9.4, gov-code-search 8.8, gov-landscape 8.6)
+
+## [4.5.2] - 2026-03-23
+
+### Fixed
+
+- Add govreposcrape MCP server to Gemini extension
+- Update command count from 64 to 67 across all docs, HTML pages, plugin manifests, and extension configs
+- Update agent count from 6 to 9 and hook count from 4 to 5 in docs
+
+## [4.5.0] - 2026-03-23
+
+### Added
+
+- **govreposcrape MCP server** — Semantic search over 24,500+ UK government repositories (no API key required)
+- `/arckit.gov-reuse` command and agent — Discover reusable UK government code before building from scratch
+- `/arckit.gov-code-search` command and agent — Search UK government repositories using natural language queries
+- `/arckit.gov-landscape` command and agent — Map the UK government code landscape for a domain
+- Government Code Reuse Check step in `/arckit.research` agent — adds "Reuse Government Code" as 5th build-vs-buy option
+- Government Code for Data Integration step in `/arckit.datascout` agent — discovers existing API client libraries
+- Government Implementation Patterns step in AWS, Azure, and GCP research agents — checks for government precedent
+- Document type codes: GOVR (Government Reuse Assessment), GCSR (Government Code Search Report), GLND (Government Landscape Analysis)
+- GOVR, GCSR, GLND added to `/arckit.pages` artifact type list
+
+## [4.4.0] - 2026-03-21
+
+### Added
+
+- Wardley map mathematical model metrics in commands and autoresearch
+- Git worktree isolation for autoresearch
+- Autoresearch guide for self-improving command prompts
+- Rate limit display in statusline
+
+### Fixed
+
+- Sync guides between arckit-claude and docs directories
+
+## [4.3.1] - 2026-03-18
+
+### Added
+
+- Mermaid `wardley-beta` dual output for Wardley map commands — generates both OWM syntax and Mermaid diagram blocks
+- Mermaid wardley-beta examples added to mapping references
+- Mermaid viewing guidance added to wardley and value chain guides
+- Claude Code v2.1.78 agent frontmatter support (`effort`, `maxTurns`, `disallowedTools`) and `StopFailure` hook
+- Mermaid special character escaping guidance for diagram command
+
+### Fixed
+
+- Missing component declaration for pipeline parent in Mermaid example
+
+## [4.3.0] - 2026-03-16
+
+### Added
+
+- `/arckit.wardley.value-chain` command — Decompose user needs into value chains
+- `/arckit.wardley.doctrine` command — Assess organizational doctrine maturity (4 phases, 40+ principles)
+- `/arckit.wardley.gameplay` command — Analyze strategic plays from 60+ gameplay patterns with D&D alignment
+- `/arckit.wardley.climate` command — Assess 32 climatic patterns across 6 categories
+- Wardley reference files enriched from 3 Wardley Mapping books (doctrine, gameplays, climatic patterns)
+- 4 new document types: WVCH, WDOC, WGAM, WCLM
+- 4 new document templates and usage guides
+
+### Fixed
+
+- `wardley.md` hook reference corrected from `python3 .py` to `node .mjs`
+
 ## [4.2.11] - 2026-03-16
 
 ### Added

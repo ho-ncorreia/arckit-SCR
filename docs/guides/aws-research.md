@@ -2,7 +2,7 @@
 
 > **Guide Origin**: Official | **ArcKit Version**: [VERSION]
 
-`/arckit.aws-research` researches AWS services, architecture patterns, and implementation guidance using the AWS Knowledge MCP server for authoritative documentation.
+`/arckit:aws-research` researches AWS services, architecture patterns, and implementation guidance using the AWS Knowledge MCP server for authoritative documentation.
 
 > **Agent Architecture**: This command runs as an autonomous agent via the Task tool. The agent makes 15-30+ MCP calls to gather AWS documentation in its own context window, keeping the main conversation clean. The slash command is a thin wrapper that delegates to the agent.
 
@@ -31,6 +31,8 @@ Add to your Claude Code MCP configuration (`~/.claude/claude_desktop_config.json
 
 After installation, restart Claude Code to load the MCP server.
 
+**Slow corporate network?** On TLS-inspecting proxies, VPN tunnels, or congested links, large-scope research prompts can exceed Claude Code's default per-request fetch timeout. Set `MCP_TOOL_TIMEOUT=300000` (5 minutes, in milliseconds) before launching Claude — see [MCP per-request timeout](mcp-servers.md#optional-mcp-per-request-timeout-claude-code-v21142) in the MCP setup guide. Requires Claude Code v2.1.142+.
+
 ### Project Prerequisites
 
 - Requirements document (`ARC-*-REQ-*.md`) - **MANDATORY**
@@ -57,12 +59,26 @@ Add constraints (budget, classification, region) in the prompt for tailored resu
 ## Command
 
 ```bash
-/arckit.aws-research Research AWS services for <project>
+/arckit:aws-research Research AWS services for <project>
 ```
 
 Outputs: `projects/<id>/research/ARC-<id>-AWRS-v1.0.md`
 
 > **Auto-versioning**: Re-running this command when a document already exists automatically increments the version (minor for refreshed content, major for changed scope) instead of overwriting.
+
+---
+
+## Long runs: Remote Control + push notifications
+
+`/arckit:aws-research` frequently exceeds 10 minutes as the agent issues dozens of AWS Knowledge MCP calls and fetches full documentation pages for cost and compliance analysis. To avoid babysitting the terminal, pair it with [Claude Code Remote Control](https://code.claude.com/docs/en/remote-control):
+
+```bash
+claude remote-control
+```
+
+Drive the session from claude.ai/code or the mobile app, then enable `/config → Push when Claude decides` so your phone gets a notification on completion or when the agent reaches a decision point (service shortlist confirmation, region selection). ArcKit's minimum Claude Code floor (v2.1.121) already covers the v2.1.110 RC requirement.
+
+Caveats: Pro/Max plans only (no API keys, no Bedrock/Vertex/Foundry), push is a single on/off so chatty agents can over-notify, and the local `claude` process must keep running.
 
 ---
 
@@ -108,17 +124,17 @@ When UK Government project detected:
 
 ## Follow-on Actions
 
-- Feed AWS findings into `/arckit.diagram` for AWS architecture diagrams
-- Run `/arckit.secure` to validate against UK Secure by Design
-- Run `/arckit.devops` to plan AWS CodePipeline CI/CD
-- Run `/arckit.finops` to create AWS FinOps cost management strategy
-- Run `/arckit.adr` to document AWS service selection decisions
+- Feed AWS findings into `/arckit:diagram` for AWS architecture diagrams
+- Run `/arckit:secure` to validate against UK Secure by Design
+- Run `/arckit:devops` to plan AWS CodePipeline CI/CD
+- Run `/arckit:finops` to create AWS FinOps cost management strategy
+- Run `/arckit:adr` to document AWS service selection decisions
 
 ---
 
-## Comparison with /arckit.research
+## Comparison with /arckit:research
 
-| Feature | `/arckit.research` | `/arckit.aws-research` |
+| Feature | `/arckit:research` | `/arckit:aws-research` |
 |---------|-------------------|------------------------|
 | Scope | Multi-cloud, SaaS, open-source | AWS-specific only |
 | Source | Web search, multiple sources | AWS Knowledge MCP (authoritative) |
@@ -130,8 +146,8 @@ When UK Government project detected:
 
 **When to use which**:
 
-- Use `/arckit.research` for cloud-agnostic evaluation or build vs buy
-- Use `/arckit.aws-research` when AWS is the target platform
+- Use `/arckit:research` for cloud-agnostic evaluation or build vs buy
+- Use `/arckit:aws-research` when AWS is the target platform
 
 ---
 

@@ -27,7 +27,39 @@ This guide helps AI assistants (Claude Code, OpenAI Codex CLI, Gemini CLI) selec
 
 ### Banner Images
 
-- **`arckit-banner-light.svg`** - Version-agnostic SVG banner (1600x400px)
+- **`arckit-banner-light.svg`** - Banner with tagline, light theme (580×155, native SVG)
+- **`arckit-banner-dark.svg`** - Banner with tagline, dark theme (580×155, native SVG)
+
+### Social / OG Card
+
+- **`og-card.svg`** - 1200×630 social-preview card for `og:image`, Twitter cards, LinkedIn shares
+- **`og-card.png`** - Rasterised export (1200×630, 1x and 2x available)
+
+### Favicons
+
+- **`favicon.svg`** - Detailed mark on rounded navy tile, scales 192px+
+- **`favicon-small.svg`** - Detail-stripped variant optimised for 16/32px (browser tabs)
+- PNG exports: `favicon-512.png`, `favicon-192.png`, `favicon-32.png`, `favicon-16.png`
+
+### Brand motif
+
+The mark is built from three semantic elements that together depict an AI harness:
+
+1. **Angle brackets `⟨ ⟩`** — the harness frame. Reads as "AI/prompt structure". Pairs naturally with Claude Code, Codex, Gemini.
+2. **Inner caret `^`** — the prompt indicator. The point at which the AI generates.
+3. **Linchpin cursor** — teal terminal anchors flanking a navy centre pin. The cursor is the AI's output baseline; the pin is what holds it in place. This is the harness metaphor made literal.
+
+Colour roles: navy `#0B1F33` for structure (brackets, caret, pin); teal `#1ED3C6` for the AI/active layer (anchor nodes, cursor line).
+
+### PNG exports
+
+Every SVG above has 1x and (where useful) 2x PNG companions. Regenerate them after editing any SVG:
+
+```bash
+python scripts/render-brand-pngs.py
+```
+
+Requires `cairosvg` (already in the dev env).
 
 ---
 
@@ -64,7 +96,7 @@ This guide helps AI assistants (Claude Code, OpenAI Codex CLI, Gemini CLI) selec
 **README.md header:**
 
 ```markdown
-![ArcKit - Enterprise Architecture Governance Toolkit](docs/assets/arckit-banner-light.svg)
+![ArcKit: The Enterprise Architecture Governance Harness](docs/assets/arckit-banner-light.svg)
 ```
 
 → Use: `arckit-banner-light.svg` (version-agnostic SVG, recommended)
@@ -235,15 +267,15 @@ When an AI assistant (Claude Code, Codex CLI, Gemini CLI) needs to:
 
 ## Color Values
 
-### Dark Logos
+| Token | Hex | Use |
+|-------|-----|-----|
+| **Navy (primary)** | `#0B1F33` | Light variants: arc strokes, wordmark, stems |
+| **White (primary)** | `#FFFFFF` | Dark variants: arc strokes, wordmark, stems |
+| **Teal (accent)** | `#1ED3C6` | Node fills, harness triangle |
+| **Tagline grey (light)** | `#5A6A78` | Tagline text on light banner |
+| **Tagline grey (dark)** | `#B1B4B6` | Tagline text on dark banner |
 
-- Primary: `#1A1A1A` (near black)
-- Secondary: `#4A4A4A` (dark gray)
-
-### Light Logos
-
-- Primary: `#FFFFFF` (white)
-- Secondary: `#F5F5F5` (off-white)
+> Heads-up: pre-v5.4 banner assets used `#1A1A1A`. All assets are now aligned on `#0B1F33` (matches the existing logo lockups).
 
 ---
 
@@ -264,9 +296,9 @@ When an AI assistant (Claude Code, Codex CLI, Gemini CLI) needs to:
 ### ✅ Good: README Header
 
 ```markdown
-# ArcKit - Enterprise Architecture Governance Toolkit
+# ArcKit: The Enterprise Architecture Governance Harness
 
-![ArcKit - Enterprise Architecture Governance Toolkit](docs/assets/arckit-banner-light.svg)
+![ArcKit: The Enterprise Architecture Governance Harness](docs/assets/arckit-banner-light.svg)
 ```
 
 ### ✅ Good: Website Navigation
@@ -295,7 +327,17 @@ When an AI assistant (Claude Code, Codex CLI, Gemini CLI) needs to:
 ### ✅ Good: Favicon
 
 ```html
-<link rel="icon" type="image/svg+xml" href="assets/ArcKit_Mark_Dark.svg">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png">
+<link rel="apple-touch-icon" sizes="192x192" href="assets/favicon-192.png">
+```
+
+### ✅ Good: Social-share `og:image`
+
+```html
+<meta property="og:image" content="https://arckit.org/assets/og-card.png">
+<meta name="twitter:image" content="https://arckit.org/assets/og-card.png">
 ```
 
 ---

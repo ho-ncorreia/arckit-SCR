@@ -4,28 +4,32 @@
     <meta charset="UTF-8">
     <script>(function(){var t=localStorage.getItem('arckit-theme');if(t==='dark')document.documentElement.classList.add('dark-mode');else if(t==='light')document.documentElement.classList.add('light-mode');else if(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)document.documentElement.classList.add('dark-mode')})();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="description" content="ArcKit Example Projects - Browse AI-generated architecture documentation from 18 public test scenarios covering health, AI, cloud, digital services, and more.">
-    <title>Example Projects - ArcKit</title>
-    <meta name="keywords" content="ArcKit examples, architecture documentation examples, AI-generated architecture, UK government projects, test projects">
+    <meta name="description" content="ArcKit AI harness example projects: AI-generated architecture documentation for health, cloud, digital services, governance, procurement, data, and UK public-sector scenarios.">
+    <title>ArcKit Example Projects | Architecture Documentation Examples</title>
+    <meta name="keywords" content="ArcKit examples, architecture documentation examples, AI-generated architecture, UK government projects, enterprise architecture examples, governance artifacts">
     <meta name="author" content="ArcKit">
-    <meta property="og:title" content="Example Projects - ArcKit">
-    <meta property="og:description" content="Browse 18 AI-generated architecture documentation projects across health, AI, cloud, digital services, and more.">
+    <meta property="og:title" content="ArcKit Example Projects | Architecture Documentation Examples">
+    <meta property="og:description" content="Browse ArcKit example projects with AI-generated architecture documentation for health, cloud, digital services, AI governance, procurement, and data scenarios.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://arckit.org/use-cases.html">
     <meta property="og:site_name" content="ArcKit">
     <meta property="og:image" content="https://arckit.org/og-image.png">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Example Projects - ArcKit">
-    <meta name="twitter:description" content="Browse 18 AI-generated architecture documentation projects across health, AI, cloud, digital services, and more.">
+    <meta name="twitter:title" content="ArcKit Example Projects | Architecture Documentation Examples">
+    <meta name="twitter:description" content="Browse ArcKit example projects with AI-generated architecture documentation for health, cloud, digital services, AI governance, procurement, and data scenarios.">
     <meta name="twitter:image" content="https://arckit.org/og-image.png">
     <link rel="canonical" href="https://arckit.org/use-cases.html">
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="assets/favicon-192.png">
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
     <!-- GOV.UK Frontend v5.13.0 -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/govuk-frontend@5.13.0/dist/govuk/govuk-frontend.min.css" integrity="sha384-AceDY4oHkY81f+xCeKu8Quexo66/gUuQDs73S9k0dLlVZCL4YKg/pEJtw4dxL4wY" crossorigin="anonymous">
-    <link rel="stylesheet" href="theme.css">
-    <link rel="stylesheet" href="heroes.css">
+    <link rel="stylesheet" href="theme.css?v=4.12.3">
+    <link rel="stylesheet" href="heroes.css?v=4.12.3">
 
     <style>
         body,
@@ -42,7 +46,7 @@
 
         /* Nav Bar */
         .app-nav-bar {
-            background: #0b0c0c;
+            background: #0B1F33;
             position: sticky;
             top: 0;
             z-index: 100;
@@ -69,6 +73,7 @@
             text-decoration: none;
             font-size: 0.9375rem;
             font-weight: 700;
+            border-top: 3px solid transparent;
             border-bottom: 3px solid transparent;
         }
 
@@ -179,8 +184,8 @@
             {
                 "@type": "CollectionPage",
                 "@id": "https://arckit.org/use-cases.html",
-                "name": "Example Projects - ArcKit",
-                "description": "18 AI-generated architecture documentation projects across health, AI, cloud, digital services, and more.",
+                "name": "ArcKit Example Projects | Architecture Documentation Examples",
+                "description": "ArcKit AI harness example projects: AI-generated architecture documentation for health, cloud, digital services, governance, procurement, data, and UK public-sector scenarios.",
                 "isPartOf": { "@type": "WebSite", "name": "ArcKit", "url": "https://arckit.org" }
             },
             {
@@ -207,8 +212,10 @@
                 <li class="app-nav-bar__item app-nav-bar__item--active"><a href="use-cases.html">Example Projects</a></li>
                 <li class="app-nav-bar__item"><a href="guides.html">Guides</a></li>
                 <li class="app-nav-bar__item"><a href="roles.html">Roles</a></li>
+                <li class="app-nav-bar__item"><a href="articles.html">Articles</a></li>
                 <li class="app-nav-bar__item"><a href="getting-started.html">Getting Started</a></li>
                 <li class="app-nav-bar__item"><a href="contributors.html">Contributors</a></li>
+                <li class="app-nav-bar__item"><a href="https://tractorjuice.github.io/arckit-fde/">FDE</a></li>
             </ul>
             <div class="app-nav-bar__icons">
                 <a href="https://github.com/tractorjuice/arc-kit" class="app-icon-link" aria-label="GitHub repository" title="GitHub repository">
@@ -224,9 +231,9 @@
 
     <div class="app-page-hero app-page-hero--projects">
         <div class="govuk-width-container app-page-hero__content">
-            <span class="app-page-hero__stat">18 Example Projects</span>
-            <h1 class="app-page-hero__title">Example Projects</h1>
-            <p class="app-page-hero__description">Browse AI-generated architecture documentation across health, AI, cloud, digital services, data, and more. Each project links to a live GitHub Pages site.</p>
+            <span class="app-page-hero__stat">19 Architecture Examples</span>
+            <h1 class="app-page-hero__title">ArcKit Example Projects</h1>
+            <p class="app-page-hero__description">Browse AI-generated architecture documentation across health, cloud, digital services, AI governance, procurement, data, and UK public-sector scenarios.</p>
         </div>
     </div>
 
@@ -235,7 +242,7 @@
             <a href="index.html" class="govuk-back-link govuk-!-margin-bottom-6">Back to ArcKit</a>
 
             <div class="govuk-inset-text">
-                These are <strong>demonstration projects</strong> created to showcase ArcKit's capabilities. Every artifact was AI-generated using ArcKit commands &mdash; they are test outputs, not real client deliverables. Always review, validate, and refine AI output with human expertise before use.
+                These are <strong>demonstration projects</strong> created to show what the ArcKit AI harness and enterprise architecture kit produces. Every artifact was AI-generated using ArcKit commands &mdash; they are test outputs, not real client deliverables. Always review, validate, and refine AI output with human expertise before use.
             </div>
 
             <div class="app-use-case-grid">
@@ -243,7 +250,7 @@
                 <div class="app-use-case-card">
                     <span class="app-use-case-card__domain app-use-case-card__domain--health">Health</span>
                     <h2 class="govuk-heading-s">NHS Appointment Booking</h2>
-                    <p class="govuk-body-s">Digital health platform with patient portal, NHS Spine integration, IG Toolkit compliance, accessibility (WCAG 2.1 AA), GDPR data handling.</p>
+                    <p class="govuk-body-s">Digital health platform with patient portal, NHS Spine integration, IG Toolkit compliance, accessibility (WCAG 2.2 AA), GDPR data handling.</p>
                     <a href="https://tractorjuice.github.io/arckit-test-project-v7-nhs-appointment/" class="govuk-link govuk-body-s">View example outputs &rarr;</a>
                 </div>
 
@@ -386,7 +393,7 @@
 
     <footer class="app-footer">
         <div class="govuk-width-container">
-            <p class="govuk-body-s">Built with <a href="https://design-system.service.gov.uk/" class="govuk-link">GOV.UK Design System</a> | <a href="index.html" class="govuk-link">Back to ArcKit</a> | <a href="https://github.com/tractorjuice/arc-kit" class="govuk-link">GitHub</a> | MIT License</p>
+            <p class="govuk-body-s"><a href="index.html" class="govuk-link">Back to ArcKit</a> | <a href="https://github.com/tractorjuice/arc-kit" class="govuk-link">GitHub</a> | MIT License</p>
         </div>
     </footer>
 

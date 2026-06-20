@@ -1,25 +1,11 @@
 # Strategic Outline Business Case (SOBC)
 
-> **Template Origin**: Official | **ArcKit Version**: [VERSION] | **Command**: `/arckit.sobc`
+> **Template Origin**: Official | **ArcKit Version**: [VERSION] | **Command**: `/arckit:sobc`
 
 ## Document Control
 
-| Field | Value |
-|-------|-------|
-| **Document ID** | ARC-[PROJECT_ID]-SOBC-v[VERSION] |
-| **Document Type** | [DOCUMENT_TYPE_NAME] |
-| **Project** | [PROJECT_NAME] (Project [PROJECT_ID]) |
-| **Classification** | [PUBLIC / OFFICIAL / OFFICIAL-SENSITIVE / SECRET] |
-| **Status** | [DRAFT / IN_REVIEW / APPROVED / PUBLISHED / SUPERSEDED / ARCHIVED] |
-| **Version** | [VERSION] |
-| **Created Date** | [YYYY-MM-DD] |
-| **Last Modified** | [YYYY-MM-DD] |
-| **Review Cycle** | [Monthly / Quarterly / Annual / On-Demand] |
-| **Next Review Date** | [YYYY-MM-DD] |
-| **Owner** | [OWNER_NAME_AND_ROLE] |
-| **Reviewed By** | [REVIEWER_NAME] on [DATE] or [PENDING] |
-| **Approved By** | [APPROVER_NAME] on [DATE] or [PENDING] |
-| **Distribution** | [DISTRIBUTION_LIST] |
+<!-- DOC-CONTROL-HEADER -->
+<!-- Resolved at command-execution time to _partials/document-control-uk.md or _partials/document-control-uae.md based on plugin userConfig classification_scheme + governance_framework. See _partials/RENDERING.md (when present). -->
 
 ## Revision History
 
@@ -73,7 +59,7 @@
 **Next Steps if Approved**:
 
 1. Secure funding approval: [Date]
-2. Define detailed requirements: `/arckit.requirements`
+2. Define detailed requirements: `/arckit:requirements`
 3. Develop Outline Business Case (OBC): [Date]
 4. Procurement approach: [Date]
 
@@ -716,7 +702,7 @@ Derived from stakeholder analysis RACI matrix in `ARC-{PROJECT_ID}-STKE-v*.md`:
 |-----------|------|--------------|-------|
 | SOBC Approval (this document) | [Date] | Stakeholder analysis complete | SRO |
 | Funding Secured | [Date] | SOBC approval | Finance Director |
-| Requirements Complete (`/arckit.requirements`) | [Date] | SOBC approval | Business Analyst |
+| Requirements Complete (`/arckit:requirements`) | [Date] | SOBC approval | Business Analyst |
 | Procurement Launch | [Date] | Requirements approved | Commercial Manager |
 | Vendor Contract Award | [Date] | Evaluation complete | SRO |
 | High-Level Design Approval | [Date] | Vendor onboarded | Solution Architect |
@@ -964,21 +950,21 @@ Derived from stakeholder analysis RACI matrix in `ARC-{PROJECT_ID}-STKE-v*.md`:
 
 **Phase 1: Requirements** (Months 1-2):
 
-1. **Detailed Requirements**: Run `/arckit.requirements` to create comprehensive requirements - **Target: [Date]**
+1. **Detailed Requirements**: Run `/arckit:requirements` to create comprehensive requirements - **Target: [Date]**
 2. **Stakeholder Validation**: Review and sign-off requirements with all stakeholders - **Target: [Date]**
 3. **Traceability Matrix**: Generate requirements traceability matrix - **Target: [Date]**
 
 **Phase 2: Procurement** (Months 2-4):
 
-1. **SOW Generation**: Run `/arckit.sow` to create RFP - **Target: [Date]**
+1. **SOW Generation**: Run `/arckit:sow` to create RFP - **Target: [Date]**
 2. **Digital Marketplace**: Publish opportunity on Digital Marketplace (UK Gov) - **Target: [Date]**
-3. **Vendor Evaluation**: Score and compare vendors using `/arckit.evaluate` - **Target: [Date]**
+3. **Vendor Evaluation**: Score and compare vendors using `/arckit:evaluate` - **Target: [Date]**
 4. **Contract Award**: Award contract to selected vendor - **Target: [Date]**
 
 **Phase 3: Design** (Months 4-6):
 
-1. **High-Level Design**: Vendor delivers HLD, reviewed with `/arckit.hld-review` - **Target: [Date]**
-2. **Detailed Design**: Vendor delivers DLD, reviewed with `/arckit.dld-review` - **Target: [Date]**
+1. **High-Level Design**: Vendor delivers HLD, reviewed with `/arckit:hld-review` - **Target: [Date]**
+2. **Detailed Design**: Vendor delivers DLD, reviewed with `/arckit:dld-review` - **Target: [Date]**
 3. **Security Sign-off**: CISO approves security architecture - **Target: [Date]**
 
 **Phase 4: Build & Test** (Months 6-9):
@@ -1105,19 +1091,36 @@ If this SOBC is not approved:
 
 **END OF STRATEGIC OUTLINE BUSINESS CASE**
 
-*Document created using ArcKit `/arckit.sobc` command*
+*Document created using ArcKit `/arckit:sobc` command*
 *Template version: 1.0*
 *Green Book compliant: Yes (HM Treasury 5-case model)*
 
 ## External References
 
-| Document | Type | Source | Key Extractions | Path |
-|----------|------|--------|-----------------|------|
+> This section provides traceability from generated content back to source documents.
+> Follow citation instructions in the project's citation reference guide.
+
+### Document Register
+
+| Doc ID | Filename | Type | Source Location | Description |
+|--------|----------|------|-----------------|-------------|
 | *None provided* | — | — | — | — |
+
+### Citations
+
+| Citation ID | Doc ID | Page/Section | Category | Quoted Passage |
+|-------------|--------|--------------|----------|----------------|
+| — | — | — | — | — |
+
+### Unreferenced Documents
+
+| Filename | Source Location | Reason |
+|----------|-----------------|--------|
+| — | — | — |
 
 ---
 
-**Generated by**: ArcKit `/arckit.sobc` command
+**Generated by**: ArcKit `/arckit:sobc` command
 **Generated on**: [DATE]
 **ArcKit Version**: [VERSION]
 **Project**: [PROJECT_NAME]

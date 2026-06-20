@@ -1,25 +1,11 @@
 # High-Level Design (HLD) Review: [PROJECT_NAME]
 
-> **Template Origin**: Official | **ArcKit Version**: [VERSION] | **Command**: `/arckit.hld-review`
+> **Template Origin**: Official | **ArcKit Version**: [VERSION] | **Command**: `/arckit:hld-review`
 
 ## Document Control
 
-| Field | Value |
-|-------|-------|
-| **Document ID** | ARC-[PROJECT_ID]-HLDR-v[VERSION] |
-| **Document Type** | [DOCUMENT_TYPE_NAME] |
-| **Project** | [PROJECT_NAME] (Project [PROJECT_ID]) |
-| **Classification** | [PUBLIC / OFFICIAL / OFFICIAL-SENSITIVE / SECRET] |
-| **Status** | [DRAFT / IN_REVIEW / APPROVED / PUBLISHED / SUPERSEDED / ARCHIVED] |
-| **Version** | [VERSION] |
-| **Created Date** | [YYYY-MM-DD] |
-| **Last Modified** | [YYYY-MM-DD] |
-| **Review Cycle** | [Monthly / Quarterly / Annual / On-Demand] |
-| **Next Review Date** | [YYYY-MM-DD] |
-| **Owner** | [OWNER_NAME_AND_ROLE] |
-| **Reviewed By** | [REVIEWER_NAME] on [DATE] or [PENDING] |
-| **Approved By** | [APPROVER_NAME] on [DATE] or [PENDING] |
-| **Distribution** | [DISTRIBUTION_LIST] |
+<!-- DOC-CONTROL-HEADER -->
+<!-- Resolved at command-execution time to _partials/document-control-uk.md or _partials/document-control-uae.md based on plugin userConfig classification_scheme + governance_framework. See _partials/RENDERING.md (when present). -->
 
 ## Revision History
 
@@ -189,9 +175,9 @@ Review how HLD addresses functional requirements from requirements document.
 
 | Requirement ID | Requirement Summary | Addressed in HLD | Design Element | Assessment |
 |----------------|---------------------|------------------|----------------|------------|
-| FR-1 | [Requirement] | [ ] Yes [ ] Partial [ ] No | [Service/component] | [✅ Adequate | ⚠️ Needs clarification | ❌ Inadequate] |
-| FR-2 | [Requirement] | [ ] Yes [ ] Partial [ ] No | [Service/component] | [✅ | ⚠️ | ❌] |
-| FR-3 | [Requirement] | [ ] Yes [ ] Partial [ ] No | [Service/component] | [✅ | ⚠️ | ❌] |
+| FR-001 | [Requirement] | [ ] Yes [ ] Partial [ ] No | [Service/component] | [✅ Adequate | ⚠️ Needs clarification | ❌ Inadequate] |
+| FR-002 | [Requirement] | [ ] Yes [ ] Partial [ ] No | [Service/component] | [✅ | ⚠️ | ❌] |
+| FR-003 | [Requirement] | [ ] Yes [ ] Partial [ ] No | [Service/component] | [✅ | ⚠️ | ❌] |
 
 **Gaps Identified**:
 
@@ -210,39 +196,39 @@ Review how HLD addresses functional requirements from requirements document.
 
 | NFR ID | Requirement | Target | HLD Approach | Assessment | Comments |
 |--------|-------------|--------|--------------|------------|----------|
-| NFR-P-1 | API response time | <200ms (p95) | [Caching strategy, async processing] | [✅ | ⚠️ | ❌] | |
-| NFR-P-2 | Throughput | 10K TPS | [Auto-scaling, load balancing] | [✅ | ⚠️ | ❌] | |
+| NFR-P-001 | API response time | <200ms (p95) | [Caching strategy, async processing] | [✅ | ⚠️ | ❌] | |
+| NFR-P-002 | Throughput | 10K TPS | [Auto-scaling, load balancing] | [✅ | ⚠️ | ❌] | |
 
 #### Availability & Resilience
 
 | NFR ID | Requirement | Target | HLD Approach | Assessment | Comments |
 |--------|-------------|--------|--------------|------------|----------|
-| NFR-A-1 | Availability SLA | 99.95% | [Multi-AZ deployment, health checks] | [✅ | ⚠️ | ❌] | |
-| NFR-A-2 | RPO | <15 min | [Continuous backup, cross-region replication] | [✅ | ⚠️ | ❌] | |
-| NFR-A-3 | RTO | <4 hours | [Automated failover, disaster recovery plan] | [✅ | ⚠️ | ❌] | |
+| NFR-A-001 | Availability SLA | 99.95% | [Multi-AZ deployment, health checks] | [✅ | ⚠️ | ❌] | |
+| NFR-A-002 | RPO | <15 min | [Continuous backup, cross-region replication] | [✅ | ⚠️ | ❌] | |
+| NFR-A-003 | RTO | <4 hours | [Automated failover, disaster recovery plan] | [✅ | ⚠️ | ❌] | |
 
 #### Security Requirements
 
 | NFR ID | Requirement | HLD Approach | Assessment | Comments |
 |--------|-------------|--------------|------------|----------|
-| NFR-SEC-1 | Authentication (SSO/MFA) | [OIDC with Okta, MFA enforced] | [✅ | ⚠️ | ❌] | |
-| NFR-SEC-2 | Authorization (RBAC) | [OPA for policy enforcement] | [✅ | ⚠️ | ❌] | |
-| NFR-SEC-3 | Encryption (TLS 1.3+, AES-256) | [ALB TLS termination, RDS encryption] | [✅ | ⚠️ | ❌] | |
-| NFR-SEC-4 | Secrets management | [AWS Secrets Manager with rotation] | [✅ | ⚠️ | ❌] | |
+| NFR-SEC-001 | Authentication (SSO/MFA) | [OIDC with Okta, MFA enforced] | [✅ | ⚠️ | ❌] | |
+| NFR-SEC-002 | Authorization (RBAC) | [OPA for policy enforcement] | [✅ | ⚠️ | ❌] | |
+| NFR-SEC-003 | Encryption (TLS 1.3+, AES-256) | [ALB TLS termination, RDS encryption] | [✅ | ⚠️ | ❌] | |
+| NFR-SEC-004 | Secrets management | [AWS Secrets Manager with rotation] | [✅ | ⚠️ | ❌] | |
 
 #### Scalability Requirements
 
 | NFR ID | Requirement | HLD Approach | Assessment | Comments |
 |--------|-------------|--------------|------------|----------|
-| NFR-S-1 | Horizontal scaling | [Auto-scaling groups, stateless services] | [✅ | ⚠️ | ❌] | |
-| NFR-S-2 | Data volume growth | [Partitioning strategy, data lifecycle] | [✅ | ⚠️ | ❌] | |
+| NFR-S-001 | Horizontal scaling | [Auto-scaling groups, stateless services] | [✅ | ⚠️ | ❌] | |
+| NFR-S-002 | Data volume growth | [Partitioning strategy, data lifecycle] | [✅ | ⚠️ | ❌] | |
 
 #### Compliance Requirements
 
 | NFR ID | Requirement | HLD Approach | Assessment | Comments |
 |--------|-------------|--------------|------------|----------|
-| NFR-C-1 | GDPR compliance | [Data residency, deletion APIs, consent] | [✅ | ⚠️ | ❌] | |
-| NFR-C-2 | Audit logging | [CloudWatch Logs, 7-year retention] | [✅ | ⚠️ | ❌] | |
+| NFR-C-001 | GDPR compliance | [Data residency, deletion APIs, consent] | [✅ | ⚠️ | ❌] | |
+| NFR-C-002 | Audit logging | [CloudWatch Logs, 7-year retention] | [✅ | ⚠️ | ❌] | |
 
 ---
 
@@ -744,13 +730,30 @@ Suggestions for improvement, not required for approval.
 
 ## External References
 
-| Document | Type | Source | Key Extractions | Path |
-|----------|------|--------|-----------------|------|
+> This section provides traceability from generated content back to source documents.
+> Follow citation instructions in the project's citation reference guide.
+
+### Document Register
+
+| Doc ID | Filename | Type | Source Location | Description |
+|--------|----------|------|-----------------|-------------|
 | *None provided* | — | — | — | — |
+
+### Citations
+
+| Citation ID | Doc ID | Page/Section | Category | Quoted Passage |
+|-------------|--------|--------------|----------|----------------|
+| — | — | — | — | — |
+
+### Unreferenced Documents
+
+| Filename | Source Location | Reason |
+|----------|-----------------|--------|
+| — | — | — |
 
 ---
 
-**Generated by**: ArcKit `/arckit.hld-review` command
+**Generated by**: ArcKit `/arckit:hld-review` command
 **Generated on**: [DATE]
 **ArcKit Version**: [VERSION]
 **Project**: [PROJECT_NAME]

@@ -1,34 +1,17 @@
 # UK Digital Marketplace: Digital Outcomes and Specialists
 
-> **Template Origin**: Official | **ArcKit Version**: [VERSION] | **Command**: `/arckit.dos`
+> **Template Origin**: Official | **ArcKit Version**: [VERSION] | **Command**: `/arckit:dos`
 
 ## Document Control
 
-| Field | Value |
-|-------|-------|
-| **Document ID** | ARC-[PROJECT_ID]-DOS-v[VERSION] |
-| **Document Type** | DOS Procurement Requirements |
-| **Project** | [PROJECT_NAME] (Project [PROJECT_ID]) |
-| **Classification** | [PUBLIC / OFFICIAL / OFFICIAL-SENSITIVE / SECRET] |
-| **Status** | [DRAFT / IN_REVIEW / APPROVED / PUBLISHED / SUPERSEDED / ARCHIVED] |
-| **Version** | [VERSION] |
-| **Created Date** | [YYYY-MM-DD] |
-| **Last Modified** | [YYYY-MM-DD] |
-| **Review Cycle** | [Monthly / Quarterly / Annual / On-Demand] |
-| **Next Review Date** | [YYYY-MM-DD] |
-| **Owner** | [OWNER_NAME_AND_ROLE] |
-| **Reviewed By** | [REVIEWER_NAME] ([YYYY-MM-DD]) or PENDING |
-| **Approved By** | [APPROVER_NAME] ([YYYY-MM-DD]) or PENDING |
-| **Distribution** | [DISTRIBUTION_LIST] |
-| **Framework** | Digital Outcomes and Specialists (DOS) |
-| **Procurement Type** | [Digital Outcome / Digital Specialists / Outcome + Specialists] |
-| **Requirements Source** | projects/[PROJECT_ID]/ARC-{PROJECT_ID}-REQ-v*.md |
+<!-- DOC-CONTROL-HEADER -->
+<!-- Resolved at command-execution time to _partials/document-control-uk.md or _partials/document-control-uae.md based on plugin userConfig classification_scheme + governance_framework. See _partials/RENDERING.md (when present). -->
 
 ## Revision History
 
 | Version | Date | Author | Changes | Approved By | Approval Date |
 |---------|------|--------|---------|-------------|---------------|
-| [VERSION] | [DATE] | ArcKit AI | Initial creation from `/arckit.dos` command | PENDING | PENDING |
+| [VERSION] | [DATE] | ArcKit AI | Initial creation from `/arckit:dos` command | PENDING | PENDING |
 
 ---
 
@@ -253,7 +236,7 @@ From SHOULD requirements:
 - [ ] **Security Review** - before go-live
 - [ ] **Compliance Review** - before go-live
 
-Reference: Run `/arckit.hld-review` and `/arckit.dld-review` for formal review processes
+Reference: Run `/arckit:hld-review` and `/arckit:dld-review` for formal review processes
 
 ### 9.2 Compliance Requirements
 
@@ -271,7 +254,7 @@ Vendor must maintain requirements traceability throughout delivery:
 - Requirements → Test Cases
 - Requirements → Deliverables
 
-Reference: `/arckit.traceability` for traceability matrix generation and validation
+Reference: `/arckit:traceability` for traceability matrix generation and validation
 
 ---
 
@@ -336,7 +319,7 @@ Suppliers will be evaluated according to Digital Marketplace guidelines:
 - [ ] **Security design** documentation
 - [ ] **Integration design** documentation (for INT-xxx requirements)
 
-Reference: Generate with `/arckit.diagram`, `/arckit.data-model`
+Reference: Generate with `/arckit:diagram`, `/arckit:data-model`
 
 ### 12.2 Implementation
 
@@ -425,15 +408,15 @@ Vendors must provide:
 ### 14.2 For Architecture Team
 
 1. **Prepare Review Frameworks**:
-   - Run `/arckit.hld-review` to set up HLD review process
-   - Run `/arckit.dld-review` to set up DLD review process
+   - Run `/arckit:hld-review` to set up HLD review process
+   - Run `/arckit:dld-review` to set up DLD review process
    - Prepare evaluation scorecards based on Section 11 criteria
 2. **Establish Governance**:
    - Set up architecture review board
    - Define review gates and approval process
    - Schedule regular checkpoints with vendor
 3. **Traceability Setup**:
-   - Run `/arckit.traceability` to establish tracking framework
+   - Run `/arckit:traceability` to establish tracking framework
    - Define traceability requirements for vendor
 
 ---
@@ -456,10 +439,10 @@ Vendors must provide:
 
 ### 15.3 ArcKit Commands for Vendor Management
 
-- **`/arckit.evaluate`**: Create vendor evaluation framework and scoring
-- **`/arckit.hld-review`**: High-Level Design review process for vendor deliverables
-- **`/arckit.dld-review`**: Detailed Design review process for vendor deliverables
-- **`/arckit.traceability`**: Requirements traceability matrix validation
+- **`/arckit:evaluate`**: Create vendor evaluation framework and scoring
+- **`/arckit:hld-review`**: High-Level Design review process for vendor deliverables
+- **`/arckit:dld-review`**: Detailed Design review process for vendor deliverables
+- **`/arckit:traceability`**: Requirements traceability matrix validation
 
 ---
 
@@ -493,13 +476,30 @@ Vendors must provide:
 
 ## External References
 
-| Document | Type | Source | Key Extractions | Path |
-|----------|------|--------|-----------------|------|
+> This section provides traceability from generated content back to source documents.
+> Follow citation instructions in the project's citation reference guide.
+
+### Document Register
+
+| Doc ID | Filename | Type | Source Location | Description |
+|--------|----------|------|-----------------|-------------|
 | *None provided* | — | — | — | — |
+
+### Citations
+
+| Citation ID | Doc ID | Page/Section | Category | Quoted Passage |
+|-------------|--------|--------------|----------|----------------|
+| — | — | — | — | — |
+
+### Unreferenced Documents
+
+| Filename | Source Location | Reason |
+|----------|-----------------|--------|
+| — | — | — |
 
 ---
 
-**Generated by**: ArcKit `/arckit.dos` command
+**Generated by**: ArcKit `/arckit:dos` command
 **Generated on**: [DATE]
 **ArcKit Version**: [VERSION]
 **Project**: [PROJECT_NAME]

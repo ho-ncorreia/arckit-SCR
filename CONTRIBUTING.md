@@ -52,7 +52,7 @@ Documentation contributions are highly valued:
 
 To add a new ArcKit command:
 
-1. **Create the command file** in `arckit-claude/commands/`:
+1. **Create the command file** in `plugins/arckit-claude/commands/`:
 
    ```markdown
    ---
@@ -161,7 +161,7 @@ Types:
 Examples:
 
 ```text
-feat(commands): add /arckit.security-review command
+feat(commands): add /arckit:security-review command
 
 docs(guides): improve wardley mapping examples
 
@@ -195,7 +195,7 @@ Before submitting:
 
    ```bash
    # Claude Code (requires ArcKit plugin: /plugin marketplace add tractorjuice/arc-kit)
-   /arckit.your-command Test description
+   /arckit:your-command Test description
 
    # Gemini CLI
    gemini
@@ -211,7 +211,7 @@ Before submitting:
 3. **Check integration**:
    - Run related commands before and after
    - Verify traceability matrix includes new artifacts
-   - Test `/arckit.analyze` detects relevant gaps
+   - Test `/arckit:analyze` detects relevant gaps
 
 ## UK Government Standards Compliance
 
@@ -223,13 +223,36 @@ All contributions must align with:
 - **GDS Service Standard**: 14 points for government services
 - **Digital Marketplace**: DOS and G-Cloud procurement frameworks
 
+## Adding a new doc-type code (v5.0.0+)
+
+Doc-type codes live in `plugins/arckit-claude/config/doc-types.mjs` regardless of which plugin the emitting command lives in. This keeps `validate-arc-filename.mjs` single-sourced and the collision check in one file.
+
+A new community command that emits a new doc type therefore requires a **two-part PR**:
+
+1. The command in `arckit-{jurisdiction}/commands/{slug}.md` (e.g. `plugins/arckit-uae/commands/uae-newthing.md`).
+2. The new code in `plugins/arckit-claude/config/doc-types.mjs` with `regime: 'UAE'` (or `FR`, `CA`, `EU`, `AT`).
+
+Reviewers check that the new code doesn't collide with existing codes — `scripts/check_doctype_collisions.py` catches duplicates automatically in CI.
+
+If the new code is the **first** of its regime, also register the regime in the `REGIMES` array and `REGIME_LABELS` object at the bottom of `doc-types.mjs`. Order convention: officially-maintained first, then community alphabetical.
+
+## Adding a bundled MCP server
+
+When a new command requires an MCP server that does not already ship with ArcKit, follow this checklist:
+
+1. **`.mcp.json` entry** — add the server under `plugins/arckit-claude/.mcp.json`. Omit `alwaysLoad` unless the server is needed on every session start (keep cold-start tool budgets lean; deferred is the default).
+2. **`allow-mcp-tools.mjs` prefix** — add the `mcp__<server-name>__` prefix to the `ALLOWED_PREFIXES` array in `plugins/arckit-claude/hooks/allow-mcp-tools.mjs` and update the JSDoc comment's server list.
+3. **Reader `tools:` allowlist** — in the reader agent's YAML frontmatter, list only the read-only tools the reader needs. Never include free-form query tools (e.g. SQL endpoints) in the allowlist — they are an uncontrolled prompt-injection surface.
+4. **`docs/MCP-CATALOGUE.md` rows** — add a row to the "Servers at a glance" table, a `## <server-name>` section (tool table with "Consumed by ArcKit?" column, allowlist note, consumer list), rows in the "Tool → command cross-reference" table, and update the totals line.
+5. **Run `python scripts/converter.py`** — regenerate the Codex / OpenCode / Gemini / Copilot extension formats so the new MCP config propagates to all non-Claude targets.
+
 ## Command Naming Conventions
 
-- Use lowercase with hyphens: `/arckit.data-model`
+- Use lowercase with hyphens: `/arckit:data-model`
 - Be descriptive but concise
-- Use verbs for actions: `/arckit.analyze`, `/arckit.review`
-- Use nouns for artifacts: `/arckit.requirements`, `/arckit.runbook`
-- Group related commands: `/arckit.hld-review`, `/arckit.lld-review`
+- Use verbs for actions: `/arckit:analyze`, `/arckit:review`
+- Use nouns for artifacts: `/arckit:requirements`, `/arckit:runbook`
+- Group related commands: `/arckit:hld-review`, `/arckit:lld-review`
 
 ## Questions?
 

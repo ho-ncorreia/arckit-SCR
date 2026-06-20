@@ -77,7 +77,7 @@ if [[ ! -d "$PROJECTS_DIR" ]]; then
     else
         log_warning "No projects directory found"
         echo ""
-        echo "Run: /arckit.init to initialize an ArcKit repository"
+        echo "Run: /arckit:init to initialize an ArcKit repository"
     fi
     exit 0
 fi
@@ -91,7 +91,7 @@ if [[ $PROJECT_COUNT -eq 0 ]]; then
     else
         echo "No projects found"
         echo ""
-        echo "Run: /arckit.create to create a new project"
+        echo "Run: /arckit:create to create a new project"
     fi
     exit 0
 fi
@@ -150,20 +150,21 @@ calculate_completion() {
     local total=10
     local completed=0
 
-    # Standard artifacts (8 items)
-    local artifacts=(
-        "stakeholder-drivers.md"
-        "risk-register.md"
-        "sobc.md"
-        "requirements.md"
-        "data-model.md"
-        "research-findings.md"
-        "sow.md"
-        "evaluation-criteria.md"
+    # Standard artifacts (8 items) — check both legacy and ARC-*-TYPE-* naming
+    local -A artifact_patterns=(
+        [stakeholder-drivers.md]="STKE"
+        [risk-register.md]="RISK"
+        [sobc.md]="SOBC"
+        [requirements.md]="REQ"
+        [data-model.md]="DATA"
+        [research-findings.md]="RSCH"
+        [sow.md]="SOW"
+        [evaluation-criteria.md]="EVAL"
     )
 
-    for artifact in "${artifacts[@]}"; do
-        if [[ -f "$project_dir/$artifact" ]]; then
+    for artifact in "${!artifact_patterns[@]}"; do
+        local type_code="${artifact_patterns[$artifact]}"
+        if [[ -f "$project_dir/$artifact" ]] || compgen -G "$project_dir/ARC-*-${type_code}-*.md" > /dev/null 2>&1; then
             ((completed++))
         fi
     done

@@ -19,13 +19,17 @@
     <meta name="twitter:description" content="Read detailed ArcKit command and role guides for enterprise architecture governance directly in your browser.">
     <meta name="twitter:image" content="https://arckit.org/og-image.png">
     <link rel="canonical" href="https://arckit.org/guide-viewer.html">
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="assets/favicon-192.png">
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
     <!-- GOV.UK Frontend v5.13.0 -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/govuk-frontend@5.13.0/dist/govuk/govuk-frontend.min.css" integrity="sha384-AceDY4oHkY81f+xCeKu8Quexo66/gUuQDs73S9k0dLlVZCL4YKg/pEJtw4dxL4wY" crossorigin="anonymous">
-    <link rel="stylesheet" href="theme.css">
-    <link rel="stylesheet" href="heroes.css">
+    <link rel="stylesheet" href="theme.css?v=4.12.3">
+    <link rel="stylesheet" href="heroes.css?v=4.12.3">
 
     <!-- marked.js v15.0.6 + DOMPurify -->
     <script src="https://cdn.jsdelivr.net/npm/marked@15.0.6/marked.min.js" integrity="sha384-b5hg04N6F0rvyz1a/GVoPPY0JcqGTARCmEuFCqwQKX3zq7LsxhV+n+6Ykh2pQOCH" crossorigin="anonymous"></script>
@@ -46,7 +50,7 @@
 
         /* Nav Bar */
         .app-nav-bar {
-            background: #0b0c0c;
+            background: #0B1F33;
             position: sticky;
             top: 0;
             z-index: 100;
@@ -88,6 +92,7 @@
             text-decoration: none;
             font-size: 0.9375rem;
             font-weight: 700;
+            border-top: 3px solid transparent;
             border-bottom: 3px solid transparent;
         }
 
@@ -287,8 +292,10 @@
                 <li class="app-nav-bar__item"><a href="use-cases.html">Example Projects</a></li>
                 <li class="app-nav-bar__item app-nav-bar__item--active"><a href="guides.html">Guides</a></li>
                 <li class="app-nav-bar__item"><a href="roles.html">Roles</a></li>
+                <li class="app-nav-bar__item"><a href="articles.html">Articles</a></li>
                 <li class="app-nav-bar__item"><a href="getting-started.html">Getting Started</a></li>
                 <li class="app-nav-bar__item"><a href="contributors.html">Contributors</a></li>
+                <li class="app-nav-bar__item"><a href="https://tractorjuice.github.io/arckit-fde/">FDE</a></li>
             </ul>
             <div class="app-nav-bar__icons">
                 <a href="https://github.com/tractorjuice/arc-kit" class="app-icon-link" aria-label="GitHub repository" title="GitHub repository">
@@ -333,7 +340,7 @@
 
     <footer class="app-footer">
         <div class="govuk-width-container">
-            <p class="govuk-body-s">Built with <a href="https://design-system.service.gov.uk/" class="govuk-link">GOV.UK Design System</a> | <a href="index.html" class="govuk-link">Back to ArcKit</a> | <a href="https://github.com/tractorjuice/arc-kit" class="govuk-link">GitHub</a> | MIT License</p>
+            <p class="govuk-body-s"><a href="index.html" class="govuk-link">Back to ArcKit</a> | <a href="https://github.com/tractorjuice/arc-kit" class="govuk-link">GitHub</a> | MIT License</p>
         </div>
     </footer>
 
@@ -372,6 +379,29 @@
                     var titleMatch = md.match(/^#\s+(.+)$/m);
                     if (titleMatch) {
                         document.title = titleMatch[1] + ' - ArcKit';
+                    }
+
+                    // Per-guide SEO: self-referential canonical + Open Graph so each
+                    // ?guide=<slug> URL is uniquely indexable instead of collapsing to
+                    // the bare guide-viewer.html shell.
+                    var guideTitle = titleMatch ? titleMatch[1] : 'Guide';
+                    var guideUrl = 'https://arckit.org/guide-viewer.html?guide=' + guide;
+                    var setMeta = function(sel, attr, val) {
+                        var el = document.querySelector(sel);
+                        if (el && val) el.setAttribute(attr, val);
+                    };
+                    setMeta('link[rel="canonical"]', 'href', guideUrl);
+                    setMeta('meta[property="og:url"]', 'content', guideUrl);
+                    setMeta('meta[property="og:title"]', 'content', guideTitle);
+                    setMeta('meta[name="twitter:title"]', 'content', guideTitle);
+                    var gPara = md.split(/\n\n+/).find(function(chunk){
+                        return chunk && !chunk.startsWith('#') && !chunk.startsWith('!') && !chunk.startsWith('---') && !chunk.startsWith('>') && !chunk.startsWith('|');
+                    });
+                    if (gPara) {
+                        var gClean = gPara.replace(/\*\*|__|`/g, '').replace(/\s+/g,' ').trim();
+                        if (gClean.length > 220) gClean = gClean.slice(0, 217) + '…';
+                        setMeta('meta[property="og:description"]', 'content', gClean);
+                        setMeta('meta[name="twitter:description"]', 'content', gClean);
                     }
 
                     var rawHtml = marked.parse(md);

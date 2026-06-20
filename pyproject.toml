@@ -1,7 +1,7 @@
 [project]
 name = "arckit-cli"
-version = "4.2.11"
-description = "ArcKit CLI - Enterprise Architecture Governance & Vendor Procurement Toolkit"
+version = "5.15.0"
+description = "ArcKit CLI - The Enterprise Architecture Governance Harness"
 requires-python = ">=3.11"
 dependencies = [
     "typer",
@@ -53,11 +53,17 @@ packages = ["src/arckit_cli"]
 [tool.hatch.build.targets.wheel.shared-data]
 "scripts" = "share/arckit/scripts"
 ".arckit" = "share/arckit/.arckit"
-"docs" = "share/arckit/docs"
+# Distribute only the docs the CLI scaffolds (guides + the three named files),
+# NOT the whole docs/ tree — mapping the directory shipped BUSINESS-PLAN.md,
+# INVESTOR-REPORT.md, proposals/, articles/ and superpowers/ into the public
+# package, and also double-mapped DEPENDENCY-MATRIX.md (breaking the wheel build).
+"docs/guides" = "share/arckit/docs/guides"
+"docs/README.md" = "share/arckit/docs/README.md"
 "docs/DEPENDENCY-MATRIX.md" = "share/arckit/docs/DEPENDENCY-MATRIX.md"
 "docs/WORKFLOW-DIAGRAMS.md" = "share/arckit/docs/WORKFLOW-DIAGRAMS.md"
 "VERSION" = "share/arckit/VERSION"
 "CHANGELOG.md" = "share/arckit/CHANGELOG.md"
-"arckit-codex" = "share/arckit/arckit-codex"
-"arckit-opencode" = "share/arckit/arckit-opencode"
-"arckit-copilot" = "share/arckit/arckit-copilot"
+"extensions/arckit-codex" = "share/arckit/extensions/arckit-codex"
+"extensions/arckit-opencode" = "share/arckit/extensions/arckit-opencode"
+"extensions/arckit-copilot" = "share/arckit/extensions/arckit-copilot"
+"extensions/arckit-vibe" = "share/arckit/extensions/arckit-vibe"

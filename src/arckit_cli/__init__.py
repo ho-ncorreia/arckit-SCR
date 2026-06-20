@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-ArcKit CLI - Enterprise Architecture Governance & Vendor Procurement Toolkit
+ArcKit CLI - The Enterprise Architecture Governance Harness
 
 A toolkit for enterprise architects to manage:
 - Architecture principles and governance
@@ -37,8 +37,8 @@ ssl_context = truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
 client = httpx.Client(verify=ssl_context)
 
 # Agent configuration for ArcKit
-# Note: Claude Code support has moved to the ArcKit plugin (arckit-claude/).
-# Gemini CLI support has moved to the ArcKit Gemini extension (arckit-gemini/).
+# Note: Claude Code support has moved to the ArcKit plugin (plugins/arckit-claude/).
+# Gemini CLI support has moved to the ArcKit Gemini extension (extensions/arckit-gemini/).
 # The CLI now only supports Codex.
 AGENT_CONFIG = {
     "codex": {
@@ -70,13 +70,13 @@ BANNER = """
 ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚═╝   ╚═╝
 """
 
-TAGLINE = "Enterprise Architecture Governance & Vendor Procurement"
+TAGLINE = "The Enterprise Architecture Governance Harness"
 
 console = Console()
 
 app = typer.Typer(
     name="arckit",
-    help="Enterprise Architecture Governance & Vendor Procurement Toolkit",
+    help="The Enterprise Architecture Governance Harness",
     add_completion=False,
 )
 
@@ -152,28 +152,31 @@ def get_data_paths():
         return {
             "templates": base_path / ".arckit" / "templates",
             "scripts": base_path / "scripts",
-            "opencode_root": base_path / "arckit-opencode",
-            "opencode_commands": base_path / "arckit-opencode" / "commands",
-            "opencode_agents": base_path / "arckit-opencode" / "agents",
+            "opencode_root": base_path / "extensions" / "arckit-opencode",
+            "opencode_commands": base_path / "extensions" / "arckit-opencode" / "commands",
+            "opencode_agents": base_path / "extensions" / "arckit-opencode" / "agents",
             "docs_guides": base_path / "docs" / "guides",
             "docs_readme": base_path / "docs" / "README.md",
             "dependency_matrix": base_path / "docs" / "DEPENDENCY-MATRIX.md",
             "workflow_diagrams": base_path / "docs" / "WORKFLOW-DIAGRAMS.md",
             "version": base_path / "VERSION",
             "changelog": base_path / "CHANGELOG.md",
-            "codex_references": base_path / "arckit-codex" / "references",
-            "codex_skills": base_path / "arckit-codex" / "skills",
-            "codex_agents": base_path / "arckit-codex" / "agents",
-            "codex_config": base_path / "arckit-codex" / "config.toml",
-            "copilot_prompts": base_path / "arckit-copilot" / "prompts",
-            "copilot_agents": base_path / "arckit-copilot" / "agents",
-            "copilot_instructions": base_path / "arckit-copilot" / "copilot-instructions.md",
+            "codex_references": base_path / "extensions" / "arckit-codex" / "references",
+            "codex_skills": base_path / "extensions" / "arckit-codex" / "skills",
+            "codex_agents": base_path / "extensions" / "arckit-codex" / "agents",
+            "codex_hooks": base_path / "extensions" / "arckit-codex" / "hooks",
+            "codex_schemas": base_path / "extensions" / "arckit-codex" / "schemas",
+            "codex_validator": base_path / "extensions" / "arckit-codex" / "scripts" / "validate-handoff.mjs",
+            "codex_config": base_path / "extensions" / "arckit-codex" / "config.toml",
+            "copilot_prompts": base_path / "extensions" / "arckit-copilot" / "prompts",
+            "copilot_agents": base_path / "extensions" / "arckit-copilot" / "agents",
+            "copilot_instructions": base_path / "extensions" / "arckit-copilot" / "copilot-instructions.md",
         }
 
     # First, check if running from source (development mode)
     # This allows testing local changes without re-installing
     source_root = Path(__file__).parent.parent.parent
-    if (source_root / ".arckit").exists() and (source_root / "arckit-codex").exists():
+    if (source_root / ".arckit").exists() and (source_root / "extensions" / "arckit-codex").exists():
         return build_paths(source_root)
 
     # Then try to find installed package data
@@ -242,6 +245,7 @@ def create_project_structure(
         directories.extend(
             [
                 ".codex/agents",
+                ".codex/hooks",
                 ".agents/skills",
                 ".opencode/commands",
                 ".opencode/agents",
@@ -252,6 +256,7 @@ def create_project_structure(
         if ai_assistant == "codex":
             directories.append(".agents/skills")
             directories.append(f"{agent_folder}agents")
+            directories.append(f"{agent_folder}hooks")
         elif ai_assistant == "opencode":
             directories.append(f"{agent_folder}commands")
             directories.append(f"{agent_folder}agents")
@@ -289,12 +294,12 @@ This directory is for your customized ArcKit templates.
 
 ## Getting Started
 
-Use the `/arckit.customize` command to copy templates for editing:
+Use the `/arckit:customize` command to copy templates for editing:
 
 ```
-/arckit.customize requirements      # Copy requirements template
-/arckit.customize all               # Copy all templates
-/arckit.customize list              # See available templates
+/arckit:customize requirements      # Copy requirements template
+/arckit:customize all               # Copy all templates
+/arckit:customize list              # See available templates
 ```
 
 ## Why This Pattern?
@@ -548,7 +553,31 @@ def init(
         if codex_config_src and codex_config_src.exists():
             config_dst = project_path / ".codex" / "config.toml"
             shutil.copy2(codex_config_src, config_dst)
-            console.print(f"[green]✓[/green] Copied config.toml (MCP servers + agent roles)")
+            console.print(f"[green]✓[/green] Copied config.toml (MCP servers + hooks + agent roles)")
+
+        # Copy Codex lifecycle hooks
+        codex_hooks_src = data_paths.get("codex_hooks")
+        if codex_hooks_src and codex_hooks_src.exists():
+            hooks_dst = project_path / ".codex" / "hooks"
+            hooks_dst.mkdir(parents=True, exist_ok=True)
+            for hook_file in sorted(codex_hooks_src.iterdir()):
+                if hook_file.is_file() and hook_file.name != "hooks.json":
+                    shutil.copy2(hook_file, hooks_dst / hook_file.name)
+            console.print(f"[green]✓[/green] Copied Codex lifecycle hooks to .codex/hooks/")
+
+        # Copy Codex schemas and deterministic validators used by research workflows
+        codex_schemas_src = data_paths.get("codex_schemas")
+        if codex_schemas_src and codex_schemas_src.exists():
+            schemas_dst = project_path / ".arckit" / "schemas"
+            shutil.copytree(codex_schemas_src, schemas_dst, dirs_exist_ok=True)
+            console.print(f"[green]✓[/green] Copied Codex schemas to .arckit/schemas/")
+
+        codex_validator_src = data_paths.get("codex_validator")
+        if codex_validator_src and codex_validator_src.exists():
+            validator_dst = project_path / ".arckit" / "scripts" / "validate-handoff.mjs"
+            validator_dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(codex_validator_src, validator_dst)
+            console.print(f"[green]✓[/green] Copied handoff validator to .arckit/scripts/")
 
     # Copy OpenCode commands and agents
     if ai_assistant == "opencode" or all_ai:
@@ -690,7 +719,7 @@ Enterprise Architecture Governance Project
 
 ## Getting Started
 
-This project uses ArcKit for enterprise architecture governance and vendor procurement.
+This project uses ArcKit — The Enterprise Architecture Governance Harness — for strategy, architecture, delivery, and assurance.
 
 ### Available Commands
 
@@ -808,6 +837,9 @@ Example:
             "# Codex CLI",
             ".codex/*",
             "!.codex/agents/",
+            "!.codex/agents/**",
+            "!.codex/hooks/",
+            "!.codex/hooks/**",
             "!.codex/config.toml",
         ]
 
@@ -944,9 +976,9 @@ export OPENCODE_HOME="$PWD/.opencode"
         )
         next_steps.append(f"3. Start OpenCode: [cyan]opencode[/cyan]")
         next_steps.append(
-            "4. Establish architecture principles: [cyan]/arckit.principles[/cyan]"
+            "4. Establish architecture principles: [cyan]/arckit:principles[/cyan]"
         )
-        next_steps.append("5. Create your first project: [cyan]/arckit.requirements[/cyan]"
+        next_steps.append("5. Create your first project: [cyan]/arckit:requirements[/cyan]"
         )
     elif ai_assistant == "copilot":
         next_steps.append("2. Open in VS Code: [cyan]code .[/cyan]")
@@ -956,6 +988,59 @@ export OPENCODE_HOME="$PWD/.opencode"
         )
 
     console.print(Panel("\n".join(next_steps), title="Next Steps", border_style="cyan"))
+
+
+@app.command(name="migrate-classification")
+def migrate_classification(
+    apply: bool = typer.Option(
+        False,
+        "--apply",
+        help="Apply the proposed mappings (default: report only).",
+    ),
+    root: str = typer.Option(
+        "projects",
+        "--root",
+        help="Root directory to walk (default: projects).",
+    ),
+):
+    """Migrate Document Control Classification from UK ladder to UAE Smart Data ladder.
+
+    One-time helper for projects switching to the UAE Federal Overlay (v4.10).
+    Walks projects/ for ARC-* artefacts and proposes mappings:
+
+      PUBLIC -> Open, OFFICIAL -> Shared, OFFICIAL-SENSITIVE -> Confidential,
+      SECRET -> Secret, TOP SECRET -> Top Secret
+
+    Default is report-only; pass --apply to write the changes.
+    """
+    # Locate the migration script (works for source/dev, pip install, uv tool install).
+    here = Path(__file__).resolve()
+    candidates = [
+        here.parents[2] / "scripts" / "python" / "migrate_classification.py",  # source/dev
+        Path.cwd() / "scripts" / "python" / "migrate_classification.py",  # cwd-relative
+    ]
+    # Also try the get_data_paths() fallback (covers pip and uv tool installs).
+    try:
+        data_paths = get_data_paths()  # type: ignore[name-defined]
+        if data_paths and "scripts" in data_paths:
+            candidates.append(Path(data_paths["scripts"]) / "python" / "migrate_classification.py")
+    except Exception:
+        pass
+
+    script = next((c for c in candidates if c.is_file()), None)
+    if script is None:
+        console.print(
+            "[red]Error:[/red] migrate_classification.py not found. "
+            "Searched: " + ", ".join(str(c) for c in candidates)
+        )
+        raise typer.Exit(code=2)
+
+    cmd = [sys.executable, str(script), "--root", root]
+    if apply:
+        cmd.append("--apply")
+
+    result = subprocess.run(cmd)
+    raise typer.Exit(code=result.returncode)
 
 
 @app.command()

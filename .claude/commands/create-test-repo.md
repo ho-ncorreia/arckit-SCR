@@ -50,6 +50,7 @@ Use the **Write** tool to create each file inside `/tmp/arckit-test-setup/${REPO
 
 ```json
 {
+  "minimumVersion": "2.1.172",
   "extraKnownMarketplaces": {
     "arc-kit": {
       "source": {
@@ -63,6 +64,8 @@ Use the **Write** tool to create each file inside `/tmp/arckit-test-setup/${REPO
   }
 }
 ```
+
+> `minimumVersion` pins the test repo to ArcKit's current Claude Code floor (matches `MIN_CLAUDE_CODE_VERSION` in `plugins/arckit-claude/hooks/version-check.mjs`) so background auto-updates can't drop a Codespace below it. Bump this alongside the floor.
 
 ### 4b. `.devcontainer/devcontainer.json`
 
@@ -93,10 +96,10 @@ This project uses **ArcKit v${VERSION}** for enterprise architecture governance.
 ## Getting Started
 
 Run ArcKit commands using the Claude Code plugin:
-- `/arckit.principles` - Define architecture principles
-- `/arckit.stakeholders` - Stakeholder analysis
-- `/arckit.requirements` - Requirements specification
-- `/arckit.sobc` - Strategic Outline Business Case
+- `/arckit:principles` - Define architecture principles
+- `/arckit:stakeholders` - Stakeholder analysis
+- `/arckit:requirements` - Requirements specification
+- `/arckit:sobc` - Strategic Outline Business Case
 
 See the [ArcKit Documentation](https://tractorjuice.github.io/arc-kit/) for the full command reference.
 
@@ -134,16 +137,16 @@ This repository uses **ArcKit v${VERSION}** for enterprise architecture governan
 
 ```bash
 # Check ArcKit is working
-/arckit.init
+/arckit:init
 
 # Define architecture principles (if not already done)
-/arckit.principles
+/arckit:principles
 
 # Start with stakeholder analysis
-/arckit.stakeholders ${DISPLAY_NAME}
+/arckit:stakeholders ${DISPLAY_NAME}
 
 # Generate requirements
-/arckit.requirements ${DISPLAY_NAME}
+/arckit:requirements ${DISPLAY_NAME}
 ```
 
 ## Project Structure
@@ -182,12 +185,12 @@ This project uses the **ArcKit plugin** (v${VERSION}) for enterprise architectur
 
 ### Key Commands
 
-- `/arckit.principles` - Architecture principles (start here)
-- `/arckit.stakeholders` - Stakeholder analysis
-- `/arckit.requirements` - Requirements specification
-- `/arckit.sobc` - Strategic Outline Business Case
-- `/arckit.adr` - Architecture Decision Records
-- `/arckit.diagram` - Architecture diagrams (C4, sequence, etc.)
+- `/arckit:principles` - Architecture principles (start here)
+- `/arckit:stakeholders` - Stakeholder analysis
+- `/arckit:requirements` - Requirements specification
+- `/arckit:sobc` - Strategic Outline Business Case
+- `/arckit:adr` - Architecture Decision Records
+- `/arckit:diagram` - Architecture diagrams (C4, sequence, etc.)
 
 ### Project Structure
 
@@ -284,7 +287,7 @@ Files created:
 Next steps:
   1. Open the repo in a GitHub Codespace
   2. Restart Claude Code to resolve the plugin
-  3. Run /arckit.principles to get started
+  3. Run /arckit:principles to get started
 ```
 
 ## Important Notes

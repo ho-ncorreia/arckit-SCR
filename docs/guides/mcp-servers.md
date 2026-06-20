@@ -10,8 +10,46 @@ This guide covers installing the ArcKit plugin, configuring MCP servers, and com
 
 ### Prerequisites
 
-- **Claude Code** v2.1.50 or later (or **Claude Cowork** desktop app)
+- **Claude Code** v2.1.121 or later (or **Claude Cowork** desktop app)
 - **Bash** shell (for helper scripts)
+
+### Step 0: Make sure Claude Code is up to date
+
+```bash
+claude install latest
+claude --version
+```
+
+`claude install` accepts `stable`, `latest`, or a specific version (e.g. `claude install 2.1.121`). If you don't have the `claude` CLI yet, follow the [official Claude Code install guide](https://docs.claude.com/en/docs/claude-code/quickstart) first.
+
+### Optional: Long-session prompt cache (Claude Code v2.1.108+)
+
+Long ArcKit workflows -- requirements -> data-model -> components -> stories, or any chain that re-reads the same templates, principles, and project artifacts -- benefit from the 1-hour prompt cache TTL introduced in Claude Code v2.1.108. The default 5-minute TTL expires between commands when you pause to review output, file the next prompt, or step away.
+
+Set the env var before launching Claude:
+
+```bash
+export ENABLE_PROMPT_CACHING_1H=1
+claude
+```
+
+Recommended for: overnight `autoresearch` runs, multi-command workflows (`/arckit:requirements` -> `/arckit:data-model` -> `/arckit:components`), and research agents that re-read large project context. Verify cache uplift in your Anthropic billing dashboard (`cache_read_input_tokens` should grow as a fraction of input tokens).
+
+### Optional: MCP per-request timeout (Claude Code v2.1.142+)
+
+The three bundled cloud-research MCP servers (`aws-knowledge`, `microsoft-learn`, `google-developer-knowledge`) are remote HTTP servers reached from your machine. Behind corporate proxies, TLS-inspecting gateways, or slow links, individual fetches inside a single tool call can exceed Claude Code's default per-request timeout — surfacing as `MCP tool call failed: timeout` in the middle of a long `/arckit:aws-research`, `/arckit:azure-research`, or `/arckit:gcp-research` run.
+
+Claude Code v2.1.142 made `MCP_TOOL_TIMEOUT` honour the per-request fetch timeout for remote servers (previously it only governed initial connect). Raise it for cloud-research sessions on slow networks:
+
+```bash
+# 5-minute per-request timeout (default is 60s)
+export MCP_TOOL_TIMEOUT=300000
+claude
+```
+
+The value is milliseconds. Recommended for: corporate networks with TLS-inspecting proxies, VPN-tunnelled connections, and large-scope research prompts that trigger many `microsoft_docs_fetch` / `aws___read_documentation` / `get_document` calls in sequence. On a healthy direct connection the default is fine — only set this when you see timeout failures.
+
+> **Don't set a sub-second timeout.** As of Claude Code v2.1.162, a per-server `timeout` below `1000` ms is ignored (it falls back to `MCP_TOOL_TIMEOUT` or the default) rather than being floored to a 1-second watchdog that aborted every call. ArcKit ships no sub-1000 ms timeouts, so this is reassurance only — but if you hand-edit a server's `timeout`, keep it ≥ `1000`.
 
 ### Step 1: Add the marketplace
 
@@ -41,12 +79,14 @@ The plugin loads MCP servers and hooks at startup. **A restart is required** aft
 
 After restart, open the plugin manager (`/plugin`) and navigate to **Installed**. You should see:
 
-- **Commands**: 60 slash commands
-- **Agents**: 6 autonomous research agents
-- **Skills**: 1 (Wardley Mapping)
+- **Commands**: ArcKit slash commands
+- **Agents**: Autonomous research agents
+- **Skills**: Reference skills (Wardley, Mermaid, PlantUML, workflow, build harness)
 - **Hooks**: SessionStart, UserPromptSubmit, PreToolUse, PermissionRequest
 
 > **Tip**: You may see 2 MCP errors about missing API keys for Google and Data Commons. These are harmless — see [Servers Requiring API Keys](#servers-requiring-api-keys) below.
+
+> **Confirm what's enabled from the CLI** (Claude Code v2.1.163+): `/plugin list --enabled` lists the active plugins. Handy because the community overlays (`arckit-uae`, `arckit-fr`, `arckit-au`, …) ship `defaultEnabled: false` — if an overlay's `/arckit:*` commands aren't showing up, it's almost always because it wasn't enabled. Use `/plugin list --disabled` to see what's installed but off.
 
 ### Auto-enabling for team repos
 
@@ -153,6 +193,8 @@ export DATA_COMMONS_API_KEY="your-api-key-here"
 
 3. Restart Claude Code
 
+> **Your keys stay hidden in `claude mcp` output.** Both keyed servers carry their key in an HTTP header (`X-Goog-Api-Key`, `X-API-Key`) via `${GOOGLE_API_KEY}` / `${DATA_COMMONS_API_KEY}`. As of Claude Code v2.1.161, `claude mcp list` / `get` / `add` no longer expand `${VAR}` references and redact credential headers and URL secrets — so inspecting your MCP config (or screen-sharing it) won't leak the keys. Relevant for OFFICIAL-SENSITIVE / regulated deployments. The other four bundled servers are keyless, so there's nothing to redact.
+
 ---
 
 ## Troubleshooting
@@ -164,7 +206,7 @@ Invalid MCP server config for 'google-developer-knowledge': Missing environment 
 Invalid MCP server config for 'datacommons-mcp': Missing environment variables: DATA_COMMONS_API_KEY
 ```
 
-**These errors are harmless.** They mean you haven't configured the optional API keys. All 60 commands, 6 agents, hooks, and skills work without them. Only `/arckit:gcp-research` and Data Commons lookups are affected.
+**These errors are harmless.** They mean you haven't configured the optional API keys. All ArcKit commands, agents, hooks, and skills work without them. Only `/arckit:gcp-research` and Data Commons lookups are affected.
 
 **To fix**: Set the environment variables as described above and restart Claude Code.
 

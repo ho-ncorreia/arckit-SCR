@@ -28,16 +28,16 @@ Examples:
 
 ```bash
 # Single project
-.arckit/scripts/bash/migrate-filenames.sh projects/001-my-project
+${CLAUDE_PLUGIN_ROOT}/scripts/bash/migrate-filenames.sh projects/001-my-project
 
 # Dry run (preview changes)
-.arckit/scripts/bash/migrate-filenames.sh projects/001-my-project --dry-run
+${CLAUDE_PLUGIN_ROOT}/scripts/bash/migrate-filenames.sh projects/001-my-project --dry-run
 
 # All projects
-.arckit/scripts/bash/migrate-filenames.sh --all
+${CLAUDE_PLUGIN_ROOT}/scripts/bash/migrate-filenames.sh --all
 
 # Global directory only
-.arckit/scripts/bash/migrate-filenames.sh --global
+${CLAUDE_PLUGIN_ROOT}/scripts/bash/migrate-filenames.sh --global
 ```
 
 ---
@@ -247,7 +247,7 @@ Use `--no-backup` to skip backups (not recommended).
 ### Preview All Changes
 
 ```bash
-.arckit/scripts/bash/migrate-filenames.sh --all --dry-run
+${CLAUDE_PLUGIN_ROOT}/scripts/bash/migrate-filenames.sh --all --dry-run
 ```
 
 Output:
@@ -263,7 +263,7 @@ Output:
 ### Migrate Global Principles
 
 ```bash
-.arckit/scripts/bash/migrate-filenames.sh --global
+${CLAUDE_PLUGIN_ROOT}/scripts/bash/migrate-filenames.sh --global
 ```
 
 This will:
@@ -275,13 +275,13 @@ This will:
 ### Migrate Single Project
 
 ```bash
-.arckit/scripts/bash/migrate-filenames.sh projects/001-payment-gateway
+${CLAUDE_PLUGIN_ROOT}/scripts/bash/migrate-filenames.sh projects/001-payment-gateway
 ```
 
 ### Force Overwrite Existing
 
 ```bash
-.arckit/scripts/bash/migrate-filenames.sh projects/001-payment-gateway --force
+${CLAUDE_PLUGIN_ROOT}/scripts/bash/migrate-filenames.sh projects/001-payment-gateway --force
 ```
 
 ---
@@ -290,7 +290,7 @@ This will:
 
 1. **Review backups**: Check `.backup/` directories for original files
 2. **Update references**: Search for old filenames in documentation
-3. **Run pages command**: Regenerate documentation site with `/arckit.pages`
+3. **Run pages command**: Regenerate documentation site with `/arckit:pages`
 4. **Commit changes**: Add migrated files to version control
 
 ---
@@ -320,7 +320,7 @@ Check that the filename matches a known mapping. The script only migrates recogn
 - [ ] Verified backup directory was created
 - [ ] Checked all expected files were migrated
 - [ ] Updated cross-references in documentation
-- [ ] Regenerated GitHub Pages with `/arckit.pages`
+- [ ] Regenerated GitHub Pages with `/arckit:pages`
 - [ ] Committed changes to version control
 
 ---

@@ -2,7 +2,7 @@
 
 > **Guide Origin**: Official | **ArcKit Version**: [VERSION]
 
-`/arckit.gcp-research` researches Google Cloud services, architecture patterns, and implementation guidance using the Google Developer Knowledge MCP server for authoritative documentation.
+`/arckit:gcp-research` researches Google Cloud services, architecture patterns, and implementation guidance using the Google Developer Knowledge MCP server for authoritative documentation.
 
 > **Agent Architecture**: This command runs as an autonomous agent via the Task tool. The agent makes 15-30+ MCP calls to gather Google Cloud documentation in its own context window, keeping the main conversation clean. The slash command is a thin wrapper that delegates to the agent.
 
@@ -42,6 +42,8 @@ export GOOGLE_API_KEY="your-api-key-here"
 
 After installation, restart Claude Code to load the MCP server.
 
+**Slow corporate network?** On TLS-inspecting proxies, VPN tunnels, or congested links, large-scope research prompts can exceed Claude Code's default per-request fetch timeout. Set `MCP_TOOL_TIMEOUT=300000` (5 minutes, in milliseconds) before launching Claude — see [MCP per-request timeout](mcp-servers.md#optional-mcp-per-request-timeout-claude-code-v21142) in the MCP setup guide. Requires Claude Code v2.1.142+.
+
 ### Project Prerequisites
 
 - Requirements document (`ARC-*-REQ-*.md`) - **MANDATORY**
@@ -69,12 +71,26 @@ Add constraints (budget, classification, region) in the prompt for tailored resu
 ## Command
 
 ```bash
-/arckit.gcp-research Research Google Cloud services for <project>
+/arckit:gcp-research Research Google Cloud services for <project>
 ```
 
 Outputs: `projects/<id>/research/ARC-<id>-GCRS-v1.0.md`
 
 > **Auto-versioning**: Re-running this command when a document already exists automatically increments the version (minor for refreshed content, major for changed scope) instead of overwriting.
+
+---
+
+## Long runs: Remote Control + push notifications
+
+`/arckit:gcp-research` frequently exceeds 10 minutes as the agent issues dozens of Google Developer Knowledge MCP calls and fetches full documentation pages for cost and compliance analysis. To avoid babysitting the terminal, pair it with [Claude Code Remote Control](https://code.claude.com/docs/en/remote-control):
+
+```bash
+claude remote-control
+```
+
+Drive the session from claude.ai/code or the mobile app, then enable `/config → Push when Claude decides` so your phone gets a notification on completion or when the agent reaches a decision point (service shortlist confirmation, region selection). ArcKit's minimum Claude Code floor (v2.1.121) already covers the v2.1.110 RC requirement.
+
+Caveats: Pro/Max plans only (no API keys, no Bedrock/Vertex/Foundry), push is a single on/off so chatty agents can over-notify, and the local `claude` process must keep running.
 
 ---
 
@@ -118,17 +134,17 @@ When UK Government project detected:
 
 ## Follow-on Actions
 
-- Feed Google Cloud findings into `/arckit.diagram` for GCP architecture diagrams
-- Run `/arckit.secure` to validate against UK Secure by Design
-- Run `/arckit.devops` to plan Cloud Build CI/CD pipelines
-- Run `/arckit.finops` to create Google Cloud FinOps cost management strategy
-- Run `/arckit.adr` to document Google Cloud service selection decisions
+- Feed Google Cloud findings into `/arckit:diagram` for GCP architecture diagrams
+- Run `/arckit:secure` to validate against UK Secure by Design
+- Run `/arckit:devops` to plan Cloud Build CI/CD pipelines
+- Run `/arckit:finops` to create Google Cloud FinOps cost management strategy
+- Run `/arckit:adr` to document Google Cloud service selection decisions
 
 ---
 
-## Comparison with /arckit.research
+## Comparison with /arckit:research
 
-| Feature | `/arckit.research` | `/arckit.gcp-research` |
+| Feature | `/arckit:research` | `/arckit:gcp-research` |
 |---------|-------------------|------------------------|
 | Scope | Multi-cloud, SaaS, open-source | Google Cloud-specific only |
 | Source | Web search, multiple sources | Google Developer Knowledge MCP (authoritative) |
@@ -139,8 +155,8 @@ When UK Government project detected:
 
 **When to use which**:
 
-- Use `/arckit.research` for cloud-agnostic evaluation or build vs buy
-- Use `/arckit.gcp-research` when Google Cloud is the target platform
+- Use `/arckit:research` for cloud-agnostic evaluation or build vs buy
+- Use `/arckit:gcp-research` when Google Cloud is the target platform
 
 ---
 

@@ -16,7 +16,7 @@
 #   ./generate-document-id.sh 001 ADR 1.0 --filename --next-num ./decisions → ARC-001-ADR-001-v1.0.md
 #
 # Multi-instance types (require --next-num for sequence numbering):
-#   ADR, DIAG, DFD, WARD, DMC, RSCH, AWRS, AZRS, GCRS, DSCT
+#   ADR, DIAG, DFD, WARD, DMC, RSCH, AWRS, AZRS, GCRS, DSCT, TNDR, CMPT, WGAM, WCLM, WVCH
 
 set -euo pipefail
 
@@ -81,8 +81,8 @@ PROJECT_ID_CLEAN=${PROJECT_ID_CLEAN:-0}
 PROJECT_ID_PADDED=$(printf "%03d" "$PROJECT_ID_CLEAN")
 
 # Multi-instance document types that require sequence numbers
-# Keep in sync with arckit-claude/config/doc-types.mjs MULTI_INSTANCE_TYPES
-MULTI_INSTANCE_TYPES="ADR DIAG DFD WARD DMC RSCH AWRS AZRS GCRS DSCT"
+# Keep in sync with plugins/arckit-claude/config/doc-types.mjs MULTI_INSTANCE_TYPES
+MULTI_INSTANCE_TYPES="ADR DIAG DFD WARD DMC RSCH AWRS AZRS GCRS DSCT TNDR CMPT WGAM WCLM WVCH GOVR GCSR GLND"
 
 # Check if this is a multi-instance type
 is_multi_instance() {

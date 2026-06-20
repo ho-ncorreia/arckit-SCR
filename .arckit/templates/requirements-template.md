@@ -1,25 +1,11 @@
 # Project Requirements: [PROJECT_NAME]
 
-> **Template Origin**: Official | **ArcKit Version**: [VERSION] | **Command**: `/arckit.requirements`
+> **Template Origin**: Official | **ArcKit Version**: [VERSION] | **Command**: `/arckit:requirements`
 
 ## Document Control
 
-| Field | Value |
-|-------|-------|
-| **Document ID** | ARC-[PROJECT_ID]-REQ-v[VERSION] |
-| **Document Type** | [DOCUMENT_TYPE_NAME] |
-| **Project** | [PROJECT_NAME] (Project [PROJECT_ID]) |
-| **Classification** | [PUBLIC / OFFICIAL / OFFICIAL-SENSITIVE / SECRET] |
-| **Status** | [DRAFT / IN_REVIEW / APPROVED / PUBLISHED / SUPERSEDED / ARCHIVED] |
-| **Version** | [VERSION] |
-| **Created Date** | [YYYY-MM-DD] |
-| **Last Modified** | [YYYY-MM-DD] |
-| **Review Cycle** | [Monthly / Quarterly / Annual / On-Demand] |
-| **Next Review Date** | [YYYY-MM-DD] |
-| **Owner** | [OWNER_NAME_AND_ROLE] |
-| **Reviewed By** | [REVIEWER_NAME] on [DATE] or [PENDING] |
-| **Approved By** | [APPROVER_NAME] on [DATE] or [PENDING] |
-| **Distribution** | [DISTRIBUTION_LIST] |
+<!-- DOC-CONTROL-HEADER -->
+<!-- Resolved at command-execution time to _partials/document-control-uk.md or _partials/document-control-uae.md based on plugin userConfig classification_scheme + governance_framework. See _partials/RENDERING.md (when present). -->
 
 ## Revision History
 
@@ -87,7 +73,7 @@
 
 ## Business Requirements
 
-### BR-1: [Business Requirement Name]
+### BR-001: [Business Requirement Name]
 
 **Description**: [What the business needs to achieve from a value perspective]
 
@@ -104,7 +90,7 @@
 
 ---
 
-### BR-2: [Business Requirement Name]
+### BR-002: [Business Requirement Name]
 
 [Repeat structure above for each business requirement]
 
@@ -171,11 +157,11 @@
 
 ### Functional Requirements Detail
 
-#### FR-1: [Functional Requirement Name]
+#### FR-001: [Functional Requirement Name]
 
 **Description**: [What the system must do]
 
-**Relates To**: [BR-1, UC-1] (link to business requirements and use cases)
+**Relates To**: [BR-001, UC-1] (link to business requirements and use cases)
 
 **Acceptance Criteria**:
 
@@ -199,7 +185,7 @@
 
 ---
 
-#### FR-2: [Functional Requirement Name]
+#### FR-002: [Functional Requirement Name]
 
 [Repeat for each functional requirement - aim for 10-30 FRs depending on project size]
 
@@ -209,7 +195,7 @@
 
 ### Performance Requirements
 
-#### NFR-P-1: Response Time
+#### NFR-P-001: Response Time
 
 **Requirement**: [Specific performance metric]
 
@@ -229,7 +215,7 @@
 
 ---
 
-#### NFR-P-2: Throughput
+#### NFR-P-002: Throughput
 
 **Requirement**: System must handle [X] transactions per second at peak load
 
@@ -241,7 +227,7 @@
 
 ### Availability and Resilience Requirements
 
-#### NFR-A-1: Availability Target
+#### NFR-A-001: Availability Target
 
 **Requirement**: System must achieve [99.9%] uptime (SLA)
 
@@ -254,7 +240,7 @@
 
 ---
 
-#### NFR-A-2: Disaster Recovery
+#### NFR-A-002: Disaster Recovery
 
 **RPO (Recovery Point Objective)**: Maximum acceptable data loss = [X minutes]
 
@@ -275,7 +261,7 @@
 
 ---
 
-#### NFR-A-3: Fault Tolerance
+#### NFR-A-003: Fault Tolerance
 
 **Requirement**: System must gracefully degrade when [component] fails
 
@@ -293,7 +279,7 @@
 
 ### Scalability Requirements
 
-#### NFR-S-1: Horizontal Scaling
+#### NFR-S-001: Horizontal Scaling
 
 **Requirement**: System must support horizontal scaling without code changes
 
@@ -309,7 +295,7 @@
 
 ---
 
-#### NFR-S-2: Data Volume Scaling
+#### NFR-S-002: Data Volume Scaling
 
 **Requirement**: System must handle data growth to [X TB] over [Y years]
 
@@ -321,7 +307,7 @@
 
 ### Security Requirements
 
-#### NFR-SEC-1: Authentication
+#### NFR-SEC-001: Authentication
 
 **Requirement**: All users must authenticate via [SSO | OAuth 2.0 | SAML 2.0]
 
@@ -340,7 +326,7 @@
 
 ---
 
-#### NFR-SEC-2: Authorization
+#### NFR-SEC-002: Authorization
 
 **Requirement**: Role-based access control (RBAC) with least privilege principle
 
@@ -352,7 +338,7 @@
 
 ---
 
-#### NFR-SEC-3: Data Encryption
+#### NFR-SEC-003: Data Encryption
 
 **Requirement**:
 
@@ -371,7 +357,7 @@
 
 ---
 
-#### NFR-SEC-4: Secrets Management
+#### NFR-SEC-004: Secrets Management
 
 **Requirement**: No secrets (API keys, passwords, certificates) in code or configuration files
 
@@ -383,7 +369,7 @@
 
 ---
 
-#### NFR-SEC-5: Vulnerability Management
+#### NFR-SEC-005: Vulnerability Management
 
 **Requirement**:
 
@@ -404,7 +390,7 @@
 
 ### Compliance and Regulatory Requirements
 
-#### NFR-C-1: Data Privacy Compliance
+#### NFR-C-001: Data Privacy Compliance
 
 **Applicable Regulations**: [GDPR | CCPA | HIPAA | PCI-DSS | SOX | FedRAMP]
 
@@ -424,7 +410,7 @@
 
 ---
 
-#### NFR-C-2: Audit Logging
+#### NFR-C-002: Audit Logging
 
 **Requirement**: Comprehensive audit trail for compliance and forensics
 
@@ -445,7 +431,7 @@
 
 ---
 
-#### NFR-C-3: Regulatory Reporting
+#### NFR-C-003: Regulatory Reporting
 
 **Requirement**: System must generate compliance reports for [specific regulations]
 
@@ -460,14 +446,14 @@
 
 ### Usability Requirements
 
-#### NFR-U-1: User Experience
+#### NFR-U-001: User Experience
 
 **Requirement**: System must be intuitive for users with [proficiency level]
 
 **UX Standards**:
 
 - Consistent with [Design System Name]
-- Accessibility: WCAG 2.1 Level AA compliance
+- Accessibility: WCAG 2.2 Level AA compliance
 - Mobile responsive design
 - Browser support: [Chrome, Firefox, Safari, Edge - last 2 versions]
 
@@ -477,9 +463,9 @@
 
 ---
 
-#### NFR-U-2: Accessibility
+#### NFR-U-002: Accessibility
 
-**Requirement**: WCAG 2.1 Level AA compliance
+**Requirement**: WCAG 2.2 Level AA compliance
 
 **Accessibility Features**:
 
@@ -496,7 +482,7 @@
 
 ---
 
-#### NFR-U-3: Localization and Internationalization
+#### NFR-U-003: Localization and Internationalization
 
 **Requirement**: Support for [list of languages and locales]
 
@@ -514,7 +500,7 @@
 
 ### Maintainability and Supportability Requirements
 
-#### NFR-M-1: Observability
+#### NFR-M-001: Observability
 
 **Requirement**: Comprehensive instrumentation for monitoring and troubleshooting
 
@@ -532,7 +518,7 @@
 
 ---
 
-#### NFR-M-2: Documentation
+#### NFR-M-002: Documentation
 
 **Requirement**: Comprehensive documentation for operators and developers
 
@@ -553,7 +539,7 @@
 
 ---
 
-#### NFR-M-3: Operational Runbooks
+#### NFR-M-003: Operational Runbooks
 
 **Requirement**: Runbooks for common operational tasks and incident response
 
@@ -572,7 +558,7 @@
 
 ### Portability and Interoperability Requirements
 
-#### NFR-I-1: API Standards
+#### NFR-I-001: API Standards
 
 **Requirement**: All APIs must follow [OpenAPI 3.0 | GraphQL] standards
 
@@ -588,7 +574,7 @@
 
 ---
 
-#### NFR-I-2: Integration Capabilities
+#### NFR-I-002: Integration Capabilities
 
 **Requirement**: System must integrate with [list of external systems]
 
@@ -606,7 +592,7 @@
 
 ---
 
-#### NFR-I-3: Data Portability
+#### NFR-I-003: Data Portability
 
 **Requirement**: Users/administrators must be able to export their data
 
@@ -624,7 +610,7 @@
 
 ### External System Integrations
 
-#### INT-1: Integration with [System Name]
+#### INT-001: Integration with [System Name]
 
 **Purpose**: [Why this integration is needed]
 
@@ -649,7 +635,7 @@
 
 ---
 
-#### INT-2: Integration with [Another System]
+#### INT-002: Integration with [Another System]
 
 [Repeat structure for each external integration]
 
@@ -1010,13 +996,30 @@ By signing below, stakeholders confirm that requirements are complete, understoo
 
 ## External References
 
-| Document | Type | Source | Key Extractions | Path |
-|----------|------|--------|-----------------|------|
+> This section provides traceability from generated content back to source documents.
+> Follow citation instructions in the project's citation reference guide.
+
+### Document Register
+
+| Doc ID | Filename | Type | Source Location | Description |
+|--------|----------|------|-----------------|-------------|
 | *None provided* | — | — | — | — |
+
+### Citations
+
+| Citation ID | Doc ID | Page/Section | Category | Quoted Passage |
+|-------------|--------|--------------|----------|----------------|
+| — | — | — | — | — |
+
+### Unreferenced Documents
+
+| Filename | Source Location | Reason |
+|----------|-----------------|--------|
+| — | — | — |
 
 ---
 
-**Generated by**: ArcKit `/arckit.requirements` command
+**Generated by**: ArcKit `/arckit:requirements` command
 **Generated on**: [DATE]
 **ArcKit Version**: [VERSION]
 **Project**: [PROJECT_NAME]
