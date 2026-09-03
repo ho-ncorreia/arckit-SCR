@@ -7,7 +7,7 @@
 ## Document Control
 
 <!-- DOC-CONTROL-HEADER -->
-<!-- Resolved at command-execution time to _partials/document-control-uk.md or _partials/document-control-uae.md based on plugin userConfig classification_scheme + governance_framework. See _partials/RENDERING.md (when present). -->
+<!-- Resolved at command-execution time per _partials/RENDERING.md. -->
 
 ## Revision History
 
@@ -30,7 +30,7 @@
 
 | Cloud Recommendations | Status |
 |----------------------|--------|
-| ANSSI cloud security recommendations (2021) | [Applicable / Not applicable] |
+| ANSSI cloud security recommendations (updated 2024) | [Applicable / Not applicable] |
 | Cloud provider trust level | [SecNumCloud / EU-qualified / Other] |
 
 ---

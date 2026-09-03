@@ -1,5 +1,6 @@
 ---
 description: "[COMMUNITY] Assess a US federal civilian system against the CISA Zero Trust Maturity Model v2.0 — scoring 5 pillars (Identity, Devices, Networks, Apps & Workloads, Data) and 3 cross-cuts (Visibility & Analytics, Automation & Orchestration, Governance) across 4 maturity stages."
+doc-type: ZTA
 argument-hint: "<project ID or system, e.g. '001', 'Agency Citizen Services Portal'>"
 effort: high
 handoffs:
@@ -59,11 +60,13 @@ NIST SP 800-207 is the foundational Zero Trust Architecture specification (logic
    - **Then**, `.arckit/templates/us-zero-trust-template.md`
    - **Fallback**, `${CLAUDE_PLUGIN_ROOT}/templates/us-zero-trust-template.md`
 
-3. Use `scripts/bash/create-project.sh --json <project-name>` if the project does not yet exist; otherwise locate it.
+3. Use `scripts/bash/create-project.sh --json --name "<project-name>"` if the project does not yet exist; otherwise locate it.
 
-4. Use `scripts/bash/generate-document-id.sh <PROJECT_ID> ZTA --filename` for the artefact filename. The type code for this command is `ZTA`.
+4. Use `node scripts/generate-document-id.mjs <PROJECT_ID> ZTA --filename` for the artefact filename. The type code for this command is `ZTA`.
 
-5. Generate the following sections:
+5. Resolve the `<!-- DOC-CONTROL-HEADER -->` marker per `RENDERING.md` before writing the artefact. `RENDERING.md` hard-routes the US regime to `_partials/document-control-us.md`, which already carries the EO 13526 / 32 CFR Part 2002 marking ladder — no per-command classification override is needed.
+
+6. Generate the following sections:
 
    - **System Scope** — system name, mission, in-scope components, current network architecture summary, and the M-22-09 target date alignment.
    - **Maturity Assessment — 5 Pillars** — for each pillar (Identity, Devices, Networks, Applications & Workloads, Data) score Current and Target maturity across the 4 stages (Traditional / Initial / Advanced / Optimal) per the ZTMM v2.0 function tables. For each function within a pillar, record: function description, current stage with evidence (1–2 sentences), target stage, gap actions.
@@ -73,9 +76,10 @@ NIST SP 800-207 is the foundational Zero Trust Architecture specification (logic
    - **OMB M-22-09 End-State Alignment** — explicit mapping of current posture to the five M-22-09 strategic goals (Identity, Devices, Networks, Applications & Workloads, Data) and the specific action items in the memo.
    - **800-53 Control Linkage** — table mapping each ZTMM function to the NIST 800-53 Rev 5 controls that evidence it (e.g. Identity / Authentication → IA-2, IA-2(1), IA-2(2), IA-5, IA-8; Networks / Network Segmentation → SC-7, SC-7(4), SC-7(5), SC-7(8); Data / Data Encryption → SC-13, SC-28, SC-28(1)).
 
-6. Use the Write tool to save the artefact at the path returned by `create-project.sh` + `generate-document-id.sh`.
+7. Before writing the file, read `${CLAUDE_PLUGIN_ROOT}/references/quality-checklist.md` and verify all **Common Checks** plus the **ZTA** per-type checks pass. Fix any failures before proceeding.
+8. Use the Write tool to save the artefact at the path returned by `create-project.sh` + `generate-document-id.mjs`.
 
-7. Emit a short summary to the user — overall maturity (e.g. "Initial across Identity and Networks; Traditional elsewhere"), top three gaps, target FY for Advanced posture, and the count of M-22-09 action items unaddressed. Do not echo the full artefact.
+9. Emit a short summary to the user — overall maturity (e.g. "Initial across Identity and Networks; Traditional elsewhere"), top three gaps, target FY for Advanced posture, and the count of M-22-09 action items unaddressed. Do not echo the full artefact.
 
 ## Handoffs
 

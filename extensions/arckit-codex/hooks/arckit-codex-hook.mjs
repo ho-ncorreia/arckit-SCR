@@ -49,10 +49,12 @@ const ALLOWED_MCP_PREFIXES = [
   "mcp__google-developer-knowledge__",
   "mcp__datacommons-mcp__",
   "mcp__govreposcrape__",
+  "mcp__uk-tenders__",
 ];
 
 const PLUGIN_SCRIPT_ALLOWLIST = new Set([
   "validate-handoff.mjs",
+  "generate-document-id.mjs",
   "bash/common.sh",
   "bash/create-project.sh",
   "bash/generate-document-id.sh",
@@ -270,7 +272,7 @@ function hookAdditionalContext(output) {
 
 function promptMatchesCommand(prompt, command) {
   const escaped = command.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return new RegExp(`(?:^|\\s)(?:\\$arckit-${escaped}|/arckit[.:]${escaped})\\b`, "i").test(prompt);
+  return new RegExp(`(?:^|\\s)(?:\\$arckit-${escaped}|\\$arckit-codex:arckit-${escaped}|/arckit[.:]${escaped})\\b`, "i").test(prompt);
 }
 
 function detectSecrets(text) {
@@ -1129,7 +1131,10 @@ function buildProvenanceBlock(data) {
   }
 
   const tableRows = rows.map(([key, value]) => `| ${key} | ${value} |`).join("\n");
-  return `${PROV_START}\n\n## Build Provenance\n\n_Stamped automatically by the ArcKit Codex PostToolUse hook. This records runtime context that should not be manually invented in generated artifacts._\n\n| Field | Value |\n|-------|-------|\n${tableRows}\n\n${PROV_END}\n`;
+  // Asterisk emphasis, not underscore — MD049 is configured to `asterisk`, and
+  // this block lands in every stamped artefact, so an underscore fails lint in
+  // each one. Mirrors the same fix in the plugin's provenance-stamp.mjs.
+  return `${PROV_START}\n\n## Build Provenance\n\n*Stamped automatically by the ArcKit Codex PostToolUse hook. This records runtime context that should not be manually invented in generated artifacts.*\n\n| Field | Value |\n|-------|-------|\n${tableRows}\n\n${PROV_END}\n`;
 }
 
 function stampProvenance(filePath, data) {

@@ -263,7 +263,7 @@ Auto-populate fields:
 - `[VERSION]` = determined version from Step 9
 - `[DATE]` = current date (YYYY-MM-DD)
 - `[STATUS]` = "DRAFT"
-- `[CLASSIFICATION]` = `${user_config.default_classification}` when set; otherwise "OFFICIAL" (UK Gov) or "PUBLIC"
+- **Classification** → comes from the resolved Document Control header, not from a placeholder. `_partials/RENDERING.md` fixes the ladder from the artefact's own regime; `${user_config.default_classification}` applies only where that regime falls through to user config.
 
 Include the generation metadata footer:
 
@@ -312,7 +312,7 @@ Return ONLY a concise summary including:
 ## Toolchain
 
 - **Templates** — `${CLAUDE_PLUGIN_ROOT}/templates/azure-research-template.md` (override at `.arckit/templates-custom/azure-research-template.md`)
-- **Helpers** — `${CLAUDE_PLUGIN_ROOT}/scripts/bash/create-project.sh` · `${CLAUDE_PLUGIN_ROOT}/scripts/bash/generate-document-id.sh`
+- **Helpers** — `${CLAUDE_PLUGIN_ROOT}/scripts/bash/create-project.sh` · `${CLAUDE_PLUGIN_ROOT}/scripts/generate-document-id.mjs`
 - **MCP server** — `microsoft-learn` (docs search, docs fetch, code sample search)
 - **External tools** — `WebSearch` · `WebFetch` (STANDALONE-mode fallback when MCP unavailable)
 - **Related commands** — `/arckit:requirements` (input) · `/arckit:research` (cross-cloud comparison) · `/arckit:aws-research` · `/arckit:gcp-research`

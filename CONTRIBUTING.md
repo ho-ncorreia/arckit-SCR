@@ -77,9 +77,17 @@ To add a new ArcKit command:
 4. **Multi-AI support**:
    - Run `python scripts/converter.py` to generate Gemini TOML and Codex Markdown from the plugin command
 
-5. **Update documentation**:
-   - Update `CHANGELOG.md`
-   - Add to `README.md` if major feature
+5. **Update documentation** — six files, not one:
+   - `CHANGELOG.md` — an entry under `## [Unreleased]`.
+   - `README.md` — a bullet in the relevant command table or overlay section. Not optional for an overlay command: those section headers carry counts (`The 21 commands below …`) that go stale the moment you add one.
+   - `docs/index.html` — the published site. Overlay commands appear both in a jurisdiction card's instrument list and in the community-overlay paragraph, each enumerating instruments by name.
+   - `docs/DEPENDENCY-MATRIX.md` — a dependency entry alongside the command's siblings, and its place in that overlay's flow block.
+   - `docs/commands.html` — a `<tr>` in the command table. A new **overlay** also needs an `<option>` in both the category and jurisdiction filters, or its `docs/index.html` jurisdiction card links to a filter that returns an empty table.
+   - `docs/llms.txt` — the llmstxt.org index for arckit.org, hand-curated (the generator in `sync-guides.mjs` only overwrites files carrying its marker, and this one deliberately does not). `scripts/check-llms-txt.py` fails CI if a command is missing or a link 404s.
+
+   All but the first two were previously documented only in `CLAUDE.md`, which contributors do not read, so PRs kept arriving without them. That was our omission, not the contributors'.
+
+6. **Watch the counts.** A new overlay command changes a stated number in **five** places: the overlay's `README.md` (`N slash commands`), its `.claude-plugin/plugin.json` description, **both** marketplace manifests, and the root `README.md` section header. Grep for the old number before pushing — nothing checks these.
 
 ### 5. Code Improvements
 
@@ -235,6 +243,49 @@ A new community command that emits a new doc type therefore requires a **two-par
 Reviewers check that the new code doesn't collide with existing codes — `scripts/check_doctype_collisions.py` catches duplicates automatically in CI.
 
 If the new code is the **first** of its regime, also register the regime in the `REGIMES` array and `REGIME_LABELS` object at the bottom of `doc-types.mjs`. Order convention: officially-maintained first, then community alphabetical.
+
+## Registering a new community overlay
+
+A new `plugins/arckit-<name>/` directory is **not** discovered automatically. Several scripts carry hardcoded plugin lists, and the two below fail **silently** — they report success while producing nothing for your overlay. This is not hypothetical: `arckit-uk-finance` shipped its four commands in **zero** non-Claude extensions from v5.3.0 through v5.6.0 because of the first one.
+
+### 1. `scripts/converter.py` — `PLUGIN_SOURCES`
+
+Add `"plugins/arckit-<name>"` to the list (core `arckit-claude` stays last). Without it the converter generates **no** files for your overlay in any of the seven non-Claude extensions, and still exits 0 with a success summary — nothing looks wrong.
+
+Two plugins are excluded deliberately and must stay out: `arckit-fde` (Claude-only tooling) and `arckit-uk-gcloud` (proprietary — must not leak into the MIT extension repos).
+
+### 2. Both marketplace manifests
+
+There are **two**, they use different source shapes, and both need an entry:
+
+| Manifest | Source shape | Consumed by |
+|---|---|---|
+| `.claude-plugin/marketplace.json` | flat — `./plugins/arckit-nl` | this repo |
+| `plugins/arckit-claude/.claude-plugin/marketplace.json` | nested — `./plugins/nl` | the published `tractorjuice/arckit-claude` marketplace |
+
+`tests/plugin/test_release_process.py` compares both against `EXPECTED_CLAUDE_MARKETPLACE_SOURCES`, so updating one manifest but not the other (or not the test) fails CI. Omitting all three passes silently.
+
+### 3. The rest of the same registration
+
+These belong to the same act and are best done together:
+
+- `scripts/sync-claude-plugin-layout.py` (`PLUGIN_LAYOUT`) and `scripts/push-extensions.sh` (`CLAUDE_PLUGIN_LAYOUT`) — both map `plugins/arckit-<name>` to its nested publish path. Missing here, the overlay never reaches the published marketplace repo.
+- `tests/extension_helpers.py`, `tests/codex/test_codex_extension.py`, `tests/paperclip/test_commands_json.py` (`PLUGIN_COMMAND_DIRS`) and `tests/plugin/test_template_consistency.py` (`PLUGIN_SOURCES`).
+- `scripts/sync-shared-assets.py` (`SYNC_EXEMPT_PLUGINS`) — every governance overlay must carry the shared `templates/_partials` and `references` assets byte-identical. Only add your plugin to the exempt set if it is tooling rather than governance.
+
+The test lists are what makes step 1 loud instead of silent: `.github/workflows/python-tests.yml` regenerates the extensions and then runs the full suite, so an overlay present in `PLUGIN_COMMAND_DIRS` but absent from `PLUGIN_SOURCES` fails CI. Adding them matters more than it looks.
+
+### Verify before opening the PR
+
+```bash
+python scripts/converter.py
+find extensions -path '*<prefix>-*' -type f | wc -l   # expect non-zero
+python scripts/sync-shared-assets.py --check
+python scripts/sync-claude-plugin-layout.py --check
+python -m pytest -q
+```
+
+See also [Adding a new doc-type code](#adding-a-new-doc-type-code-v500) above — a new overlay is almost always also a new regime.
 
 ## Adding a bundled MCP server
 

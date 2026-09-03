@@ -10,9 +10,23 @@
  * there, generated artifacts are silently omitted from the rendered
  * dashboard sidebar even though the manifest hook records them correctly.
  * See PR #317 for context — long term the two registries should be unified.
+ * scripts/check-doc-type-registry.py enforces this parity in CI, along with
+ * every code referenced by a recipe `output.type` or an `ARC-*-CODE-v`
+ * filename in a command or agent body. A code missing from THIS file but
+ * written by a command is fatal: validate-arc-filename.mjs blocks the write
+ * and the command has no conforming name to fall back to (#712).
  *
- * NOTE: scripts/bash/generate-document-id.sh has its own MULTI_INSTANCE_TYPES
- * list (bash, 10 entries). Keep it in sync manually — low drift risk.
+ * MULTI_INSTANCE_TYPES used to be duplicated in bash and is not any more.
+ * generate-document-id.sh carried its own space-separated copy, in TWO copies
+ * of the script, and the lists drifted twice: v5.9.0 added TNDR/CMPT without
+ * updating bash, so every /arckit:competitors run emitted the same colliding ID
+ * (fixed v5.9.2, PR #566), and GRNT went the same way, caught in 2026-07 while
+ * adding CDAU. A missing entry was silent -- the helper returned an ID with no
+ * -NNN- sequence and each run of a multi-instance command overwrote the last.
+ *
+ * generate-document-id.mjs (#723) imports this file instead, so the set below
+ * is the only copy and there is nothing left to keep in sync. Do not reintroduce
+ * a hardcoded list anywhere; import from here.
  *
  * Schema per entry:
  *   name:      Human-readable display name shown on the dashboard sidebar.
@@ -22,10 +36,13 @@
  *              Reveal.js exports). The /arckit:pages scanner enforces the
  *              extension — `ARC-001-DECK-v1.0.md` and `ARC-001-REQ-v1.0.html`
  *              are both rejected as type/extension mismatches.
- *   regime:    Optional jurisdiction tag — 'UK' | 'MOD' | 'EU' | 'FR' | 'AT' | 'UAE'.
+ *   regime:    Optional jurisdiction tag — one of the codes in REGIMES below
+ *              ('UK' | 'MOD' | 'AT' | 'AU' | 'CA' | 'EU' | 'FR' | 'UAE' | 'US').
  *              Drives per-regime grouping in /arckit:navigator and
- *              /arckit:graph-report. Universal best-practice types (RISK, SECD,
- *              TRAC, CONF, PRIN-COMP) deliberately omit it.
+ *              /arckit:graph-report, and selects the Document Control
+ *              classification partial via REGIME_PARTIALS. Universal
+ *              best-practice types (RISK, SECD, TRAC, CONF, PRIN-COMP)
+ *              deliberately omit it.
  *   severity:  Optional governance weight — 'HIGH' marks a type that counts
  *              toward the Compliance Readiness scorecard in /arckit:graph-report.
  *              HIGH-severity coverage is computed per-regime so a UAE-only
@@ -61,6 +78,31 @@ export const DOC_TYPES = {
   'DFD':       { name: 'Data Flow Diagram',                category: 'Architecture' },
   'ADR':       { name: 'Architecture Decision Records',    category: 'Architecture' },
   'PLAT':      { name: 'Platform Design',                  category: 'Architecture' },
+  // TOGAF ADM overlay (community)
+  'ADMP':      { name: 'ADM Preliminary / Architecture Vision', category: 'Architecture' },
+  'BPCM':      { name: 'Business Capability Map',          category: 'Architecture' },
+  'APP':       { name: 'Application Inventory',            category: 'Architecture' },
+  'APPR':      { name: 'Application Rationalisation',      category: 'Architecture' },
+  'GAPA':      { name: 'TOGAF Gap Analysis',               category: 'Governance' },
+  'TRANS':     { name: 'Transition Architecture',          category: 'Planning' },
+  'BORD':      { name: 'Architecture Board Charter',       category: 'Governance' },
+  'ACHG':      { name: 'Architecture Change Request',      category: 'Governance' },
+  'REPO':      { name: 'Architecture Repository',          category: 'Architecture' },
+  // AI Agent Architecture overlay (community)
+  'AAGI':      { name: 'Agent Inventory',                  category: 'Architecture' },
+  'AAGR':      { name: 'Agent Architecture Specification', category: 'Architecture' },
+  'AAOV':      { name: 'Agent Governance Framework',       category: 'Governance' },
+  'AAIN':      { name: 'Agent Integration Architecture',   category: 'Architecture' },
+  'AASE':      { name: 'Agent Security Architecture',      category: 'Governance', severity: 'HIGH' },
+  'AAMT':      { name: 'Agent Maturity Assessment',        category: 'Governance' },
+  // Open Agile Architecture overlay (arckit-oaa, community) — O-AA C208 agile
+  // enterprise architecture: strategy canvas, product-centric architecture,
+  // ADM Lite sprint mapping, security embedded in sprint rhythm, governance cadence.
+  'OASTR':     { name: 'Agile Strategy',                   category: 'Planning' },
+  'OAPR':      { name: 'Product Architecture',             category: 'Architecture' },
+  'OAAL':      { name: 'ADM Lite Sprint Mapping',          category: 'Architecture' },
+  'OASEC':     { name: 'Agile Security',                   category: 'Governance', severity: 'HIGH' },
+  'OAGOV':     { name: 'Agile Governance',                 category: 'Governance' },
   // Governance — universal best-practice (no regime tag, HIGH-severity)
   'RISK':      { name: 'Risk Register',                    category: 'Governance', severity: 'HIGH' },
   'TRAC':      { name: 'Traceability Matrix',              category: 'Governance', severity: 'HIGH' },
@@ -70,6 +112,9 @@ export const DOC_TYPES = {
   'DECK':      { name: 'Executive Deck',                    category: 'Reporting', extension: '.html' },
   'ANAL':      { name: 'Analysis Report',                  category: 'Governance' },
   'GAPS':      { name: 'Gap Analysis',                     category: 'Governance' },
+  'CDAU':      { name: 'Codebase Audit',                   category: 'Governance' },
+  'GLOS':      { name: 'Glossary',                         category: 'Governance' },
+  'FWRK':      { name: 'Framework Overview',               category: 'Governance' },
   // Compliance — UK Gov + MOD officially-maintained
   'TCOP':      { name: 'TCoP Assessment',                  category: 'Compliance', regime: 'UK',  severity: 'HIGH' },
   'SECD':      { name: 'Secure by Design',                 category: 'Compliance',                severity: 'HIGH' },
@@ -120,6 +165,7 @@ export const DOC_TYPES = {
   'CRA':       { name: 'EU Cyber Resilience Act Assessment',           category: 'Compliance',  regime: 'EU', severity: 'HIGH' },
   'DSA':       { name: 'EU Digital Services Act Assessment',           category: 'Compliance',  regime: 'EU' },
   'DATAACT':   { name: 'EU Data Act Compliance Assessment',            category: 'Compliance',  regime: 'EU' },
+  'EUCSF':     { name: 'EU Cloud Sovereignty Framework Assessment',    category: 'Compliance',  regime: 'EU', severity: 'HIGH' },
   // French Government (Community-contributed, maintained by @thomas-jardinet)
   'IRN':       { name: 'IRN — Indice de Résilience Numérique',         category: 'Governance',  regime: 'FR' },
   'CNIL':      { name: 'CNIL / French GDPR Assessment',                category: 'Compliance',  regime: 'FR', severity: 'HIGH' },
@@ -134,9 +180,10 @@ export const DOC_TYPES = {
   'PSSI':      { name: 'Information System Security Policy',           category: 'Compliance',  regime: 'FR', severity: 'HIGH' },
   'REUSE':     { name: 'Public Code Reuse Assessment',                 category: 'Procurement', regime: 'FR' },
   // Austrian Government (Community-contributed, maintained by @gtonic)
+  'ATBFR':     { name: 'Austrian Accessibility Assessment (BaFG / WZG)', category: 'Compliance', regime: 'AT', severity: 'HIGH' },
   'ATDSG':     { name: 'Austrian Data Protection Assessment',          category: 'Compliance',  regime: 'AT', severity: 'HIGH' },
   'ATNISG':    { name: 'Austrian NISG (NIS2) Assessment',              category: 'Compliance',  regime: 'AT', severity: 'HIGH' },
-  'BVERGG':    { name: 'Austrian Public Procurement (BVergG 2018)',    category: 'Procurement', regime: 'AT' },
+  'BVERGG':    { name: 'Austrian Public Procurement (BVergG 2018 idF VergabeRG 2026)', category: 'Procurement', regime: 'AT' },
   // UAE Federal Overlay (Community-contributed, maintained by @tractorjuice — recruiting UAE domain co-maintainer) — anchored on 23 April 2026 Cabinet decree
   'PDPL':      { name: 'UAE PDPL Compliance Assessment',               category: 'Compliance',  regime: 'UAE', severity: 'HIGH' },
   'IAS':       { name: 'UAE IAS Statement of Applicability',           category: 'Compliance',  regime: 'UAE', severity: 'HIGH' },
@@ -190,6 +237,14 @@ export const DOC_TYPES = {
   'AUPSPF':    { name: 'AU Protective Security Policy Framework Scorecard', category: 'Governance', regime: 'AU', severity: 'HIGH' },
   'AUAIA':     { name: 'AU AI Assurance Baseline (DTA AI Policy v2.0)', category: 'Compliance',  regime: 'AU', severity: 'HIGH' },
   'AUDISP':    { name: 'AU DISP Member Self-Attestation Pack',         category: 'Compliance',  regime: 'AU', severity: 'HIGH' },
+  // Netherlands Public Sector Overlay (arckit-nl) — community-contributed,
+  // EXPERIMENTAL. Outputs require review by qualified NL counsel and, for any
+  // rubricering determination, a departmental beveiligingsautoriteit or
+  // rubriceringsambtenaar before reliance.
+  'RBCLOUD':   { name: 'Rijksbreed Cloudbeleid Compliance Assessment',  category: 'Compliance',  regime: 'NL', severity: 'HIGH' },
+  'TBB':       { name: 'Te Beschermen Belangen / VIRBI 2025 Rubricering', category: 'Compliance', regime: 'NL', severity: 'HIGH' },
+  'BIO2':      { name: 'BIO2 Conformance Assessment',                   category: 'Compliance',  regime: 'NL', severity: 'HIGH' },
+  'NLEXIT':    { name: 'NL Cloud Exit Plan',                            category: 'Governance',  regime: 'NL' },
   // UK Financial Services Payments Overlay (arckit-uk-finance) — community-contributed,
   // EXPERIMENTAL. Outputs require review by qualified UK FS regulatory counsel + firm
   // MLRO / Compliance Officer before reliance.
@@ -210,7 +265,7 @@ export const DOC_TYPES = {
 // Derived: regimes in canonical order (officially-maintained first, then community alphabetical)
 // CA + AU + US added retroactively — each shipped doc-types without REGIMES registration
 // (CA since v4.15.0, AU in v5.0.0, US in v5.1.0; see #545). REGIME_LABELS ordering matches.
-export const REGIMES = ['UK', 'MOD', 'AT', 'AU', 'CA', 'EU', 'FR', 'UAE', 'US'];
+export const REGIMES = ['UK', 'MOD', 'AT', 'AU', 'CA', 'EU', 'FR', 'NL', 'UAE', 'US'];
 
 // Human-readable regime labels
 export const REGIME_LABELS = {
@@ -221,9 +276,64 @@ export const REGIME_LABELS = {
   CA:  'Canada',
   EU:  'EU',
   FR:  'France',
+  NL:  'Netherlands',
   UAE: 'UAE',
   US:  'USA Federal',
 };
+
+// Document Control classification partial per regime, resolved by the command
+// that reads a template carrying the <!-- DOC-CONTROL-HEADER --> marker.
+// See templates/_partials/RENDERING.md, which carries the same routing as a
+// self-contained table — that file, not this one, is what the model reads at
+// runtime, because community overlay plugins ship templates/_partials but no
+// config/ directory.
+//
+// Every regime names a partial, so the CI guard can require one. Regimes listed
+// in UK_FALLBACK_BY_DESIGN below name the UK partial as the *default outcome*
+// of the user-config chain rather than as a hard route — see that constant.
+export const REGIME_PARTIALS = {
+  UK:  'document-control-uk.md',
+  MOD: 'document-control-uk.md',
+  AT:  'document-control-at.md',
+  AU:  'document-control-au.md',
+  CA:  'document-control-ca.md',
+  EU:  'document-control-uk.md',
+  FR:  'document-control-fr.md',
+  NL:  'document-control-nl.md',
+  UAE: 'document-control-uae.md',
+  US:  'document-control-us.md',
+};
+
+// Regimes that deliberately resolve to `document-control-uk.md` rather than to a
+// partial of their own — and which therefore do NOT hard-route. An artefact in
+// one of these regimes falls through to the user-config chain (step 2 of
+// RENDERING.md) exactly as it did before regime routing existed, so a UAE- or
+// AT-configured entity running a UK-regime command keeps its own ladder. Hard
+// routing these would have silently changed the rendered header for 52
+// doc-types.
+//
+// Membership is a registered decision, not an oversight, and the reason differs
+// per regime:
+//   UK       — the UK partial IS the UK ladder; nothing to defer.
+//   MOD      — MOD artefacts use the UK Government ladder.
+//   EU       — EU commands assess EU instruments from a member state's
+//              perspective; EUCI governs EU-institution material, not this.
+//
+// US was the fourth member and is not one any more (#746). It sat here as a
+// deferral rather than a decision, because no ladder wording existed in this
+// repository and a wrong ladder in a Document Control header reads more
+// authoritative than a fallback does. document-control-us.md now ships, sourced
+// from the two primary instruments — EO 13526 §1.2 for the classified tiers and
+// 32 CFR 2002.20 for CUI — so all 10 federal civilian doc-types stopped
+// rendering the UK ladder. The judgement the deferral was waiting on is
+// recorded in step 7 of RENDERING.md: CUI is a control marking rather than a
+// classification level, and a FIPS 199 impact level never belongs in the field.
+//
+// scripts/tests/test-regime-registration.mjs enforces both halves: a regime in
+// this set must map to the UK partial, and a regime outside it must map to
+// `document-control-<lowercased regime>.md`. Pointing CA at the Australian
+// ladder previously passed CI.
+export const UK_FALLBACK_BY_DESIGN = new Set(['UK', 'MOD', 'EU']);
 
 // Derived: HIGH-severity type codes, grouped per regime (plus 'UNIVERSAL' for
 // types that apply regardless of jurisdiction).
@@ -247,6 +357,7 @@ export const MULTI_INSTANCE_TYPES = new Set([
   'RSCH', 'AWRS', 'AZRS', 'GCRS', 'DSCT', 'TNDR', 'CMPT',
   'WGAM', 'WCLM', 'WVCH',
   'GOVR', 'GCSR', 'GLND', 'GRNT',
+  'CDAU',
 ]);
 
 // Type code -> required subdirectory
@@ -273,6 +384,8 @@ export const SUBDIR_MAP = {
   'GCSR': 'research',
   'GLND': 'research',
   'GRNT': 'research',
+  'CDAU': 'audits',
+  'FWRK': 'framework',
 };
 
 // Derived: set of all valid type codes

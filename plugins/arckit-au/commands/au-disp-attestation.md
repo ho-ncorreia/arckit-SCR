@@ -1,5 +1,6 @@
 ---
 description: "[COMMUNITY] Generate a DISP (Defence Industry Security Program) Member self-attestation pack covering E8 ML2, ISM applicability, governance, personnel security, and incident reporting — supports DISP Levels 1, 2, 3."
+doc-type: AUDISP
 argument-hint: "<project ID or system, e.g. '001'>"
 effort: high
 handoffs:
@@ -66,11 +67,11 @@ The Defence Industry Security Program (DISP) is the security accreditation frame
    - Then: `.arckit/templates/au-disp-attestation-template.md`
    - Fallback: `${CLAUDE_PLUGIN_ROOT}/templates/au-disp-attestation-template.md`
 
-3. Use `scripts/bash/create-project.sh --json <project-name>` if needed.
+3. Use `scripts/bash/create-project.sh --json --name "<project-name>"` if needed.
 
-4. Use `scripts/bash/generate-document-id.sh <PROJECT_ID> AUDISP --filename` for the artefact filename.
+4. Use `node scripts/generate-document-id.mjs <PROJECT_ID> AUDISP --filename` for the artefact filename.
 
-5. Resolve the `<!-- DOC-CONTROL-HEADER -->` marker per `RENDERING.md`. Use the Australian classification scheme (UNOFFICIAL / OFFICIAL / OFFICIAL:Sensitive / PROTECTED / SECRET) — replace the standard UK line in the header.
+5. Resolve the `<!-- DOC-CONTROL-HEADER -->` marker per `RENDERING.md` before writing the artefact. `RENDERING.md` hard-routes the AU regime to `_partials/document-control-au.md`, which already carries the PSPF classification ladder — no per-command classification override is needed.
 
 6. Generate the following sections:
 
@@ -113,9 +114,10 @@ The Defence Industry Security Program (DISP) is the security accreditation frame
 
 7. Populate the External References section per `${CLAUDE_PLUGIN_ROOT}/references/citation-instructions.md`. The DISP Membership Pack (with edition) MUST appear in the Document Register.
 
-8. Write the artefact via the Write tool to `projects/<project-id>/<filename>`.
+8. Before writing the file, read `${CLAUDE_PLUGIN_ROOT}/references/quality-checklist.md` and verify all **Common Checks** plus the **AUDISP** per-type checks pass. Fix any failures before proceeding.
+9. Write the artefact via the Write tool to `projects/<project-id>/<filename>`.
 
-9. Show only a summary to the user (one paragraph plus the Four Security Domains coverage table).
+10. Show only a summary to the user (one paragraph plus the Four Security Domains coverage table).
 
 ## Important Notes
 

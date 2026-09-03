@@ -4,18 +4,19 @@ How to test an ArcKit plugin branch before merging.
 
 ## Quick start
 
-Create `.claude/settings.json` in any test project:
+To test an unmerged standalone `tractorjuice/arckit-claude` branch, create
+`.claude/settings.json` in any test project:
 
 ```json
 {
   "enabledPlugins": {
-    "arckit@arc-kit": true
+    "arckit@arckit-claude": true
   },
   "extraKnownMarketplaces": {
-    "arc-kit": {
+    "arckit-claude": {
       "source": {
         "source": "github",
-        "repo": "tractorjuice/arc-kit",
+        "repo": "tractorjuice/arckit-claude",
         "ref": "feat/your-branch-name"
       }
     }
@@ -29,6 +30,11 @@ Then start Claude Code in that directory:
 cd your-test-project
 claude
 ```
+
+> **Claude Code v2.1.219+ recommended:** project-scoped plugin loading from
+> git worktrees is reliable from this floor. Earlier clients can fail to pick up
+> the expected branch, which makes `/arckit:health` look like the branch test is
+> passing against the marketplace copy.
 
 ## Source fields
 
@@ -45,8 +51,25 @@ claude
 To test from a local checkout without pushing:
 
 ```bash
-claude --plugin-dir /path/to/arc-kit/arckit-claude
+claude --plugin-dir /path/to/arc-kit/plugins/arckit-claude
 ```
+
+On Claude Code v2.1.219+, `claude agents --plugin-dir
+/path/to/arc-kit/plugins/arckit-claude` also shows the plugin's agents and
+skills. Use it when you are testing agent/skill visibility before opening a PR.
+
+## Validate local source
+
+Run local validation before relying on a branch test:
+
+```bash
+claude plugin validate /path/to/arc-kit/plugins/arckit-claude
+```
+
+Claude Code v2.1.219+ handles local `source: "."` plugin metadata correctly and
+reports all validation errors instead of stopping at the first one. It also
+honours local folder and git marketplace dependency pins, which matters when an
+overlay branch depends on an unmerged ArcKit core branch.
 
 ## Verifying the correct branch loaded
 
@@ -56,18 +79,18 @@ claude --plugin-dir /path/to/arc-kit/arckit-claude
 
 ## Switching back to production
 
-Replace your test `settings.json` with the standard config (no `ref`):
+Replace your test `settings.json` with the production marketplace config:
 
 ```json
 {
   "enabledPlugins": {
-    "arckit@arc-kit": true
+    "arckit@arckit-claude": true
   },
   "extraKnownMarketplaces": {
-    "arc-kit": {
+    "arckit-claude": {
       "source": {
         "source": "github",
-        "repo": "tractorjuice/arc-kit"
+        "repo": "tractorjuice/arckit-claude"
       },
       "autoUpdate": true
     }

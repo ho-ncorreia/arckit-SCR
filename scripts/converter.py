@@ -10,6 +10,11 @@ CLAUDE_ONLY_COMMAND_FIELDS = (
     "effort",
     "keep-coding-instructions",
     "paths",
+    # `doc-type:` is ArcKit metadata read only by check-doc-type-registry.py,
+    # which asserts a recipe's output.type matches what its command declares it
+    # writes. Nothing consumes it at runtime on any platform, so it is stripped
+    # rather than carried into the generated extensions (#715).
+    "doc-type",
 )
 
 CLAUDE_ONLY_AGENT_FIELDS = (
@@ -18,6 +23,7 @@ CLAUDE_ONLY_AGENT_FIELDS = (
     "maxTurns",
     "disallowedTools",
     "tools",
+    "experimental",
 )
 
 
@@ -38,6 +44,12 @@ def rewrite_user_config_placeholders(value):
 def rewrite_copilot_command_invocations(prompt):
     """Rewrite Claude-style ArcKit slash commands to Copilot prompt names."""
     return prompt.replace("/arckit:", "/arckit-")
+
+
+# Commands that never reach a non-Claude target. `build` orchestrates parallel
+# `Agent` dispatch, which no other runtime has. Read by converter.py itself and
+# by scripts/check-orchestrator-leaks.py, so there is exactly one copy.
+CLAUDE_ONLY_COMMANDS = {"build.md"}
 
 
 def build_agent_map(agents_dir):
@@ -184,6 +196,16 @@ def vibe_skill_name(command_name):
     return f"arckit-{command_name.replace('.', '-')}"
 
 
+def kimi_skill_name(command_name):
+    """Return the Kimi Code CLI skill name for an ArcKit command name."""
+    return f"arckit-{command_name.replace('.', '-')}"
+
+
+def kimi_skill_invocation(command_name):
+    """Return the invocation string for a Kimi skill-backed command."""
+    return f"/skill:{kimi_skill_name(command_name)}"
+
+
 def titleize_arckit_name(name):
     """Return a human-readable ArcKit display name."""
     stem = name.replace("arckit-", "", 1).replace(".", "-")
@@ -232,6 +254,7 @@ CONTEXT_HOOK_REPLACEMENT = (
 PLUGIN_SOURCES = [
     "plugins/arckit-uae",
     "plugins/arckit-fr",
+    "plugins/arckit-nl",
     "plugins/arckit-ca",
     "plugins/arckit-eu",
     "plugins/arckit-at",
@@ -240,14 +263,18 @@ PLUGIN_SOURCES = [
     "plugins/arckit-us",
     "plugins/arckit-uk-finance",
     "plugins/arckit-uk-nhs",
+    "plugins/arckit-togaf-adm",
+    "plugins/arckit-oaa",
+    "plugins/arckit-agent-architecture",
     "plugins/arckit-claude",  # core last
 ]
 # Intentionally EXCLUDED from PLUGIN_SOURCES (Claude Code only, not converted):
 #   - arckit-fde            : standalone site-generator tooling plugin
+#   - arckit-repo           : standalone repository-docs tooling plugin
 #   - arckit-uk-gcloud      : PROPRIETARY overlay — must NOT be copied into the
 #                             MIT-licensed public extension repos (licence leak).
 #                             Ships as a Claude Code marketplace plugin only.
-# (Both still appear in marketplace.json; exclusion here is deliberate, not drift.)
+# (All still appear in marketplace.json; exclusion here is deliberate, not drift.)
 
 
 # --- Agent configuration: adding a new AI target = adding a dictionary entry ---
@@ -264,7 +291,7 @@ AGENT_CONFIG = {
         "copy_agents_to_extension": True,
         "project_template_overrides": True,
         "has_context_hook": False,
-        "has_sync_guides_hook": False,
+        "has_sync_guides_hook": True,
     },
     "codex_skills": {
         "name": "Codex Skills",
@@ -273,7 +300,7 @@ AGENT_CONFIG = {
         "path_prefix": ".arckit",
         "project_template_overrides": True,
         "has_context_hook": False,
-        "has_sync_guides_hook": False,
+        "has_sync_guides_hook": True,
     },
     "opencode": {
         "name": "OpenCode CLI",
@@ -337,6 +364,21 @@ AGENT_CONFIG = {
         "copy_commands_to_extension": False,
         "copy_agents_to_extension": False,
         "copy_core_skills_to_extension": False,
+        "copy_scripts_to_extension": True,
+        "copy_references_to_extension": True,
+        "copy_schemas_to_extension": True,
+        "clean_output_dir": True,
+        "has_context_hook": False,
+        "has_sync_guides_hook": False,
+    },
+    "kimi": {
+        "name": "Kimi Code CLI",
+        "output_dir": "extensions/arckit-kimi/skills",
+        "format": "kimi_skill",
+        "path_prefix": ".arckit",
+        "extension_dir": "extensions/arckit-kimi",
+        "copy_commands_to_extension": False,
+        "copy_agents_to_extension": False,
         "copy_scripts_to_extension": True,
         "copy_references_to_extension": True,
         "copy_schemas_to_extension": True,
@@ -492,7 +534,7 @@ def convert(commands_dirs, agents_dir):
     # Commands that depend on Claude Code-only features (parallel Agent dispatch,
     # plugin skills, etc.). Skipped when generating non-Claude formats because
     # they would silently fail or behave incorrectly on those platforms.
-    claude_only_commands = {"build.md"}
+    claude_only_commands = CLAUDE_ONLY_COMMANDS
 
     for config in AGENT_CONFIG.values():
         os.makedirs(config["output_dir"], exist_ok=True)
@@ -615,6 +657,8 @@ def convert(commands_dirs, agents_dir):
                 cmd_fmt = codex_skill_invocation
             elif config["format"] == "vibe_skill":
                 cmd_fmt = lambda cmd: f"/{vibe_skill_name(cmd)}"
+            elif config["format"] == "kimi_skill":
+                cmd_fmt = kimi_skill_invocation
             else:
                 cmd_fmt = "/arckit:{cmd}"
 
@@ -688,6 +732,33 @@ def convert(commands_dirs, agents_dir):
                     f.write(skill_md)
                 print(f"  {config['name'] + ':':14s}{source_label} -> {out_path}")
                 counts[agent_id] += 1
+            elif config["format"] == "kimi_skill":
+                skill_name = kimi_skill_name(base_name)
+                skill_dir = os.path.join(config["output_dir"], skill_name)
+                os.makedirs(skill_dir, exist_ok=True)
+
+                escaped_desc = description.replace('"', '\\"')
+                # Kimi Code documents SKILL.md fields as name, description, type,
+                # whenToUse, disableModelInvocation, arguments; undocumented keys
+                # are reported as skipped, not rejected. We emit only name/
+                # description here regardless — every Claude-only field (effort,
+                # keep-coding-instructions, disallowed-tools, paths, handoffs,
+                # allowed-tools, model) is dropped by construction: nothing here
+                # copies them through. Don't add undocumented fields on the
+                # assumption they'd be validated — they're simply skipped.
+                skill_md = (
+                    f"---\n"
+                    f"name: {skill_name}\n"
+                    f'description: "{escaped_desc}"\n'
+                    f"---\n\n"
+                    f"{rewritten}\n"
+                )
+                with open(
+                    os.path.join(skill_dir, "SKILL.md"), "w", encoding="utf-8"
+                ) as f:
+                    f.write(skill_md)
+                print(f"  {config['name'] + ':':14s}{source_label} -> {skill_dir}/")
+                counts[agent_id] += 1
             else:
                 content = format_output(description, rewritten, config["format"])
                 out_filename = config["filename_pattern"].format(name=base_name)
@@ -730,6 +801,9 @@ def copy_extension_files(plugin_sources):
         ("scripts/bash", "scripts/bash"),
         ("scripts/python", "scripts/python"),
         ("scripts/validate-handoff.mjs", "scripts/validate-handoff.mjs"),
+        # Imports ../config/doc-types.mjs, which the ("config", "config")
+        # entry below places at the same relative depth in every extension.
+        ("scripts/generate-document-id.mjs", "scripts/generate-document-id.mjs"),
         ("scripts/owm-to-mermaid.mjs", "scripts/owm-to-mermaid.mjs"),
         ("scripts/export-okf.mjs", "scripts/export-okf.mjs"),
         ("scripts/import-okf.mjs", "scripts/import-okf.mjs"),
@@ -784,6 +858,42 @@ def copy_extension_files(plugin_sources):
             f"  Merged templates from {len(plugin_sources)} plugin source(s) "
             f"-> {ext_templates_dir} ({merged_template_count} files)"
         )
+
+        # Merge `data/` from every plugin source into one data/ dir, the same
+        # way `templates/` is merged above. plugins/arckit-eu/data/ (arc-kit#782,
+        # the CSF calculator catalogue) is the first plugin to use this shape;
+        # this merge is generic so any future plugin's data/ ships too. Node
+        # scripts that consume a plugin's data/ (e.g. csf-score.mjs) are
+        # deliberately NOT copied here — see core_only_copies below and its
+        # comment — so non-Claude targets get the raw data for the model to
+        # read directly, but not the script.
+        ext_data_dir = os.path.join(ext_dir, "data")
+        if os.path.isdir(ext_data_dir):
+            shutil.rmtree(ext_data_dir)
+        merged_data_count = 0
+        for src_plugin in plugin_sources:
+            src_data = os.path.join(src_plugin, "data")
+            if not os.path.isdir(src_data):
+                continue
+            os.makedirs(ext_data_dir, exist_ok=True)
+            for entry in os.listdir(src_data):
+                src_path = os.path.join(src_data, entry)
+                dst_path = os.path.join(ext_data_dir, entry)
+                if os.path.isfile(src_path):
+                    shutil.copy2(src_path, dst_path)
+                    merged_data_count += 1
+                elif os.path.isdir(src_path):
+                    if os.path.isdir(dst_path):
+                        shutil.rmtree(dst_path)
+                    shutil.copytree(src_path, dst_path)
+                    merged_data_count += sum(
+                        len(files) for _, _, files in os.walk(dst_path)
+                    )
+        if merged_data_count:
+            print(
+                f"  Merged data from {len(plugin_sources)} plugin source(s) "
+                f"-> {ext_data_dir} ({merged_data_count} files)"
+            )
 
         # Core-only categories
         for src_rel, dst_rel in core_only_copies:
@@ -848,6 +958,14 @@ def strip_claude_only_skill_fields(skills_dir):
 
 def generate_codex_config_toml(mcp_json_path, agents_dir, output_path):
     """Generate config.toml for Codex extension with MCP servers and agent roles."""
+    def hook_command(event_name):
+        return (
+            "command = 'HOOK=\"${CODEX_PLUGIN_ROOT:+$CODEX_PLUGIN_ROOT/hooks/arckit-codex-hook.mjs}\"; "
+            "[ -f \"$HOOK\" ] || HOOK=\"$(git rev-parse --show-toplevel 2>/dev/null)/.codex/hooks/arckit-codex-hook.mjs\"; "
+            "[ -f \"$HOOK\" ] || HOOK=\"$(ls -td \"$HOME\"/.codex/plugins/cache/arckit/arckit-codex/*/hooks/arckit-codex-hook.mjs 2>/dev/null | head -n 1)\"; "
+            f"node \"$HOOK\" {event_name}'"
+        )
+
     lines = [
         "# ArcKit Codex Extension Configuration",
         "# Auto-generated by scripts/converter.py — do not edit directly",
@@ -857,14 +975,14 @@ def generate_codex_config_toml(mcp_json_path, agents_dir, output_path):
         "plugin_hooks = true",
         "",
         "# ── Lifecycle Hooks ─────────────────────────────────",
-        "# Resolve hook scripts from the git root so Codex can start in subdirectories.",
+        "# Resolve hook scripts from plugin root, project config, or installed plugin cache.",
         "",
         "[[hooks.SessionStart]]",
         'matcher = "startup|resume|clear"',
         "",
         "[[hooks.SessionStart.hooks]]",
         'type = "command"',
-        "command = 'node \"$(git rev-parse --show-toplevel)/.codex/hooks/arckit-codex-hook.mjs\" SessionStart'",
+        hook_command("SessionStart"),
         "timeout = 10",
         'statusMessage = "Loading ArcKit context"',
         "",
@@ -872,7 +990,7 @@ def generate_codex_config_toml(mcp_json_path, agents_dir, output_path):
         "",
         "[[hooks.UserPromptSubmit.hooks]]",
         'type = "command"',
-        "command = 'node \"$(git rev-parse --show-toplevel)/.codex/hooks/arckit-codex-hook.mjs\" UserPromptSubmit'",
+        hook_command("UserPromptSubmit"),
         "timeout = 10",
         'statusMessage = "Checking ArcKit prompt"',
         "",
@@ -881,7 +999,7 @@ def generate_codex_config_toml(mcp_json_path, agents_dir, output_path):
         "",
         "[[hooks.PreToolUse.hooks]]",
         'type = "command"',
-        "command = 'node \"$(git rev-parse --show-toplevel)/.codex/hooks/arckit-codex-hook.mjs\" PreToolUse'",
+        hook_command("PreToolUse"),
         "timeout = 10",
         'statusMessage = "Checking ArcKit file policy"',
         "",
@@ -890,7 +1008,7 @@ def generate_codex_config_toml(mcp_json_path, agents_dir, output_path):
         "",
         "[[hooks.PostToolUse.hooks]]",
         'type = "command"',
-        "command = 'node \"$(git rev-parse --show-toplevel)/.codex/hooks/arckit-codex-hook.mjs\" PostToolUse'",
+        hook_command("PostToolUse"),
         "timeout = 10",
         'statusMessage = "Updating ArcKit metadata"',
         "",
@@ -899,7 +1017,7 @@ def generate_codex_config_toml(mcp_json_path, agents_dir, output_path):
         "",
         "[[hooks.PermissionRequest.hooks]]",
         'type = "command"',
-        "command = 'node \"$(git rev-parse --show-toplevel)/.codex/hooks/arckit-codex-hook.mjs\" PermissionRequest'",
+        hook_command("PermissionRequest"),
         "timeout = 10",
         'statusMessage = "Checking ArcKit MCP policy"',
         "",
@@ -907,7 +1025,7 @@ def generate_codex_config_toml(mcp_json_path, agents_dir, output_path):
         "",
         "[[hooks.Stop.hooks]]",
         'type = "command"',
-        "command = 'node \"$(git rev-parse --show-toplevel)/.codex/hooks/arckit-codex-hook.mjs\" Stop'",
+        hook_command("Stop"),
         "timeout = 10",
         'statusMessage = "Recording ArcKit session"',
         "",
@@ -1007,6 +1125,145 @@ def generate_codex_mcp_json(mcp_json_path, output_path):
         json.dump({"mcpServers": codex_servers}, f, indent=2)
         f.write("\n")
     print(f"  Generated: {output_path}")
+
+
+def generate_kimi_hooks():
+    """Build the Kimi plugin-manifest ``hooks`` array.
+
+    Kimi hook entries are flat objects: ``{event, matcher, command, timeout}``.
+    Every entry routes through ``hooks/kimi-hook-adapter.mjs``, which runs the
+    unmodified Claude hook as a child and translates its Claude-shaped output
+    into Kimi's stdout/exit-code contract. The optional third adapter argument
+    is a path substring that replaces Claude's ``if:`` condition, which Kimi's
+    flat schema has no equivalent for.
+
+    Deliberately excluded: version-check / v5-migration-banner (Claude Code
+    version specific), graph-inject and sync-guides (they match Claude
+    ``/arckit:`` slash commands that do not exist in Kimi), allow-plugin-internals
+    / allow-mcp-tools / inject-agent-context (auto-allow and Agent-tool hooks
+    with no effect under Kimi), and external-context-watch (FileChanged has no
+    Kimi event).
+
+    NOTE: not yet smoke-tested against a live Kimi runtime — see the Kimi
+    extension memory. The adapter's translation logic is unit-tested in
+    isolation (tests/plugin/test_kimi_hook_adapter.mjs).
+    """
+    def command(target, guard=None):
+        base = f"node ./hooks/kimi-hook-adapter.mjs {target}"
+        return f"{base} {guard}" if guard else base
+
+    # event, matcher (""=all), target hook, timeout (s), path guard
+    specs = [
+        ("SessionStart", "", "arckit-session.mjs", 5, None),
+        ("SessionStart", "", "notify-stale-artifacts.mjs", 8, None),
+        ("UserPromptSubmit", "", "arckit-context.mjs", 10, None),
+        ("UserPromptSubmit", "", "secret-detection.mjs", 5, None),
+        ("PreToolUse", "Edit|Write", "file-protection.mjs", 5, None),
+        ("PreToolUse", "Edit|Write", "secret-file-scanner.mjs", 5, None),
+        ("PreToolUse", "Write", "validate-arc-filename.mjs", 5, "/projects/"),
+        ("PreToolUse", "Write", "score-validator.mjs", 5, "/vendors/scores.json"),
+        ("PreToolUse", "Write", "validate-wardley-math.mjs", 5, "/wardley-maps/"),
+        ("PostToolUse", "Write|Edit", "provenance-stamp.mjs", 5, "/projects/"),
+        ("PostToolUse", "Write|Edit", "tidy-wardley-labels.mjs", 10, "/wardley-maps/"),
+        ("PostToolUse", "Write", "update-manifest.mjs", 5, "/projects/"),
+        ("PostToolUse", ".*", "telemetry.mjs", 3, None),
+        ("Stop", "", "session-learner.mjs", 10, None),
+        ("StopFailure", "", "session-learner.mjs", 10, None),
+        ("PostCompact", "", "postcompact-rehydrate.mjs", 5, None),
+    ]
+
+    hooks = []
+    for event, matcher, target, timeout, guard in specs:
+        entry = {"event": event}
+        if matcher:
+            entry["matcher"] = matcher
+        entry["command"] = command(target, guard)
+        entry["timeout"] = timeout
+        hooks.append(entry)
+    return hooks
+
+
+def generate_kimi_plugin_json(mcp_json_path, version, output_path):
+    """Generate the Kimi Code CLI plugin manifest.
+
+    Remote MCP servers map to ``url`` (plus ``headers`` when present); stdio
+    servers map to ``command``/``args``/``env``. Claude's ``type`` discriminator
+    has no Kimi equivalent and is dropped; the shape is inferred from whether
+    ``url`` or ``command`` is present.
+
+    CAVEAT: Kimi's published mcpServers schema documents only ``url`` for remote
+    servers — ``headers`` is NOT documented and is unverified against the Kimi
+    runtime. The two keyed servers (google-developer-knowledge, datacommons-mcp)
+    rely on ``headers`` to send their API key, so those two may fail to
+    authenticate under Kimi until this is confirmed on a live instance.
+    """
+    servers = {}
+    if os.path.isfile(mcp_json_path):
+        with open(mcp_json_path, "r", encoding="utf-8") as f:
+            mcp_config = json.load(f)
+        for name, entry in mcp_config.get("mcpServers", {}).items():
+            mapped = {}
+            if entry.get("url"):
+                mapped["url"] = entry["url"]
+                if entry.get("headers"):
+                    mapped["headers"] = entry["headers"]
+            elif entry.get("command"):
+                mapped["command"] = entry["command"]
+                if entry.get("args"):
+                    mapped["args"] = entry["args"]
+                if entry.get("env"):
+                    mapped["env"] = entry["env"]
+            else:
+                continue
+            servers[name] = mapped
+
+    manifest = {
+        "name": "arckit",
+        "version": version,
+        "description": (
+            "The Enterprise Architecture Governance Harness: strategy, "
+            "architecture, delivery and assurance artefacts."
+        ),
+        "author": "ArcKit",
+        "homepage": "https://github.com/tractorjuice/arckit-kimi",
+        "repository": "https://github.com/tractorjuice/arckit-kimi",
+        "license": "MIT",
+        "keywords": [
+            "enterprise-architecture",
+            "governance",
+            "procurement",
+            "public-sector",
+            "kimi",
+        ],
+        "skills": "./skills/",
+        "sessionStart": {"skill": "architecture-workflow"},
+        "mcpServers": servers,
+        "hooks": generate_kimi_hooks(),
+        "interface": {
+            "displayName": "ArcKit",
+            "shortDescription": (
+                "Strategy, architecture, delivery and assurance artefacts"
+            ),
+            "longDescription": (
+                "Use ArcKit to create, review, and connect architecture, "
+                "procurement, governance, compliance, research, and delivery "
+                "artefacts in Kimi Code CLI."
+            ),
+            "developerName": "ArcKit",
+            "websiteURL": "https://github.com/tractorjuice/arc-kit",
+        },
+    }
+
+    # user_config placeholders are Claude-only; non-Claude targets fall back
+    # to plain environment variables.
+    rendered = rewrite_user_config_placeholders(
+        json.dumps(manifest, indent=2, ensure_ascii=False)
+    )
+
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(rendered + "\n")
+    print(f"  Generated: {output_path} ({len(servers)} MCP servers)")
 
 
 def generate_codex_plugin_manifest(output_dir):
@@ -1159,6 +1416,12 @@ def generate_vibe_agent_toml_files(agents_dir, output_dir, version, path_prefix=
             continue
 
         agent_path = os.path.join(agents_dir, filename)
+        # Reader/writer subagents are Claude-only — Vibe has no subagent
+        # dispatch primitive, so registering them would surface 19 agents
+        # whose own descriptions say "Not user-invocable" (#447).
+        if is_subagent_file(agent_path):
+            continue
+
         with open(agent_path, "r", encoding="utf-8") as f:
             content = f.read()
 
@@ -1283,8 +1546,8 @@ def generate_vibe_config_toml(output_path, version, agent_files):
     print(f"  Generated: {output_path}")
 
 
-def copy_vibe_reference_skills(src_skills_dir, dest_skills_dir):
-    """Copy non-command reference skills into the Vibe extension."""
+def copy_reference_skills(src_skills_dir, dest_skills_dir):
+    """Copy non-command reference skills into a non-Claude extension."""
     if not os.path.isdir(src_skills_dir):
         return
 
@@ -1300,7 +1563,267 @@ def copy_vibe_reference_skills(src_skills_dir, dest_skills_dir):
         shutil.copytree(src, dst)
         count += 1
 
-    print(f"  Copied {count} Vibe reference skill dirs to {dest_skills_dir}")
+    strip_claude_only_skill_fields(dest_skills_dir)
+    dest_label = os.path.basename(os.path.dirname(dest_skills_dir.rstrip("/")))
+    dest_label = dest_label.removeprefix("arckit-").capitalize() or "extension"
+    print(f"  Copied {count} {dest_label} reference skill dirs to {dest_skills_dir}")
+
+
+def _rewrite_skill_content(
+    content,
+    *,
+    skill_dir_name,
+    invocation_fn,
+    platform_label,
+    plugin_root_prefix,
+):
+    """Rewrite Claude Code-specific references in one skill body.
+
+    Pure and platform-parameterised so Codex and Kimi share one implementation.
+    `invocation_fn` maps a bare command name to that platform's invocation
+    string (for example `codex_skill_invocation` or `kimi_skill_invocation`).
+    """
+
+    def normalize_invocation(match):
+        return invocation_fn(match.group(1))
+
+    sample_invocation = invocation_fn("x")
+    inv_prefix = sample_invocation[: -len("x")]  # "$arckit-" or "/skill:arckit-"
+
+    # Rewrite a small number of Claude Code-only workflow notes that
+    # otherwise leak into generated skills. Do this before the generic
+    # command invocation rewrite so filesystem paths such as
+    # `.claude/commands/arckit.foo.md` are converted as paths, not
+    # accidentally rewritten into malformed invocation snippets.
+    if skill_dir_name == "arckit-template-builder":
+        community_name_invocation = invocation_fn("community.{name}")
+        community_security_invocation = invocation_fn("community.security-assessment")
+        content = content.replace("Slash Command", f"{platform_label} Skill")
+        content = content.replace("slash command", f"{platform_label} skill")
+        content = content.replace(
+            "Ask these questions BEFORE reading any templates. Call the **AskUserQuestion** tool exactly once with all 4 questions below in a single call. Do NOT proceed until the user has answered.",
+            "Ask these questions BEFORE reading any templates. Present all 4 questions together, then wait for the user's answers before continuing.",
+        )
+        content = content.replace(
+            "Use the Read tool only — do NOT use Bash, Glob, or Agent to search for templates.",
+            "Read these files directly. Do not search broadly or delegate this step.",
+        )
+        content = content.replace(" using the Write tool", "")
+        content = content.replace(" using the Write tool.", ".")
+        content = content.replace(
+            "The Write tool MUST be used for all file creation (avoids token limit issues)",
+            "Write generated artifacts to files instead of printing full content in the response",
+        )
+        content = content.replace("command file", "skill file")
+        content = content.replace("Command Structure", "Skill Structure")
+        content = content.replace(
+            f"Generate a matching `{community_name_invocation}` skill file",
+            f"Generate a matching `{community_name_invocation}` skill",
+        )
+        content = content.replace(
+            f'If "{platform_label} Skill" is selected, generate a skill file in Step 6.',
+            f'If "{platform_label} Skill" is selected, generate a skill in Step 6.',
+        )
+        content = content.replace(
+            "description: {Brief description of what this command generates}\nargument-hint: \"<project ID or name>\"",
+            "name: arckit-community-{name}\ndescription: \"{Brief description of what this skill generates}\"",
+        )
+        content = content.replace(
+            ".claude/commands/arckit.community.{name}.md",
+            ".agents/skills/arckit-community-{name}/SKILL.md",
+        )
+        content = content.replace(
+            ".claude/commands/arckit.community.security-assessment.md",
+            ".agents/skills/arckit-community-security-assessment/SKILL.md",
+        )
+        content = content.replace(".claude/commands/", ".agents/skills/")
+        content = content.replace(".claude/commands", ".agents/skills")
+        content = content.replace(
+            "arckit.community.{name}.md",
+            "arckit-community-{name}/SKILL.md",
+        )
+        content = content.replace(
+            "arckit.community.security-assessment.md",
+            "arckit-community-security-assessment/SKILL.md",
+        )
+        content = content.replace(
+            "/arckit:community.{name}",
+            community_name_invocation,
+        )
+        content = content.replace(
+            "/arckit:community.security-assessment",
+            community_security_invocation,
+        )
+        content = content.replace(
+            "arckit.community.{name}",
+            community_name_invocation,
+        )
+        content = content.replace(
+            "arckit.community.security-assessment",
+            community_security_invocation,
+        )
+        content = content.replace(
+            f"This location is auto-discovered by Claude Code as a project-level {platform_label} skill",
+            f"This location is auto-discovered by {platform_label} as a project-level skill",
+        )
+
+    # The command-name capture must END in a word char so a sentence-final
+    # full stop (or other trailing punctuation) is left as a literal rather
+    # than swallowed into the name — otherwise `/arckit:stakeholders.` renders
+    # as `$arckit-stakeholders-` (the `.` is captured then mapped `.`->`-`).
+    # Internal dots/hyphens (wardley.climate, security-assessment) are kept.
+    _cmd_name = r"(\w(?:[\w.-]*\w)?)"
+
+    # Rewrite /arckit:X -> platform invocation (colon-prefixed plugin format)
+    content = re.sub(
+        r"(?<![\w/])/arckit:" + _cmd_name,
+        normalize_invocation,
+        content,
+    )
+
+    # Rewrite /arckit.X -> platform invocation (dot-prefixed format)
+    content = re.sub(
+        r"(?<![\w/])/arckit\." + _cmd_name,
+        normalize_invocation,
+        content,
+    )
+
+    # Rewrite /prompts:arckit.X -> platform invocation (old Codex prompt format)
+    content = re.sub(
+        r"/prompts:arckit\." + _cmd_name,
+        normalize_invocation,
+        content,
+    )
+
+    # Normalize any already-rewritten skill invocations that still
+    # contain command-name dots, such as $arckit-wardley.climate.
+    # The capture must end in an alphanumeric so a trailing full stop is not
+    # re-consumed (otherwise it undoes the trailing-punctuation fix above).
+    content = re.sub(
+        re.escape(inv_prefix) + r"([A-Za-z0-9][A-Za-z0-9.-]*\.[A-Za-z0-9.-]*[A-Za-z0-9])",
+        normalize_invocation,
+        content,
+    )
+    content = re.sub(r"(?<![\w/])/arckit:\*", f"{inv_prefix}*", content)
+    content = re.sub(r"(?<![\w/])/arckit:", inv_prefix, content)
+    content = re.sub(r"(?<![\w/])/arckit\.", inv_prefix, content)
+    content = content.replace(f"`/{inv_prefix}", f"`{inv_prefix}")
+    content = content.replace(f"(/{inv_prefix}", f"({inv_prefix}")
+    content = content.replace(f"Run `/{inv_prefix}", f"Run `{inv_prefix}")
+
+    # Generated skills should ask the user directly instead of naming
+    # Claude Code's AskUserQuestion UI tool.
+    content = re.sub(
+        r"use the \*\*AskUserQuestion\*\* tool to gather",
+        "ask the user for",
+        content,
+        flags=re.IGNORECASE,
+    )
+    content = re.sub(
+        r"use the \*\*AskUserQuestion\*\* tool to ask",
+        "ask the user",
+        content,
+        flags=re.IGNORECASE,
+    )
+    content = re.sub(
+        r"use the AskUserQuestion tool to interactively gather",
+        "ask the user for",
+        content,
+        flags=re.IGNORECASE,
+    )
+    content = re.sub(
+        r"use the AskUserQuestion tool to gather",
+        "ask the user for",
+        content,
+        flags=re.IGNORECASE,
+    )
+    content = re.sub(
+        r"use AskUserQuestion to ask",
+        "ask the user",
+        content,
+        flags=re.IGNORECASE,
+    )
+    content = re.sub(
+        r"use AskUserQuestion to confirm",
+        "ask the user to confirm",
+        content,
+        flags=re.IGNORECASE,
+    )
+    content = re.sub(
+        r"use AskUserQuestion to clarify with the user",
+        "ask the user to clarify",
+        content,
+        flags=re.IGNORECASE,
+    )
+    content = content.replace("using AskUserQuestion", "by asking the user")
+    content = content.replace(
+        "AskUserQuestion with multiple-choice options",
+        "multiple-choice options",
+    )
+    content = content.replace("single AskUserQuestion call", "single message")
+    content = content.replace("AskUserQuestion", "direct user question")
+
+    if skill_dir_name == "arckit-template-builder":
+        content = content.replace(
+            "For official promotion: rename command (drop `community.` prefix), change banner to `Template Origin: Official`, and open a PR.",
+            "For official promotion: rename the generated skill if needed, change banner to `Template Origin: Official`, and open a PR.",
+        )
+        content = content.replace(
+            "Rename skill file: drop `community.` prefix",
+            "Rename or relocate the community skill if promoting it to an official ArcKit command",
+        )
+        content = content.replace(
+            "Rename command file: drop `community.` prefix",
+            "Rename or relocate the community skill if promoting it to an official ArcKit command",
+        )
+        content = content.replace(
+            "Copy of the command (if generated)",
+            "Copy of the skill (if generated)",
+        )
+        content = content.replace(
+            "Copy the command (if generated)",
+            "Copy of the skill (if generated)",
+        )
+        content = content.replace(
+            "Community commands use the `community.` prefix",
+            "Community skills use the `arckit-community-` prefix",
+        )
+
+    content = content.replace(
+        "Claude Code's 32K token output limit",
+        f"{platform_label} output limits",
+    )
+    content = content.replace(
+        "The Stop hook (`validate-wardley-math.mjs`) checks both blocks for consistency.",
+        "Manually check that the OWM source and Mermaid output stay consistent after conversion.",
+    )
+    content = content.replace(
+        "### Example 5: Continuous Monitoring with `/loop`",
+        "### Example 5: Repeat Monitoring",
+    )
+    health_invocation = invocation_fn("health")
+    content = content.replace(
+        f"```bash\n/loop 30m {health_invocation} SEVERITY=HIGH\n```",
+        f"```text\n{health_invocation} SEVERITY=HIGH\n```",
+    )
+    content = content.replace(
+        "Runs the health check every 30 minutes during your session, surfacing HIGH severity findings as they appear. Useful during long architecture sessions where multiple artifacts are being created or updated. Requires Claude Code v2.1.97+.",
+        "Re-run this health check periodically during long architecture sessions to "
+        "surface HIGH severity findings as artifacts change. "
+        f"{platform_label} does not provide a built-in loop command; "
+        "use a scheduler if you need automation.",
+    )
+
+    # Remove SessionStart hook reference
+    content = content.replace(
+        "- Use ArcKit Project Context from the SessionStart hook if available\n",
+        "",
+    )
+
+    # Rewrite plugin root paths
+    content = content.replace("${CLAUDE_PLUGIN_ROOT}", plugin_root_prefix)
+
+    return content
 
 
 def rewrite_codex_skills(skills_dir):
@@ -1315,9 +1838,6 @@ def rewrite_codex_skills(skills_dir):
     if not os.path.isdir(skills_dir):
         return
 
-    def normalize_codex_invocation(match):
-        return codex_skill_invocation(match.group(1))
-
     count = 0
     for root, dirs, files in os.walk(skills_dir):
         for filename in files:
@@ -1328,224 +1848,13 @@ def rewrite_codex_skills(skills_dir):
                 content = f.read()
 
             original = content
-
-            # Rewrite a small number of Claude Code-only workflow notes that
-            # otherwise leak into generated Codex skills. Do this before the
-            # generic command invocation rewrite so filesystem paths such as
-            # `.claude/commands/arckit.foo.md` are converted as paths, not
-            # accidentally rewritten into malformed `$arckit-foo` snippets.
-            if os.path.basename(root) == "arckit-template-builder":
-                content = content.replace("Slash Command", "Codex Skill")
-                content = content.replace("slash command", "Codex skill")
-                content = content.replace(
-                    "Ask these questions BEFORE reading any templates. Call the **AskUserQuestion** tool exactly once with all 4 questions below in a single call. Do NOT proceed until the user has answered.",
-                    "Ask these questions BEFORE reading any templates. Present all 4 questions together, then wait for the user's answers before continuing.",
-                )
-                content = content.replace(
-                    "Use the Read tool only — do NOT use Bash, Glob, or Agent to search for templates.",
-                    "Read these files directly. Do not search broadly or delegate this step.",
-                )
-                content = content.replace(" using the Write tool", "")
-                content = content.replace(" using the Write tool.", ".")
-                content = content.replace(
-                    "The Write tool MUST be used for all file creation (avoids token limit issues)",
-                    "Write generated artifacts to files instead of printing full content in the response",
-                )
-                content = content.replace("command file", "skill file")
-                content = content.replace("Command Structure", "Skill Structure")
-                content = content.replace(
-                    "Generate a matching `$arckit-community-{name}` skill file",
-                    "Generate a matching `$arckit-community-{name}` skill",
-                )
-                content = content.replace(
-                    "If \"Codex Skill\" is selected, generate a skill file in Step 6.",
-                    "If \"Codex Skill\" is selected, generate a skill in Step 6.",
-                )
-                content = content.replace(
-                    "description: {Brief description of what this command generates}\nargument-hint: \"<project ID or name>\"",
-                    "name: arckit-community-{name}\ndescription: \"{Brief description of what this skill generates}\"",
-                )
-                content = content.replace(
-                    ".claude/commands/arckit.community.{name}.md",
-                    ".agents/skills/arckit-community-{name}/SKILL.md",
-                )
-                content = content.replace(
-                    ".claude/commands/arckit.community.security-assessment.md",
-                    ".agents/skills/arckit-community-security-assessment/SKILL.md",
-                )
-                content = content.replace(".claude/commands/", ".agents/skills/")
-                content = content.replace(".claude/commands", ".agents/skills")
-                content = content.replace(
-                    "arckit.community.{name}.md",
-                    "arckit-community-{name}/SKILL.md",
-                )
-                content = content.replace(
-                    "arckit.community.security-assessment.md",
-                    "arckit-community-security-assessment/SKILL.md",
-                )
-                content = content.replace(
-                    "/arckit:community.{name}",
-                    "$arckit-community-{name}",
-                )
-                content = content.replace(
-                    "/arckit:community.security-assessment",
-                    "$arckit-community-security-assessment",
-                )
-                content = content.replace(
-                    "arckit.community.{name}",
-                    "$arckit-community-{name}",
-                )
-                content = content.replace(
-                    "arckit.community.security-assessment",
-                    "$arckit-community-security-assessment",
-                )
-                content = content.replace(
-                    "This location is auto-discovered by Claude Code as a project-level Codex skill",
-                    "This location is auto-discovered by Codex as a project-level skill",
-                )
-
-            # Rewrite /arckit:X -> $arckit-X (colon-prefixed plugin format)
-            content = re.sub(
-                r"(?<![\w/])/arckit:(\w[\w.-]*)",
-                normalize_codex_invocation,
+            content = _rewrite_skill_content(
                 content,
+                skill_dir_name=os.path.basename(root),
+                invocation_fn=codex_skill_invocation,
+                platform_label="Codex",
+                plugin_root_prefix=".arckit",
             )
-
-            # Rewrite /arckit.X -> $arckit-X (dot-prefixed format)
-            content = re.sub(
-                r"(?<![\w/])/arckit\.(\w[\w.-]*)",
-                normalize_codex_invocation,
-                content,
-            )
-
-            # Rewrite /prompts:arckit.X -> $arckit-X (old Codex prompt format)
-            content = re.sub(
-                r"/prompts:arckit\.(\w[\w.-]*)",
-                normalize_codex_invocation,
-                content,
-            )
-
-            # Normalize any already-rewritten skill invocations that still
-            # contain command-name dots, such as $arckit-wardley.climate.
-            content = re.sub(
-                r"\$arckit-([A-Za-z0-9][A-Za-z0-9.-]*\.[A-Za-z0-9.-]*)",
-                normalize_codex_invocation,
-                content,
-            )
-            content = re.sub(r"(?<![\w/])/arckit:\*", "$arckit-*", content)
-            content = re.sub(r"(?<![\w/])/arckit:", "$arckit-", content)
-            content = re.sub(r"(?<![\w/])/arckit\.", "$arckit-", content)
-            content = content.replace("`/$arckit-", "`$arckit-")
-            content = content.replace("(/$arckit-", "($arckit-")
-            content = content.replace("Run `/$arckit-", "Run `$arckit-")
-
-            # Codex skills should ask the user directly instead of naming
-            # Claude Code's AskUserQuestion UI tool.
-            content = re.sub(
-                r"use the \*\*AskUserQuestion\*\* tool to gather",
-                "ask the user for",
-                content,
-                flags=re.IGNORECASE,
-            )
-            content = re.sub(
-                r"use the \*\*AskUserQuestion\*\* tool to ask",
-                "ask the user",
-                content,
-                flags=re.IGNORECASE,
-            )
-            content = re.sub(
-                r"use the AskUserQuestion tool to interactively gather",
-                "ask the user for",
-                content,
-                flags=re.IGNORECASE,
-            )
-            content = re.sub(
-                r"use the AskUserQuestion tool to gather",
-                "ask the user for",
-                content,
-                flags=re.IGNORECASE,
-            )
-            content = re.sub(
-                r"use AskUserQuestion to ask",
-                "ask the user",
-                content,
-                flags=re.IGNORECASE,
-            )
-            content = re.sub(
-                r"use AskUserQuestion to confirm",
-                "ask the user to confirm",
-                content,
-                flags=re.IGNORECASE,
-            )
-            content = re.sub(
-                r"use AskUserQuestion to clarify with the user",
-                "ask the user to clarify",
-                content,
-                flags=re.IGNORECASE,
-            )
-            content = content.replace("using AskUserQuestion", "by asking the user")
-            content = content.replace(
-                "AskUserQuestion with multiple-choice options",
-                "multiple-choice options",
-            )
-            content = content.replace("single AskUserQuestion call", "single message")
-            content = content.replace("AskUserQuestion", "direct user question")
-
-            if os.path.basename(root) == "arckit-template-builder":
-                content = content.replace(
-                    "For official promotion: rename command (drop `community.` prefix), change banner to `Template Origin: Official`, and open a PR.",
-                    "For official promotion: rename the generated skill if needed, change banner to `Template Origin: Official`, and open a PR.",
-                )
-                content = content.replace(
-                    "Rename skill file: drop `community.` prefix",
-                    "Rename or relocate the community skill if promoting it to an official ArcKit command",
-                )
-                content = content.replace(
-                    "Rename command file: drop `community.` prefix",
-                    "Rename or relocate the community skill if promoting it to an official ArcKit command",
-                )
-                content = content.replace(
-                    "Copy of the command (if generated)",
-                    "Copy of the skill (if generated)",
-                )
-                content = content.replace(
-                    "Copy the command (if generated)",
-                    "Copy of the skill (if generated)",
-                )
-                content = content.replace(
-                    "Community commands use the `community.` prefix",
-                    "Community skills use the `arckit-community-` prefix",
-                )
-
-            content = content.replace(
-                "Claude Code's 32K token output limit",
-                "Codex output limits",
-            )
-            content = content.replace(
-                "The Stop hook (`validate-wardley-math.mjs`) checks both blocks for consistency.",
-                "Manually check that the OWM source and Mermaid output stay consistent after conversion.",
-            )
-            content = content.replace(
-                "### Example 5: Continuous Monitoring with `/loop`",
-                "### Example 5: Repeat Monitoring",
-            )
-            content = content.replace(
-                "```bash\n/loop 30m $arckit-health SEVERITY=HIGH\n```",
-                "```text\n$arckit-health SEVERITY=HIGH\n```",
-            )
-            content = content.replace(
-                "Runs the health check every 30 minutes during your session, surfacing HIGH severity findings as they appear. Useful during long architecture sessions where multiple artifacts are being created or updated. Requires Claude Code v2.1.97+.",
-                "Re-run this health check periodically during long architecture sessions to surface HIGH severity findings as artifacts change. Codex does not provide a built-in loop command; use a scheduler if you need automation.",
-            )
-
-            # Remove SessionStart hook reference
-            content = content.replace(
-                "- Use ArcKit Project Context from the SessionStart hook if available\n",
-                "",
-            )
-
-            # Rewrite plugin root paths
-            content = content.replace("${CLAUDE_PLUGIN_ROOT}", ".arckit")
 
             if content != original:
                 with open(filepath, "w", encoding="utf-8") as f:
@@ -1556,6 +1865,43 @@ def rewrite_codex_skills(skills_dir):
 
     if count:
         print(f"  Rewrote {count} skill files for Codex skill invocation format")
+
+
+def rewrite_kimi_skills(skills_dir):
+    """Rewrite Claude Code-specific references for the Kimi extension.
+
+    Shares its implementation with the Codex rewriter via
+    _rewrite_skill_content; only the invocation format, platform label and
+    plugin-root prefix differ.
+    """
+    if not os.path.isdir(skills_dir):
+        return
+
+    count = 0
+    for root, _dirs, files in os.walk(skills_dir):
+        for filename in files:
+            if not filename.endswith(".md"):
+                continue
+            filepath = os.path.join(root, filename)
+            with open(filepath, "r", encoding="utf-8") as f:
+                content = f.read()
+
+            original = content
+            content = _rewrite_skill_content(
+                content,
+                skill_dir_name=os.path.basename(root),
+                invocation_fn=kimi_skill_invocation,
+                platform_label="Kimi",
+                plugin_root_prefix=".arckit",
+            )
+
+            if content != original:
+                with open(filepath, "w", encoding="utf-8") as f:
+                    f.write(content)
+                count += 1
+
+    if count:
+        print(f"  Rewrote {count} skill files for Kimi skill invocation format")
 
 
 def generate_gemini_agents(agents_dir, output_dir):
@@ -1801,7 +2147,7 @@ are in `.github/prompts/arckit-*.prompt.md` (type `/` in Copilot Chat).
 
 - All architecture artifacts go in `projects/` directories (e.g., `projects/001-project-name/`)
 - Use `bash .arckit/scripts/bash/create-project.sh --json` to create numbered project dirs
-- Use `bash .arckit/scripts/bash/generate-document-id.sh` for document IDs (e.g., ARC-001-REQ-v1.0)
+- Use `node .arckit/scripts/generate-document-id.mjs` for document IDs (e.g., ARC-001-REQ-v1.0)
 - Templates are in `.arckit/templates/` (custom overrides in `.arckit/templates-custom/`)
 - Always write large documents to files (avoid output token limits)
 - Show only a summary to the user after generating artifacts
@@ -1964,7 +2310,7 @@ if __name__ == "__main__":
 
     print()
     print("Generating Mistral Vibe extension config...")
-    copy_vibe_reference_skills(
+    copy_reference_skills(
         os.path.join(plugin_dir, "skills"),
         "extensions/arckit-vibe/skills",
     )
@@ -1983,6 +2329,46 @@ if __name__ == "__main__":
         vibe_version,
         vibe_agent_files,
     )
+
+    print()
+    print("Generating Kimi Code CLI extension config...")
+    kimi_version = "0.0.0"
+    kimi_version_path = "extensions/arckit-kimi/VERSION"
+    if os.path.isfile(kimi_version_path):
+        with open(kimi_version_path, "r", encoding="utf-8") as f:
+            kimi_version = f.read().strip() or kimi_version
+    generate_kimi_plugin_json(
+        os.path.join(plugin_dir, ".mcp.json"),
+        kimi_version,
+        "extensions/arckit-kimi/kimi.plugin.json",
+    )
+    # Copy every hook script plus the Kimi adapter so the wired hooks — and
+    # their hook-to-hook imports (hook-utils, project-context-builder,
+    # session-nudge, wardley-tidy, okf-frontmatter, ...) — resolve inside the
+    # extension. config/doc-types.mjs is already copied via the config dir.
+    kimi_hooks_dst = "extensions/arckit-kimi/hooks"
+    os.makedirs(kimi_hooks_dst, exist_ok=True)
+    kimi_hooks_src = os.path.join(plugin_dir, "hooks")
+    kimi_hook_count = 0
+    for hook_file in sorted(os.listdir(kimi_hooks_src)):
+        if hook_file.endswith(".mjs"):
+            shutil.copy2(
+                os.path.join(kimi_hooks_src, hook_file),
+                os.path.join(kimi_hooks_dst, hook_file),
+            )
+            kimi_hook_count += 1
+    print(
+        f"  Copied {kimi_hook_count} hook scripts "
+        f"(incl. kimi-hook-adapter.mjs) to {kimi_hooks_dst}"
+    )
+    copy_reference_skills(
+        os.path.join(plugin_dir, "skills"),
+        "extensions/arckit-kimi/skills",
+    )
+
+    print()
+    print("Rewriting Kimi extension skills for Kimi command format...")
+    rewrite_kimi_skills("extensions/arckit-kimi/skills")
 
     print()
     total = sum(counts.values())

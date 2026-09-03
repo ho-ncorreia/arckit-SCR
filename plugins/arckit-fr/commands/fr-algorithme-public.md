@@ -1,5 +1,6 @@
 ---
 description: "[COMMUNITY] Generate a public algorithm transparency notice complying with Article L311-3-1 CRPA (Loi République Numérique) for French public administration algorithmic decisions"
+doc-type: ALGO
 argument-hint: "<project ID or algorithm description, e.g. '001', 'school admissions prioritisation algorithm used by the rectorate'>"
 effort: medium
 handoffs:
@@ -83,6 +84,7 @@ Read all documents from Step 0. Extract:
 - **First**, check if `.arckit/templates/fr-algorithme-public-template.md` exists in the project root
 - **If found**: Read the user's customized template
 - **If not found**: Read `${CLAUDE_PLUGIN_ROOT}/templates/fr-algorithme-public-template.md`
+- **Then read** `${CLAUDE_PLUGIN_ROOT}/templates/_partials/RENDERING.md` and resolve the `<!-- DOC-CONTROL-HEADER -->` marker in the template before writing. `ALGO` carries the France regime, which hard-routes to `_partials/document-control-fr.md` whatever the operator's user config says.
 
 ### Step 4: Algorithm Transparency Assessment
 
@@ -152,7 +154,7 @@ For each algorithm, document:
    - Status: DRAFT
    - Created Date: {current_date}
    - Next Review Date: {current_date + 12 months}
-   - Classification: PUBLIC — this notice must be publicly accessible
+   - Classification: Non protégé — this notice must be publicly accessible
 
 3. Write the complete transparency notice following the template.
 
@@ -174,7 +176,7 @@ projects/{project_id}/ARC-{PROJECT_ID}-ALGO-v{VERSION}.md
 📄 Document: projects/{project_id}/ARC-{PROJECT_ID}-ALGO-v{VERSION}.md
 📋 Document ID: {document_id}
 📅 Date: {date}
-🔓 Classification: PUBLIC
+🔓 Classification: Non protégé
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📊 Algorithms Assessed
@@ -216,7 +218,7 @@ Next steps:
 
 | Document | Publisher | URL |
 |----------|-----------|-----|
-| Art. L311-3-1 CRPA (algorithmic transparency obligation) | Légifrance | https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000033218710/ |
+| Art. L311-3-1 CRPA (algorithmic transparency obligation) | Légifrance | https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000033205535/ |
 | Loi n°2016-1321 pour une République Numérique (source legislation) | Légifrance | https://www.legifrance.gouv.fr/loda/id/JORFTEXT000033202746 |
 | algorithmes.data.gouv.fr — public algorithm register | DINUM | https://algorithmes.data.gouv.fr/ |
 | CNIL guidance on algorithms and automated decisions | CNIL | https://www.cnil.fr/fr/algorithmes |
@@ -237,7 +239,7 @@ Next steps:
 - ✅ GDPR Article 22 intersection assessed
 - ✅ AI Act intersection flagged if ML/AI used
 - ✅ Publication plan (algorithmes.data.gouv.fr + administration website) documented
-- ✅ Document classified PUBLIC
+- ✅ Document classified Non protégé
 - ✅ ALGO per-type quality checks passed
 
 ## Example Usage

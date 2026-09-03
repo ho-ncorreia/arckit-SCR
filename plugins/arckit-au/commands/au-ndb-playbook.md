@@ -1,5 +1,6 @@
 ---
 description: "[COMMUNITY] Generate a Notifiable Data Breach (NDB) scheme response playbook under Privacy Act 1988 Part IIIC — eligible-data-breach test, 30-day OAIC notification timeline, individual notification, containment, and lessons-learned framework."
+doc-type: AUNDB
 argument-hint: "<project ID or system, e.g. '001'>"
 effort: medium
 handoffs:
@@ -68,11 +69,11 @@ A working NDB playbook is operational — it must be executable under time press
    - Then: `.arckit/templates/au-ndb-playbook-template.md`
    - Fallback: `${CLAUDE_PLUGIN_ROOT}/templates/au-ndb-playbook-template.md`
 
-3. Use `scripts/bash/create-project.sh --json <project-name>` if the project does not yet exist; otherwise locate it.
+3. Use `scripts/bash/create-project.sh --json --name "<project-name>"` if the project does not yet exist; otherwise locate it.
 
-4. Use `scripts/bash/generate-document-id.sh <PROJECT_ID> AUNDB --filename` for the artefact filename.
+4. Use `node scripts/generate-document-id.mjs <PROJECT_ID> AUNDB --filename` for the artefact filename.
 
-5. Resolve the `<!-- DOC-CONTROL-HEADER -->` marker per `RENDERING.md`. Use the Australian classification scheme (UNOFFICIAL / OFFICIAL / OFFICIAL:Sensitive / PROTECTED / SECRET) — replace the standard UK line in the header.
+5. Resolve the `<!-- DOC-CONTROL-HEADER -->` marker per `RENDERING.md` before writing the artefact. `RENDERING.md` hard-routes the AU regime to `_partials/document-control-au.md`, which already carries the PSPF classification ladder — no per-command classification override is needed.
 
 6. Generate the following sections:
 
@@ -114,9 +115,10 @@ A working NDB playbook is operational — it must be executable under time press
 
 7. Populate the External References section per `${CLAUDE_PLUGIN_ROOT}/references/citation-instructions.md`. Privacy Act 1988 + OAIC NDB scheme guidance MUST appear in the Document Register.
 
-8. Write the artefact via the Write tool to `projects/<project-id>/<filename>`.
+8. Before writing the file, read `${CLAUDE_PLUGIN_ROOT}/references/quality-checklist.md` and verify all **Common Checks** plus the **AUNDB** per-type checks pass. Fix any failures before proceeding.
+9. Write the artefact via the Write tool to `projects/<project-id>/<filename>`.
 
-9. Show only a summary to the user (one paragraph plus the 30-day timeline summary).
+10. Show only a summary to the user (one paragraph plus the 30-day timeline summary).
 
 ## Important Notes
 

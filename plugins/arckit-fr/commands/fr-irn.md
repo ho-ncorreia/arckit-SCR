@@ -1,5 +1,6 @@
 ---
 description: "[COMMUNITY] Structure an IRN (Indice de Résilience Numérique) self-assessment following the aDRI framework — 8 resilience pillars × 5 organisational layers, with scoring scaffold and handoff to official aDRI methodology"
+doc-type: IRN
 argument-hint: "<project ID or organisation description, e.g. '001', 'SaaS fintech with AWS infrastructure and US sub-processors'>"
 effort: high
 handoffs:
@@ -66,7 +67,7 @@ $ARGUMENTS
 
 ### Step 1: Identify or Create Project
 
-Identify the target project from the hook context. If the project doesn't exist, create it via `create-project.sh --json`.
+Identify the target project from the hook context. If the project doesn't exist, create it via `create-project.sh --json --name "<project-name>"` — the `--name` is required, and without it the script exits 1 rather than returning a path.
 
 ### Step 2: Determine scope
 
@@ -87,14 +88,16 @@ If no artifacts exist, include all 5 layers and note that scope confirmation is 
 - **First**, check if `.arckit/templates/fr-irn-template.md` exists in the project root
 - **If found**: use the user's customised template
 - **If not found**: use `${CLAUDE_PLUGIN_ROOT}/templates/fr-irn-template.md`
+- **Then read** `${CLAUDE_PLUGIN_ROOT}/templates/_partials/RENDERING.md` and resolve the `<!-- DOC-CONTROL-HEADER -->` marker in the template before writing. `IRN` carries the France regime, which hard-routes to `_partials/document-control-fr.md` whatever the operator's user config says.
 
 ### Step 4: Generate IRN Assessment Document
 
 **CRITICAL**: Use the **Write tool** to create the assessment document.
 
 1. **Detect version**: Check for existing `ARC-{PROJECT_ID}-IRN-v*.md` files
-2. **Document ID**: `ARC-{PROJECT_ID}-IRN-v{VERSION}`
-3. **Classification**: OFFICIAL-SENSITIVE (dependency mapping reveals strategic vulnerabilities)
+2. **Auto-populate Document Control**:
+   - Document ID: `ARC-{PROJECT_ID}-IRN-v{VERSION}`
+   - Classification: Diffusion Restreinte (dependency mapping reveals strategic vulnerabilities)
 
 For each of the **8 IRN pillars**, create a structured section:
 
@@ -118,7 +121,7 @@ For each pillar × organisational layer in scope:
 
 5. **Gap Analysis**: Based on what is observable from existing artifacts (NOT from reproduced aDRI criteria), flag obvious dependency concentrations, single-vendor risks, or regulatory exposure as preliminary observations.
 
-Before writing, read `${CLAUDE_PLUGIN_ROOT}/references/quality-checklist.md` and verify all **Common Checks** pass.
+Before writing, read `${CLAUDE_PLUGIN_ROOT}/references/quality-checklist.md` and verify all **Common Checks** plus **IRN** per-type checks pass.
 
 Write to:
 
@@ -136,7 +139,7 @@ projects/{project_id}/ARC-{PROJECT_ID}-IRN-v{VERSION}.md
 📄 Document: projects/{project_id}/ARC-{PROJECT_ID}-IRN-v{VERSION}.md
 📋 Document ID: {document_id}
 📅 Assessment Date: {date}
-🔒 Classification: OFFICIAL-SENSITIVE
+🔒 Classification: Diffusion Restreinte
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📊 Scope
@@ -183,7 +186,7 @@ Next steps:
 - ✅ Link to official aDRI evaluation grid clearly displayed
 - ✅ Licence incompatibility and living-repo rationale explained in document
 - ✅ Preliminary observations from artifacts noted (dependency concentrations, single vendors)
-- ✅ Classification: OFFICIAL-SENSITIVE
+- ✅ Classification: Diffusion Restreinte
 
 ## Example Usage
 

@@ -1,6 +1,6 @@
 ---
 name: release
-description: "Cut a new ArcKit release — bump versions in lockstep, regenerate non-Claude formats, validate plugin/marketplace agreement, tag, and push to extension repos. Use when the user says 'cut a release', 'release ArcKit', 'ship vX.Y.Z', 'bump the version and release', 'do the release flow', 'tag and publish', or 'push the extensions'. This is a manual, high-consequence workflow: it never runs automatically."
+description: "Cut a new ArcKit release — bump versions in lockstep, regenerate non-Claude formats, validate plugin/marketplace agreement, tag, and push to standalone repos. Use when the user says 'cut a release', 'release ArcKit', 'ship vX.Y.Z', 'bump the version and release', 'do the release flow', 'tag and publish', or 'push the extensions'. This is a manual, high-consequence workflow: it never runs automatically."
 disable-model-invocation: true
 argument-hint: "[X.Y.Z]"
 ---
@@ -66,33 +66,51 @@ git status && git diff --stat
 git add -A && git commit -m "chore: bump version to X.Y.Z"
 
 # 7. Validate EVERY plugin manifest against the marketplace entry.
-#    Discover plugins dynamically — do NOT hardcode the list (it grows):
-for manifest in $(find . -maxdepth 3 -path '*/.claude-plugin/plugin.json' -not -path '*/node_modules/*' | sort); do
-  p=$(python3 -c "import json;print(json.load(open('$manifest'))['name'])")
-  claude plugin tag "$p" --dry-run || { echo "VERSION DRIFT: $p"; exit 1; }
+#    Discover plugins dynamically — do NOT hardcode the list (it grows).
+#    Search from `plugins`, not `.`: from the repo root the manifests sit at
+#    depth 4, so `find . -maxdepth 3` matches nothing and the loop below
+#    "passes" having validated not one plugin.
+mapfile -t manifests < <(find plugins -maxdepth 3 -path '*/.claude-plugin/plugin.json' | sort)
+
+(( ${#manifests[@]} > 0 )) || { echo "No plugin manifests found — check the find path"; exit 1; }
+echo "Validating ${#manifests[@]} plugin manifests..."
+
+for manifest in "${manifests[@]}"; do
+  dir=${manifest%/.claude-plugin/plugin.json}   # PATH — `claude plugin tag` rejects the name
+  claude plugin tag "$dir" --dry-run || { echo "VERSION DRIFT: $dir"; exit 1; }
 done
 
 # 8. (optional) Prune orphaned plugin deps:
 claude plugin prune --dry-run
 
 # 9. Tag the umbrella release and push — this triggers
-#    .github/workflows/release.yml, which creates the GitHub Release:
+#    .github/workflows/release.yml, which creates the GitHub Release.
+#    Push the tag BY NAME: `git push --tags` pushes every local tag, and
+#    published a stray `pre-rebase-*` backup tag during v6.8.0.
 git tag -a vX.Y.Z -m "vX.Y.Z"
-git push && git push --tags
+git push && git push origin vX.Y.Z
 
 # 10. Create native per-plugin tags (arckit--vX.Y.Z, arckit-uae--vX.Y.Z, …).
 #    Auto-discovers plugins; idempotent (skips existing tags):
 ./scripts/tag-plugins.sh X.Y.Z
 
-# 11. Push each extension to its standalone GitHub repo
-#     (tractorjuice/arckit-gemini, arckit-codex, …). This also creates or
-#     preserves each extension repo's vX.Y.Z tag and GitHub Release:
+# 11. Push each distribution to its standalone GitHub repo
+#     (tractorjuice/arckit-claude, arckit-gemini, arckit-codex, …).
+#     The claude target publishes the full Claude marketplace repo: core at
+#     the repo root, overlays under plugin/... paths. This also creates or
+#     preserves each repo's vX.Y.Z tag and GitHub Release:
 ./scripts/push-extensions.sh
 ```
 
 After step 11, confirm the GitHub Release was created (the `release.yml` workflow runs on the
-`vX.Y.Z` tag push). Also confirm every standalone extension repo has a `vX.Y.Z` tag and GitHub
-Release, then report the release URLs and which extension repos were pushed.
+`vX.Y.Z` tag push). Also confirm every standalone repo has a `vX.Y.Z` tag and GitHub
+Release, then report the release URLs and which standalone repos were pushed.
+
+Then write the release article for the major features — `docs/articles/YYYY-MM-DD-<slug>.md`
+plus a hero generator script, force-added past the drafts-folder gitignore. **No Markdown
+tables** — LinkedIn and Medium do not render them; write comparisons as prose. See
+"Release article" in RELEASING.md for the full conventions (voice, hero style, community
+block, contributor credits).
 
 ## Common Gotchas
 
@@ -107,11 +125,30 @@ The highest-signal failures — collected from real releases. Read these before 
 - **Skipping extension tests.** Run the step 4 extension suite after `converter.py`. It validates
   Codex, Gemini, OpenCode, Copilot, Vibe, Paperclip, release inventory, version alignment, and
   platform-specific command rewrites before anything is tagged.
-- **Hardcoding the plugin list.** The marketplace now ships 11 plugins (core + 10 overlays) and
-  keeps growing. The `--dry-run` validation loop in older `RELEASING.md` examples lists only 7 —
-  that silently skips newer plugins. Discover plugins dynamically (step 7) — this is the exact
-  bug that shipped `arckit-uk-nhs` untagged mid-v5.4.0, which is why `tag-plugins.sh` now
-  auto-discovers. Never copy a static plugin array.
+- **Releasing from a Mac.** `bump-version.sh` runs on stock macOS (BSD sed, bash 3.2) and asserts
+  every substitution lands — a `does not contain "…" after edit` error is pattern drift, not a
+  sed-flavour problem. `tag-plugins.sh` and `push-extensions.sh` still need bash ≥ 4:
+  `brew install bash`, then `/opt/homebrew/bin/bash scripts/…`. Full macOS notes (uv commands for
+  the converter and tests, the `http.postBuffer` fix for `protocol error: bad line length` pushes,
+  `GH_TOKEN` via `gh auth token`) live in RELEASING.md's "Releasing from macOS" section.
+- **Hardcoding the plugin list.** The Claude marketplace now ships 16 plugins (core plus
+  regional, sector, method, agent-architecture, tooling, and supplier overlays) and keeps growing. Older examples listed
+  only 7, silently skipping newer plugins. Discover plugins dynamically (step 7) -- this is the
+  exact bug that shipped `arckit-uk-nhs` untagged mid-v5.4.0, which is why `tag-plugins.sh`
+  now auto-discovers. Never copy a static plugin array.
+- **A `for` loop over an empty glob exits 0.** Step 7's discovery searched from `.` while the
+  manifests sit at depth 4, so `-maxdepth 3` matched nothing and the validation reported a
+  clean pass having checked not one plugin -- through every release from v6.0.0 to v6.7.4.
+  Dynamic discovery only helps if you assert it found something, hence the count check and the
+  `Validating N plugin manifests...` line. Treat any loop whose body might never run as
+  unvalidated until it prints what it covered.
+- **`claude plugin tag` takes a PATH, not a plugin name.** Passing the `name` from `plugin.json`
+  (`arckit`) resolves relative to the repo root and fails `✘ Path not found: /…/arckit`. Use the
+  plugin directory: `plugins/arckit-claude`. This compounded the bug above -- had the glob ever
+  matched, every iteration would have failed anyway.
+- **Validate before `tag-plugins.sh`, never after.** Once the native `name--vX.Y.Z` tags exist,
+  the dry-run fails with `Tag "…" already exists locally` -- correct behaviour, not version drift,
+  but it will send you hunting for a problem that isn't there.
 - **`claude plugin tag` needs a clean tree.** Run it *after* the commit (step 6), not before, or
   it errors on the dirty working tree.
 - **`claude plugin tag` is `--dry-run` only here.** It creates `name--vX.Y.Z` style tags that do
@@ -125,9 +162,13 @@ The highest-signal failures — collected from real releases. Read these before 
   the same number by design; don't try to skew them.
 - **`push-extensions.sh` needs `GH_TOKEN`** and skips repos that don't yet exist on GitHub — a
   "skipped" line is not an error for a brand-new extension, but double-check it's not skipping a
-  repo that *should* exist. It now creates/preserves standalone extension `vX.Y.Z` tags and
-  GitHub Releases; use `ARCKIT_SKIP_EXTENSION_RELEASES=1` only when intentionally doing a
-  commit-only sync.
+  repo that *should* exist. The `claude` target writes the full `arckit-claude` marketplace repo,
+  including the public-but-proprietary `plugin/uk/gcloud/` overlay and its license exception. It
+  now creates/preserves standalone repo `vX.Y.Z` tags and GitHub Releases; use
+  `ARCKIT_SKIP_EXTENSION_RELEASES=1` only when intentionally doing a commit-only sync.
+- **Tables in release articles.** LinkedIn and Medium do not render Markdown tables — a
+  comparison pasted there lands as a wall of pipes. Write it as prose. Articles live in the
+  gitignored `docs/articles/` drafts folder; force-add the keepers (`git add -f`).
 - **Do not put release numbers in extension READMEs.** Extension release identity lives in
   `VERSION` files, manifests, Git tags, and GitHub Releases. README-pinned versions drift and
   are blocked by `tests/plugin/test_release_process.py`.
@@ -141,5 +182,5 @@ The highest-signal failures — collected from real releases. Read these before 
 - `scripts/bump-version.sh` — version bump across all files
 - `scripts/generate-release-notes.sh` — changelog preview from git log
 - `scripts/tag-plugins.sh` — native per-plugin tags (auto-discovers)
-- `scripts/push-extensions.sh` — pushes extension dirs to standalone repos
+- `scripts/push-extensions.sh` — pushes distribution dirs to standalone repos
 - `.github/workflows/release.yml` — creates the GitHub Release on `v*` tag push

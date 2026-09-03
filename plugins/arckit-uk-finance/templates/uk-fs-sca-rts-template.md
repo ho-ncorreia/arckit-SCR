@@ -4,24 +4,13 @@
 
 ## Document Control
 
-<!-- Default: OFFICIAL. Use OFFICIAL-SENSITIVE if the document reveals proprietary fraud model parameters or detection thresholds. Driven by user_config.default_classification. -->
+<!-- DOC-CONTROL-HEADER -->
+<!-- Resolved at command-execution time per _partials/RENDERING.md. -->
+
+<!-- Domain-specific fields, retained after the resolved header per the Document Control Standard. -->
 
 | Field | Value |
 |-------|-------|
-| **Document ID** | {{DOCUMENT_ID}} |
-| **Document Type** | UK PSD2 SCA-RTS Exemption Design |
-| **Project** | {{PROJECT_NAME}} |
-| **Classification** | {{CLASSIFICATION}} |
-| **Status** | DRAFT |
-| **Version** | 1.0 |
-| **Created Date** | {{CREATED_DATE}} |
-| **Last Modified** | {{LAST_MODIFIED}} |
-| **Review Cycle** | Quarterly |
-| **Next Review Date** | {{NEXT_REVIEW_DATE}} |
-| **Owner** | {{OWNER_ROLE}} — {{OWNER_NAME}} |
-| **Reviewed By** | PENDING |
-| **Approved By** | PENDING |
-| **Distribution** | {{DISTRIBUTION}} |
 | **Firm Authorisation Type** | {{FIRM_AUTHORISATION_TYPE}} (PSP / EMI / PI / ASPSP / TPP) |
 | **FCA Firm Reference Number** | {{FCA_FRN}} |
 
@@ -263,6 +252,29 @@ to the FCA on request (PSRs 2017 Reg 100 + FCA Handbook SYSC 9.1).
 | FCA SCA coronavirus statement | FCA SCA extension — COVID-19 (30 April 2020) | <https://www.fca.org.uk/news/statements/strong-customer-authentication-and-coronavirus> |
 | UK Finance SCA Guidance | UK Finance Industry Guidance on Strong Customer Authentication (2025) | <https://www.ukfinance.org.uk/system/files/2025-07/UK-Finance-Industry-Guidance-Strong-Customer-Authentication.pdf> |
 | FCA key publications | FCA EMI and Payment Institutions — key publications | <https://www.fca.org.uk/firms/emi-payment-institutions-key-publications> |
+
+## 8. External References
+
+> This section provides traceability from generated content back to source documents.
+> Follow citation instructions in the project's citation reference guide.
+
+### Document Register
+
+| Doc ID | Filename | Type | Source Location | Description |
+|--------|----------|------|-----------------|-------------|
+| *None provided* | — | — | — | — |
+
+### Citations
+
+| Citation ID | Doc ID | Page/Section | Category | Quoted Passage |
+|-------------|--------|--------------|----------|----------------|
+| — | — | — | — | — |
+
+### Unreferenced Documents
+
+| Filename | Source Location | Reason |
+|----------|-----------------|--------|
+| — | — | — |
 
 ---
 

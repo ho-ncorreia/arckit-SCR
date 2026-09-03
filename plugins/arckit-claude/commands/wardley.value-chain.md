@@ -1,5 +1,6 @@
 ---
 description: Decompose user needs into value chains for Wardley Mapping
+doc-type: WVCH
 argument-hint: "<user need or domain, e.g. 'online shopping', 'patient booking'>"
 effort: max
 handoffs:
@@ -241,6 +242,7 @@ Before generating output, validate the value chain against these criteria.
 - **First**, check if `.arckit/templates/wardley-value-chain-template.md` exists in the project root
 - **If found**: Read the user's customized template (user override takes precedence)
 - **If not found**: Read `${CLAUDE_PLUGIN_ROOT}/templates/wardley-value-chain-template.md` (default)
+- **Then read** `${CLAUDE_PLUGIN_ROOT}/templates/_partials/RENDERING.md` and resolve the `<!-- DOC-CONTROL-HEADER -->` marker in the template before writing. Do not hand-write the Document Control table: the partial `RENDERING.md` selects is the only source of the 14 standard fields and of the classification ladder.
 
 > **Tip**: Users can customize templates with `/arckit:customize wardley-value-chain`
 
@@ -248,7 +250,12 @@ Before generating output, validate the value chain against these criteria.
 
 **Get or create project path**:
 
-Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/bash/create-project.sh --json` to get the current project path. Extract `project_id` and `project_path` from the JSON response.
+Locate the target project from the **ArcKit Project Context** injected above, taking `Project ID` and `Path` from the matching entry.
+
+Only if no project exists, create one:
+`bash ${CLAUDE_PLUGIN_ROOT}/scripts/bash/create-project.sh --json --name "<project-name>"`, then read `project_number` and `project_dir` from the JSON response.
+
+> `create-project.sh` is create-only. Run with no `--name` it exits 1 with `{"error": "Project name is required", "success": false}` and returns no path, so it cannot be used to look up an existing project. It emits `project_number` and `project_dir`; there are no `project_id` or `project_path` keys.
 
 ---
 
@@ -275,11 +282,11 @@ Before completing the document, populate ALL document control fields in the head
 
 - `[PROJECT_NAME]` → Full project name from project metadata or user input
 - `[OWNER_NAME_AND_ROLE]` → Document owner (prompt user if not in metadata)
-- `[CLASSIFICATION]` → Default to `${user_config.default_classification}`; if unavailable, use "OFFICIAL" for UK Gov, "PUBLIC" otherwise (or prompt user)
+- **Classification** → comes from the resolved Document Control header, not from a placeholder. `_partials/RENDERING.md` fixes the ladder from the artefact's own regime; `${user_config.default_classification}` applies only where that regime falls through to user config.
 
 *Calculated fields*:
 
-- `[YYYY-MM-DD]` for Review Date → Current date + 30 days
+- `[YYYY-MM-DD]` for Next Review Date → Current date + 30 days
 
 *Pending fields* (leave as [PENDING] until manually updated):
 
@@ -300,7 +307,7 @@ Before completing the document, populate ALL document control fields in the head
 **Generated on**: {DATE} {TIME} GMT
 **ArcKit Version**: {ARCKIT_VERSION}
 **Project**: {PROJECT_NAME} (Project {PROJECT_ID})
-**AI Model**: [Use actual model name, e.g., "claude-sonnet-4-5-20250929"]
+**AI Model**: [Use actual model name, e.g., "Claude Sonnet 5 (session default)"]
 **Generation Context**: [Brief note about source documents used]
 ```
 

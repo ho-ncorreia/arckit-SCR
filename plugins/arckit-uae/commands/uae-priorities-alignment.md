@@ -1,5 +1,6 @@
 ---
 description: "[COMMUNITY] Generate a National Priorities Alignment Statement under the UAE Federal Government Guide. Captures reuse-vs-build justification, capability-reuse register (UAE Pass, FedNet), and strategy alignment to NIS 2031 / AI 2031 / Digital Economy Strategy / We the UAE 2031."
+doc-type: NPRA
 argument-hint: "<project ID or service name>"
 effort: high
 keep-coding-instructions: true
@@ -30,8 +31,8 @@ You are an enterprise architect generating a National Priorities Alignment State
    - **First**, check `.arckit/templates-custom/uae-priorities-alignment-template.md` (user override)
    - **Then**, `.arckit/templates/uae-priorities-alignment-template.md`
    - **Fallback**, `${CLAUDE_PLUGIN_ROOT}/templates/uae-priorities-alignment-template.md`
-3. Use `scripts/bash/create-project.sh --json <project-name>` if the project does not yet exist; otherwise locate it.
-4. Use `scripts/bash/generate-document-id.sh NPRA --filename` for the artefact filename.
+3. Use `scripts/bash/create-project.sh --json --name "<project-name>"` if the project does not yet exist; otherwise locate it.
+4. Use `node scripts/generate-document-id.mjs <PROJECT_ID> NPRA --filename` for the artefact filename.
 5. Resolve the `<!-- DOC-CONTROL-HEADER -->` marker per `RENDERING.md`.
 6. Generate the following sections:
    - **Strategic Alignment Matrix** — for each of the four federal strategies (We the UAE 2031, National Investment Strategy 2031 (NIS 2031), UAE Strategy for Artificial Intelligence 2031, Digital Economy Strategy), state the relevant pillar(s) and the project's contribution.
@@ -40,8 +41,9 @@ You are an enterprise architect generating a National Priorities Alignment State
    - **Resource-Efficiency Calculation** — quantitative comparison of the reused-capability baseline cost vs the build alternative, over the lifecycle of the project.
    - **Feasibility & Pilot Plan** — feasibility assessment per major capability and the pilot/phased rollout sequence required by the Federal Government Guide.
 7. Populate the External References section per `${CLAUDE_PLUGIN_ROOT}/references/citation-instructions.md`. The 23 April 2026 UAE Cabinet meeting announcement (Federal Government Guide), We the UAE 2031, the UAE AI Strategy 2031, the National Investment Strategy 2031, and the Digital Economy Strategy MUST appear in the Document Register where cited.
-8. Write the artefact via the Write tool to `projects/<project-id>/<filename>`.
-9. Show only a summary to the user (one paragraph plus the headline reuse decisions and the resource-efficiency outcome).
+8. Before writing the file, read `${CLAUDE_PLUGIN_ROOT}/references/quality-checklist.md` and verify all **Common Checks** plus the **NPRA** per-type checks pass. Fix any failures before proceeding.
+9. Write the artefact via the Write tool to `projects/<project-id>/<filename>`.
+10. Show only a summary to the user (one paragraph plus the headline reuse decisions and the resource-efficiency outcome).
 
 ## Authoritative anchor
 

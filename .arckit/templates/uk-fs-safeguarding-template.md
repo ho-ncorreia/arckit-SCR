@@ -4,26 +4,13 @@
 
 ## Document Control
 
-<!-- Default: OFFICIAL. Upgrade to OFFICIAL-SENSITIVE if this document reveals the specific
-     safeguarding bank account numbers, policy reference numbers, or shortfall thresholds that
-     could be exploited if disclosed. Driven by user_config.default_classification. -->
+<!-- DOC-CONTROL-HEADER -->
+<!-- Resolved at command-execution time per _partials/RENDERING.md. -->
+
+<!-- Domain-specific fields, retained after the resolved header per the Document Control Standard. -->
 
 | Field | Value |
 |-------|-------|
-| **Document ID** | {{DOCUMENT_ID}} |
-| **Document Type** | UK EMI / PI Safeguarding Assessment |
-| **Project** | {{PROJECT_NAME}} |
-| **Classification** | {{CLASSIFICATION}} |
-| **Status** | DRAFT |
-| **Version** | 1.0 |
-| **Created Date** | {{CREATED_DATE}} |
-| **Last Modified** | {{LAST_MODIFIED}} |
-| **Review Cycle** | Annual (minimum); review immediately on change of safeguarding bank, insurer, or product scope |
-| **Next Review Date** | {{NEXT_REVIEW_DATE}} |
-| **Owner** | {{DOCUMENT_OWNER_ROLE}} — {{DOCUMENT_OWNER_NAME}} |
-| **Reviewed By** | PENDING |
-| **Approved By** | PENDING |
-| **Distribution** | {{DISTRIBUTION}} |
 | **Firm Authorisation / Registration Type** | {{FIRM_AUTHORISATION_TYPE}} (EMI — authorised / API — authorised / SPI — registered) |
 | **FCA Firm Reference Number** | {{FCA_FRN}} |
 | **SMF Holder (Safeguarding)** | {{SMF_HOLDER_NAME}} — {{SMF_HOLDER_FUNCTION}} |
@@ -338,6 +325,29 @@ safeguarding return (SUP 16 Annex 34A for payment institutions; SUP 16 Annex 34B
 | FCA CP22/25 | CP22/25 — Improving outcomes for consumers of payment and e-money firms | <https://www.fca.org.uk/publication/consultation/cp22-25.pdf> |
 | FCA SUP 16 | SUP 16 — Reporting requirements (entry point for Annex 34A/34B monthly safeguarding return) | <https://www.handbook.fca.org.uk/handbook/SUP/16/> |
 | FCA key publications | FCA EMI and Payment Institutions — key publications | <https://www.fca.org.uk/firms/emi-payment-institutions-key-publications> |
+
+## 10. External References
+
+> This section provides traceability from generated content back to source documents.
+> Follow citation instructions in the project's citation reference guide.
+
+### Document Register
+
+| Doc ID | Filename | Type | Source Location | Description |
+|--------|----------|------|-----------------|-------------|
+| *None provided* | — | — | — | — |
+
+### Citations
+
+| Citation ID | Doc ID | Page/Section | Category | Quoted Passage |
+|-------------|--------|--------------|----------|----------------|
+| — | — | — | — | — |
+
+### Unreferenced Documents
+
+| Filename | Source Location | Reason |
+|----------|-----------------|--------|
+| — | — | — |
 
 ---
 

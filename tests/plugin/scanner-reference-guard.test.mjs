@@ -56,6 +56,70 @@ for (const line of REFERENCES_ALLOWED) {
   });
 }
 
+// --- Declared capability levels are not secret material ---
+// GitHub Actions spells an OIDC permission as the id-token key set to the
+// value `write`, so the generic key-value rule blocked every workflow that
+// publishes without a stored credential — including this repo's own release
+// workflow. The value is a permission level, never credential material.
+const CAPABILITY_VALUES_ALLOWED = [
+  kv('id-token', 'write', ': '),
+  kv('id-token', 'none', ': '),
+  kv('token', 'read', ': '),
+  kv('password', 'none', ': '),
+];
+
+for (const line of CAPABILITY_VALUES_ALLOWED) {
+  test(`scanner allows capability level: ${line}`, () => {
+    assert.equal(scannerBlocks(line), false);
+  });
+  test(`detection allows capability level: ${line}`, () => {
+    assert.equal(detectionBlocks(line), false);
+  });
+}
+
+// --- Capability levels stay exempt anywhere in the input, not only at the end ---
+// The exemption was anchored with `$` under `gi` and no `m`, so it only fired
+// when the permission line was the last content in the string. Real input is
+// multi-line: a workflow has jobs after the permissions block, and an audit
+// report quotes the line mid-paragraph. Both were blocked (#737), which meant
+// the file scanner — whose input is multi-line by definition — never got the
+// OIDC exemption at all.
+const OIDC = kv('id-token', 'write', ': ');
+const MULTILINE_CAPABILITY_ALLOWED = [
+  ['workflow with jobs after the permissions block',
+    ['permissions:', '  contents: read', `  ${OIDC}`, 'jobs:', '  publish:', '    runs-on: ubuntu-latest'].join('\n')],
+  ['permission line quoted mid-prose',
+    ['The release workflow grants', `  ${OIDC}`, 'so it can publish without a stored credential.'].join('\n')],
+  ['permission line with trailing whitespace',
+    [`${OIDC}   `, 'jobs:'].join('\n')],
+];
+
+for (const [name, content] of MULTILINE_CAPABILITY_ALLOWED) {
+  test(`scanner allows capability level in multi-line content: ${name}`, () => {
+    assert.equal(scannerBlocks(content), false);
+  });
+  test(`detection allows capability level in multi-line prompt: ${name}`, () => {
+    assert.equal(detectionBlocks(content), false);
+  });
+}
+
+// --- ...but a literal value is still caught when it is not the last line ---
+const MULTILINE_LITERALS_BLOCKED = [
+  ['literal value mid-file',
+    ['jobs:', `  ${kv('auth_token', 'l1teralcredentialvalue', ': ')}`, 'runs-on: ubuntu-latest'].join('\n')],
+  ['value that merely starts with a level word',
+    [kv('token', 'writeKeyABC123', ': '), 'jobs:'].join('\n')],
+];
+
+for (const [name, content] of MULTILINE_LITERALS_BLOCKED) {
+  test(`scanner blocks literal in multi-line content: ${name}`, () => {
+    assert.equal(scannerBlocks(content), true);
+  });
+  test(`detection blocks literal in multi-line prompt: ${name}`, () => {
+    assert.equal(detectionBlocks(content), true);
+  });
+}
+
 // --- Literal secrets must STILL be blocked (no regression) ---
 const LITERALS_BLOCKED = [
   kv('pwd', 'hunter2', '='),                            // no whitespace
@@ -99,4 +163,19 @@ function extractPatternBlock(file) {
 
 test('secret-file-scanner and secret-detection share an identical pattern block', () => {
   assert.equal(extractPatternBlock(SCANNER), extractPatternBlock(DETECTION));
+});
+
+// The pattern block interpolates two guard constants declared above it, so
+// comparing the block alone let the copies drift on the guards themselves —
+// which is where #737 lived.
+function extractGuards(file) {
+  const src = readFileSync(file, 'utf-8');
+  const guards = src.match(/^const (?:REF|LEVEL) = String\.raw`.*`;$/gm);
+  assert.ok(guards, `guard constants not found in ${file}`);
+  assert.equal(guards.length, 2, `expected 2 guard constants in ${file}, found ${guards.length}`);
+  return guards.join('\n');
+}
+
+test('secret-file-scanner and secret-detection share identical guard constants', () => {
+  assert.equal(extractGuards(SCANNER), extractGuards(DETECTION));
 });

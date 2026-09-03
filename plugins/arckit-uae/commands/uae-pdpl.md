@@ -1,5 +1,6 @@
 ---
 description: "[COMMUNITY] Generate a UAE PDPL (Federal Decree-Law 45/2021) compliance assessment including DPIA, lawful-basis register, data-subject-rights procedure, and cross-border transfer log. Anchored on the UAE Data Office statutory framework."
+doc-type: PDPL
 argument-hint: "<project ID or service name>"
 effort: high
 keep-coding-instructions: true
@@ -32,7 +33,7 @@ You are an enterprise architect generating a UAE PDPL Compliance Assessment for 
    - **First**, check `.arckit/templates-custom/uae-pdpl-template.md` (user override)
    - **Then**, `.arckit/templates/uae-pdpl-template.md`
    - **Fallback**, `${CLAUDE_PLUGIN_ROOT}/templates/uae-pdpl-template.md`
-3. Use `scripts/bash/generate-document-id.sh PDPL --filename` for the artefact filename.
+3. Use `node scripts/generate-document-id.mjs <PROJECT_ID> PDPL --filename` for the artefact filename.
 4. Resolve the `<!-- DOC-CONTROL-HEADER -->` marker per `RENDERING.md`.
 5. Generate the following sections:
    - **Scope** — what processing is covered, what carve-outs apply. Note free-zone regimes DIFC DPL and ADGM DPR are out of scope of the federal PDPL; healthcare data may also fall under ADHICS.
@@ -43,8 +44,9 @@ You are an enterprise architect generating a UAE PDPL Compliance Assessment for 
    - **Breach notification playbook** — PDPL Article 9 obligations to the Data Office and to affected data subjects, with applicable timelines and the operational owner.
    - **Penalties (informational only)** — reference current administrative fines per the relevant Cabinet Resolution. This section is informational and is not used for compliance scoring.
 6. Populate the External References section per `${CLAUDE_PLUGIN_ROOT}/references/citation-instructions.md`. Federal Decree-Law No. 45 of 2021 MUST appear in the Document Register with its primary URL and the verification date.
-7. Write the artefact via the Write tool to `projects/<project-id>/<filename>`.
-8. Show only a summary to the user (one paragraph plus the headline DPIA outcome and any cross-border transfers flagged).
+7. Before writing the file, read `${CLAUDE_PLUGIN_ROOT}/references/quality-checklist.md` and verify all **Common Checks** plus the **PDPL** per-type checks pass. Fix any failures before proceeding.
+8. Write the artefact via the Write tool to `projects/<project-id>/<filename>`.
+9. Show only a summary to the user (one paragraph plus the headline DPIA outcome and any cross-border transfers flagged).
 
 ## Authoritative anchor
 

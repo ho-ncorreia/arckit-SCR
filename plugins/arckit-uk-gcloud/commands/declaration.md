@@ -1,5 +1,6 @@
 ---
 description: Generate the supplier declaration for the G-Cloud framework
+doc-type: DECL
 effort: high
 handoffs:
   - command: /arckit:review
@@ -159,6 +160,8 @@ Populate every field and answer in the template with the supplier's responses. L
 question as `[PENDING]` rather than assuming a "No" — the supplier must confirm each declaration
 explicitly. Record any "Yes" answers and their mitigating detail in the Mitigating Information
 section (Part 8) of the template.
+
+Before writing, read `${CLAUDE_PLUGIN_ROOT}/references/quality-checklist.md` and verify all **Common Checks** plus the **DECL** per-type checks pass. Fix any failures before proceeding.
 
 Use the **Write tool** to save the completed declaration to:
 

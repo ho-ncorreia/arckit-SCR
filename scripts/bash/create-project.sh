@@ -67,7 +67,16 @@ if [[ "$FORCE_CREATE" != "true" ]]; then
     GLOBAL_DIR="$(get_memory_dir "$REPO_ROOT")"
 
     # Look for principles file with new naming convention (ARC-000-PRIN-*.md)
-    PRINCIPLES_FILE=$(find "$GLOBAL_DIR" -name "ARC-000-PRIN-*.md" 2>/dev/null | head -1)
+    #
+    # `find` exits non-zero when $GLOBAL_DIR does not exist, and `2>/dev/null`
+    # hides the reason. Under `set -euo pipefail` that killed the script right
+    # here, exit 1 with NO output at all — so a fresh repository, the exact case
+    # that needs the "run /arckit:principles" guidance below, got silence.
+    # Guard the directory and tolerate a non-zero find so the message can print.
+    PRINCIPLES_FILE=""
+    if [[ -d "$GLOBAL_DIR" ]]; then
+        PRINCIPLES_FILE=$(find "$GLOBAL_DIR" -name "ARC-000-PRIN-*.md" 2>/dev/null | head -1) || true
+    fi
 
     if [[ -z "$PRINCIPLES_FILE" || ! -f "$PRINCIPLES_FILE" ]]; then
         log_error "Prerequisites not met: Architecture principles not found"
@@ -114,7 +123,17 @@ PROJECT_DIR="$REPO_ROOT/projects/$PROJECT_DIR_NAME"
 log_info "Creating project: $PROJECT_DIR_NAME"
 
 # Create project directory structure
-create_project_dir "$PROJECT_DIR"
+#
+# `if !` deliberately suspends errexit: under `set -e` a bare call would kill
+# the script here, and in --json mode the caller would get a non-zero exit with
+# an empty stdout, no JSON at all. Match the error shape used for a missing
+# project name above.
+if ! create_project_dir "$PROJECT_DIR"; then
+    if [[ "$OUTPUT_JSON" == "true" ]]; then
+        echo "{\"error\": \"Project directory already exists: $PROJECT_DIR\", \"success\": false}"
+    fi
+    exit 1
+fi
 
 # Create README for external documents directory
 cat > "$PROJECT_DIR/external/README.md" <<'EXTEOF'

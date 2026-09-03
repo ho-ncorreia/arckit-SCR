@@ -1,5 +1,6 @@
 ---
 description: Create vendor evaluation framework and score vendor proposals
+doc-type: EVAL
 argument-hint: "<project ID or category, e.g. '001', 'CRM platforms'>"
 effort: high
 ---
@@ -42,6 +43,7 @@ $ARGUMENTS
    - **First**, check if `.arckit/templates-custom/evaluation-criteria-template.md` exists in the project root
    - **If found**: Read the user's customized template (user override takes precedence)
    - **If not found**: Read `${CLAUDE_PLUGIN_ROOT}/templates/evaluation-criteria-template.md` (default)
+   - **Then read** `${CLAUDE_PLUGIN_ROOT}/templates/_partials/RENDERING.md` and resolve the `<!-- DOC-CONTROL-HEADER -->` marker in the template before writing. Do not hand-write the Document Control table: the partial `RENDERING.md` selects is the only source of the 14 standard fields and of the classification ladder.
    - **Also read** the scoring template:
      - **First**, check `.arckit/templates-custom/vendor-scoring-template.md` (user override)
      - **If not found**: Read `${CLAUDE_PLUGIN_ROOT}/templates/vendor-scoring-template.md` (default)
@@ -133,11 +135,11 @@ Before completing the document, populate ALL document control fields in the head
 
 - `[PROJECT_NAME]` → Full project name from project metadata or user input
 - `[OWNER_NAME_AND_ROLE]` → Document owner (prompt user if not in metadata)
-- `[CLASSIFICATION]` → Default to `${user_config.default_classification}`; if unavailable, use "OFFICIAL" for UK Gov, "PUBLIC" otherwise (or prompt user)
+- **Classification** → comes from the resolved Document Control header, not from a placeholder. `_partials/RENDERING.md` fixes the ladder from the artefact's own regime; `${user_config.default_classification}` applies only where that regime falls through to user config.
 
 *Calculated fields*:
 
-- `[YYYY-MM-DD]` for Review Date → Current date + 30 days
+- `[YYYY-MM-DD]` for Next Review Date → Current date + 30 days
 
 *Pending fields* (leave as [PENDING] until manually updated):
 
@@ -160,7 +162,7 @@ The footer should be populated with:
 **Generated on**: {DATE} {TIME} GMT
 **ArcKit Version**: {ARCKIT_VERSION}
 **Project**: {PROJECT_NAME} (Project {PROJECT_ID})
-**AI Model**: [Use actual model name, e.g., "claude-sonnet-4-5-20250929"]
+**AI Model**: [Use actual model name, e.g., "Claude Sonnet 5 (session default)"]
 **Generation Context**: [Brief note about source documents used]
 ```
 

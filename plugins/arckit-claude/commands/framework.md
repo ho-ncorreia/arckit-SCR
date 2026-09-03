@@ -1,5 +1,6 @@
 ---
 description: Transform existing project artifacts into a structured, phased framework with overview and executive guide
+doc-type: FWRK
 argument-hint: "<project ID or name, e.g. '001', 'data governance framework'>"
 effort: max
 keep-coding-instructions: true
@@ -51,6 +52,7 @@ If the Task tool is unavailable or the user prefers inline execution, fall back 
    - **First**, check if `.arckit/templates/framework-overview-template.md` exists in the project root
    - **If found**: Read the user's customized template (user override takes precedence)
    - **If not found**: Read `${CLAUDE_PLUGIN_ROOT}/templates/framework-overview-template.md` (default)
+   - **Then read** `${CLAUDE_PLUGIN_ROOT}/templates/_partials/RENDERING.md` and resolve the `<!-- DOC-CONTROL-HEADER -->` marker in the template before writing. Do not hand-write the Document Control table: the partial `RENDERING.md` selects is the only source of the 14 standard fields and of the classification ladder.
    - **Tip**: Users can customize templates with `/arckit:customize framework`
 3. Read all project artifacts in `projects/{project-dir}/`
 4. Categorise recommendations and requirements into logical implementation phases

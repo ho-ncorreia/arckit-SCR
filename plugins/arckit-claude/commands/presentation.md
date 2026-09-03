@@ -1,5 +1,6 @@
 ---
 description: Generate MARP presentation slides from existing project artifacts for governance boards and stakeholder briefings
+doc-type: PRES
 argument-hint: "<project ID and audience, e.g. '001 executive board'>"
 effort: high
 ---
@@ -105,6 +106,7 @@ Apply the user's selections: the focus determines which artifacts are emphasised
 - **First**, check if `.arckit/templates/presentation-template.md` exists in the project root
 - **If found**: Read the user's customized template (user override takes precedence)
 - **If not found**: Read `${CLAUDE_PLUGIN_ROOT}/templates/presentation-template.md` (default)
+- **Then read** `${CLAUDE_PLUGIN_ROOT}/templates/_partials/RENDERING.md` and resolve the `<!-- DOC-CONTROL-HEADER -->` marker in the template before writing. Do not hand-write the Document Control table: the partial `RENDERING.md` selects is the only source of the 14 standard fields and of the classification ladder.
 
 > **Tip**: Users can customize templates with `/arckit:customize presentation`
 
@@ -231,7 +233,7 @@ Before generating the document ID, check if a previous version exists:
 
 - `[PROJECT_NAME]` → Full project name from project metadata or user input
 - `[OWNER_NAME_AND_ROLE]` → Document owner (prompt user if not in metadata)
-- `[CLASSIFICATION]` → Default to `${user_config.default_classification}`; if unavailable, use "OFFICIAL" for UK Gov, "PUBLIC" otherwise (or prompt user)
+- `[CLASSIFICATION]` (MARP footer and title slide) → copy the Classification value from the resolved Document Control header, so the slides and the header cannot disagree. That header's ladder comes from `_partials/RENDERING.md`.
 
 **Pending fields** (leave as [PENDING] until manually updated):
 
@@ -252,7 +254,7 @@ Before generating the document ID, check if a previous version exists:
 **Generated on**: {DATE} {TIME} GMT
 **ArcKit Version**: {ARCKIT_VERSION}
 **Project**: {PROJECT_NAME} (Project {PROJECT_ID})
-**AI Model**: [Use actual model name, e.g., "claude-sonnet-4-5-20250929"]
+**AI Model**: [Use actual model name, e.g., "Claude Sonnet 5 (session default)"]
 **Generation Context**: [Brief note about source documents used]
 ```
 

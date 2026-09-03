@@ -1,5 +1,6 @@
 ---
 description: Generate documentation site with governance dashboard, document viewer, and Mermaid diagram support
+doc-type: none
 argument-hint: "<project ID or 'all', e.g. '001', 'all'>"
 ---
 
@@ -44,22 +45,23 @@ The following reference sections document the manifest structure and data tables
 
 ---
 
-### Reference: Guide Categories
+### Reference: Guide Grouping
 
-**Guide Categories** (based on filename):
+Guide grouping metadata is loaded by the hook from
+`config/guide-groups.mjs`. Do not duplicate filename-to-category tables in this
+command text. The hook writes each top-level guide with:
 
-| Category | Guide Files |
-|----------|-------------|
-| Discovery | requirements, stakeholders, stakeholder-analysis, research, datascout |
-| Planning | sobc, business-case, plan, roadmap, backlog, strategy |
-| Architecture | principles, adr, diagram, wardley, data-model, hld-review, dld-review, design-review, platform-design, data-mesh-contract, c4-layout-science |
-| Governance | risk, risk-management, traceability, principles-compliance, analyze, artifact-health, data-quality-framework, knowledge-compounding |
-| Compliance | tcop, secure, mod-secure, dpia, ai-playbook, atrs, jsp-936, service-assessment, govs-007-security, national-data-strategy, codes-of-practice, security-hooks |
-| Operations | devops, mlops, finops, servicenow, operationalize |
-| Procurement | sow, evaluate, dos, gcloud-search, gcloud-clarify, procurement, supplier-profile, service-design, sdd-lot1, sdd-lot2, sdd-lot3, declaration, pricing, security, gcloud-competitors, review, submission-pack |
-| Research | aws-research, azure-research, gcp-research |
-| Reporting | pages, story, presentation, trello |
-| Other | migration, customize, upgrading, pinecone-mcp, start, conformance, productivity, remote-control, mcp-servers |
+- `category`: functional guide category, for example `Architecture` or
+  `Plugin Operations`
+- `section`: top-level Pages group, for example `Core Workflows`,
+  `Plugin and Extension Operations`, or `Overlay Packs`
+- `pack`: optional overlay/community pack name, for example
+  `UK G-Cloud Supplier Overlay`
+- `status`: lifecycle maturity badge
+
+The hook also writes `guideSectionOrder` and `guideCategoryOrder` into
+`docs/manifest.json` so the browser UI and `llms.txt` can sort guides without
+filename-only heuristics.
 
 **DDaT Role Guides** (in `docs/guides/roles/`):
 
@@ -98,15 +100,6 @@ Add role guides to a separate `roleGuides` array in manifest.json (not the `guid
 | performance-analyst | 4 |
 | it-service-manager | 3 |
 | devops-engineer | 3 |
-
-**Guide Status** (from README command maturity):
-
-| Status | Description | Guide Files |
-|--------|-------------|-------------|
-| live | Production-ready | plan, principles, stakeholders, stakeholder-analysis, risk, sobc, requirements, data-model, diagram, traceability, principles-compliance, story, sow, evaluate, customize, risk-management, business-case |
-| beta | Feature-complete | dpia, research, strategy, roadmap, adr, hld-review, dld-review, backlog, servicenow, analyze, service-assessment, tcop, secure, presentation, artifact-health, design-review, procurement, knowledge-compounding, c4-layout-science, security-hooks, codes-of-practice, data-quality-framework, govs-007-security, national-data-strategy, upgrading, start, conformance, productivity, remote-control, mcp-servers |
-| alpha | Working, limited testing | data-mesh-contract, ai-playbook, atrs, pages |
-| experimental | Early adopters | platform-design, wardley, azure-research, aws-research, gcp-research, datascout, dos, gcloud-search, gcloud-clarify, trello, devops, mlops, finops, operationalize, mod-secure, jsp-936, migration, pinecone-mcp |
 
 ### 1.2 Global Documents
 
@@ -213,6 +206,8 @@ Only include these known artifact types. Match by type code pattern `ARC-{PID}-{
 | | ROAD | `ARC-*-ROAD-*.md` | Roadmap |
 | | STRAT | `ARC-*-STRAT-*.md` | Architecture Strategy |
 | | BKLG | `ARC-*-BKLG-*.md` | Product Backlog |
+| **Planning (Community-contributed — Open Agile Architecture Overlay)** | | | |
+| | OASTR | `ARC-*-OASTR-*.md` | Agile Strategy |
 | **Architecture** | | | |
 | | PRIN | `ARC-*-PRIN-*.md` | Architecture Principles |
 | | HLDR | `ARC-*-HLDR-*.md` | High-Level Design Review |
@@ -226,6 +221,20 @@ Only include these known artifact types. Match by type code pattern `ARC-{PID}-{
 | | WGAM | `ARC-*-WGAM-*.md` | Wardley Gameplay Analysis |
 | | WCLM | `ARC-*-WCLM-*.md` | Wardley Climate Assessment |
 | | WVCH | `ARC-*-WVCH-*.md` | Wardley Value Chain |
+| **Architecture (Community-contributed — TOGAF ADM Overlay)** | | | |
+| | ADMP | `ARC-*-ADMP-*.md` | ADM Preliminary / Architecture Vision |
+| | BPCM | `ARC-*-BPCM-*.md` | Business Capability Map |
+| | APP | `ARC-*-APP-*.md` | Application Inventory |
+| | APPR | `ARC-*-APPR-*.md` | Application Rationalisation |
+| | TRANS | `ARC-*-TRANS-*.md` | Transition Architecture |
+| | REPO | `ARC-*-REPO-*.md` | Architecture Repository |
+| **Architecture (Community-contributed — AI Agent Architecture Overlay)** | | | |
+| | AAGI | `ARC-*-AAGI-*.md` | Agent Inventory |
+| | AAGR | `ARC-*-AAGR-*.md` | Agent Architecture Specification |
+| | AAIN | `ARC-*-AAIN-*.md` | Agent Integration Architecture |
+| **Architecture (Community-contributed — Open Agile Architecture Overlay)** | | | |
+| | OAPR | `ARC-*-OAPR-*.md` | Product Architecture |
+| | OAAL | `ARC-*-OAAL-*.md` | ADM Lite Sprint Mapping |
 | **Governance** | | | |
 | | RISK | `ARC-*-RISK-*.md` | Risk Register |
 | | TRAC | `ARC-*-TRAC-*.md` | Traceability Matrix |
@@ -233,6 +242,20 @@ Only include these known artifact types. Match by type code pattern `ARC-{PID}-{
 | | ANAL | `ARC-*-ANAL-*.md` | Analysis Report |
 | | CONF | `ARC-*-CONF-*.md` | Conformance Assessment |
 | | GAPS | `ARC-*-GAPS-*.md` | Gap Analysis |
+| | CDAU | `ARC-*-CDAU-*.md` | Codebase Audit |
+| | GLOS | `ARC-*-GLOS-*.md` | Glossary |
+| | FWRK | `ARC-*-FWRK-*.md` | Framework Overview |
+| **Governance (Community-contributed — TOGAF ADM Overlay)** | | | |
+| | GAPA | `ARC-*-GAPA-*.md` | TOGAF Gap Analysis |
+| | BORD | `ARC-*-BORD-*.md` | Architecture Board Charter |
+| | ACHG | `ARC-*-ACHG-*.md` | Architecture Change Request |
+| **Governance (Community-contributed — AI Agent Architecture Overlay)** | | | |
+| | AAOV | `ARC-*-AAOV-*.md` | Agent Governance Framework |
+| | AASE | `ARC-*-AASE-*.md` | Agent Security Architecture |
+| | AAMT | `ARC-*-AAMT-*.md` | Agent Maturity Assessment |
+| **Governance (Community-contributed — Open Agile Architecture Overlay)** | | | |
+| | OASEC | `ARC-*-OASEC-*.md` | Agile Security |
+| | OAGOV | `ARC-*-OAGOV-*.md` | Agile Governance |
 | **Compliance** | | | |
 | | TCOP | `ARC-*-TCOP-*.md` | TCoP Assessment |
 | | SECD | `ARC-*-SECD-*.md` | Secure by Design |
@@ -292,6 +315,7 @@ Only include these known artifact types. Match by type code pattern `ARC-{PID}-{
 | | CRA | `ARC-*-CRA-*.md` | EU Cyber Resilience Act Assessment |
 | | DSA | `ARC-*-DSA-*.md` | EU Digital Services Act Assessment |
 | | DATAACT | `ARC-*-DATAACT-*.md` | EU Data Act Compliance Assessment |
+| | EUCSF | `ARC-*-EUCSF-*.md` | EU Cloud Sovereignty Framework Assessment |
 | **Compliance (Community-contributed — French Government)** | | | |
 | | CNIL | `ARC-*-CNIL-*.md` | CNIL / French GDPR Assessment |
 | | SECNUM | `ARC-*-SECNUM-*.md` | SecNumCloud 3.2 Assessment |
@@ -309,10 +333,11 @@ Only include these known artifact types. Match by type code pattern `ARC-{PID}-{
 | | MARPUB | `ARC-*-MARPUB-*.md` | French Public Procurement |
 | | REUSE | `ARC-*-REUSE-*.md` | Public Code Reuse Assessment |
 | **Compliance (Community-contributed — Austrian Government)** | | | |
+| | ATBFR | `ARC-*-ATBFR-*.md` | Austrian Accessibility Assessment (BaFG / WZG) |
 | | ATDSG | `ARC-*-ATDSG-*.md` | Austrian Data Protection Assessment |
 | | ATNISG | `ARC-*-ATNISG-*.md` | Austrian NISG (NIS2) Assessment |
 | **Procurement (Community-contributed — Austrian Government)** | | | |
-| | BVERGG | `ARC-*-BVERGG-*.md` | Austrian Public Procurement (BVergG 2018) |
+| | BVERGG | `ARC-*-BVERGG-*.md` | Austrian Public Procurement (BVergG 2018 idF VergabeRG 2026) |
 | **Compliance (Community-contributed — UAE Federal Overlay)** | | | |
 | | PDPL | `ARC-*-PDPL-*.md` | UAE PDPL Compliance Assessment |
 | | IAS | `ARC-*-IAS-*.md` | UAE IAS Statement of Applicability |
@@ -377,6 +402,12 @@ Only include these known artifact types. Match by type code pattern `ARC-{PID}-{
 | | FSSAFE | `ARC-*-FSSAFE-*.md` | UK EMI / PI Safeguarding Assessment |
 | | FSCD | `ARC-*-FSCD-*.md` | UK FCA Consumer Duty Board Report |
 | | FSCTP | `ARC-*-FSCTP-*.md` | UK Critical Third Parties Dependency Assessment |
+| **Compliance (Community-contributed — Netherlands Public Sector Overlay)** | | | |
+| | RBCLOUD | `ARC-*-RBCLOUD-*.md` | Rijksbreed Cloudbeleid Compliance Assessment |
+| | TBB | `ARC-*-TBB-*.md` | Te Beschermen Belangen / VIRBI 2025 Rubricering |
+| | BIO2 | `ARC-*-BIO2-*.md` | BIO2 Conformance Assessment |
+| **Governance (Community-contributed — Netherlands Public Sector Overlay)** | | | |
+| | NLEXIT | `ARC-*-NLEXIT-*.md` | NL Cloud Exit Plan |
 | **Compliance (Community-contributed — UK NHS Clinical Safety Overlay)** | | | |
 | | NHSDTAC | `ARC-*-NHSDTAC-*.md` | NHS Digital Technology Assessment Criteria (DTAC v3) |
 | | NHSMDR | `ARC-*-NHSMDR-*.md` | UK MDR + EU MDR SaMD/AIaMD Classification |

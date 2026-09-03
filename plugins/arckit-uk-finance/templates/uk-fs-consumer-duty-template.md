@@ -4,27 +4,13 @@
 
 ## Document Control
 
-<!-- Default: OFFICIAL. Upgrade to OFFICIAL-SENSITIVE if this document contains specific
-     pricing models, fraud-rate data, or vulnerable-customer cohort breakdowns that could
-     be exploited if disclosed to competitors or bad actors. Driven by
-     user_config.default_classification. -->
+<!-- DOC-CONTROL-HEADER -->
+<!-- Resolved at command-execution time per _partials/RENDERING.md. -->
+
+<!-- Domain-specific fields, retained after the resolved header per the Document Control Standard. -->
 
 | Field | Value |
 |-------|-------|
-| **Document ID** | {{DOCUMENT_ID}} |
-| **Document Type** | FCA Consumer Duty Annual Board Report |
-| **Project** | {{PROJECT_NAME}} |
-| **Classification** | {{CLASSIFICATION}} |
-| **Status** | DRAFT |
-| **Version** | 1.0 |
-| **Created Date** | {{CREATED_DATE}} |
-| **Last Modified** | {{LAST_MODIFIED}} |
-| **Review Cycle** | Annual (Board sign-off required before each anniversary of the Duty in-force date) |
-| **Next Review Date** | {{NEXT_REVIEW_DATE}} |
-| **Owner** | {{DOCUMENT_OWNER_ROLE}} — {{DOCUMENT_OWNER_NAME}} |
-| **Reviewed By** | PENDING |
-| **Approved By** | PENDING |
-| **Distribution** | {{DISTRIBUTION}} |
 | **Reporting Period** | {{REPORTING_PERIOD_START}} to {{REPORTING_PERIOD_END}} |
 | **Firm Legal Name** | {{FIRM_LEGAL_NAME}} |
 | **FCA Firm Reference Number** | {{FCA_FRN}} |
@@ -352,6 +338,29 @@ materialised.
 | FCA Consumer Duty — Firms | Consumer Duty information for firms | <https://www.fca.org.uk/firms/consumer-duty/information-firms> |
 | FCA Handbook | FCA Handbook homepage (navigate to PRIN 2A for Consumer Duty rules) | <https://www.handbook.fca.org.uk> |
 | FCA 2022/31 | Consumer Duty instrument — introduces Principle 12 and PRIN 2A | <https://www.fca.org.uk/publication/policy/fca-2022-31.pdf> |
+
+## 11. External References
+
+> This section provides traceability from generated content back to source documents.
+> Follow citation instructions in the project's citation reference guide.
+
+### Document Register
+
+| Doc ID | Filename | Type | Source Location | Description |
+|--------|----------|------|-----------------|-------------|
+| *None provided* | — | — | — | — |
+
+### Citations
+
+| Citation ID | Doc ID | Page/Section | Category | Quoted Passage |
+|-------------|--------|--------------|----------|----------------|
+| — | — | — | — | — |
+
+### Unreferenced Documents
+
+| Filename | Source Location | Reason |
+|----------|-----------------|--------|
+| — | — | — |
 
 ---
 

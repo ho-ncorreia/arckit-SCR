@@ -11,6 +11,7 @@ community overlays). Each plugin's commands reference templates in its
 own templates/ dir; the CLI-scaffolded copy is the union.
 """
 
+import filecmp
 import os
 import re
 import glob
@@ -21,6 +22,7 @@ PLUGIN_SOURCES = [
     "plugins/arckit-claude",
     "plugins/arckit-uae",
     "plugins/arckit-fr",
+    "plugins/arckit-nl",
     "plugins/arckit-ca",
     "plugins/arckit-eu",
     "plugins/arckit-at",
@@ -29,7 +31,15 @@ PLUGIN_SOURCES = [
     "plugins/arckit-us",
     "plugins/arckit-uk-finance",
     "plugins/arckit-uk-nhs",
+    "plugins/arckit-togaf-adm",
+    "plugins/arckit-oaa",
+    "plugins/arckit-agent-architecture",
+    "plugins/arckit-repo",
 ]
+# arckit-fde is absent by design: a tooling plugin with no governance templates
+# to mirror into .arckit/templates/. arckit-repo was in that category until
+# /arckit:repo-audit added codebase-audit-template.md, which is a governance
+# template and must stay in sync with the CLI tree like any other.
 CLI_TEMPLATES_DIR = os.path.join(REPO_ROOT, ".arckit", "templates")
 
 _TEMPLATE_RE = re.compile(r"\$\{CLAUDE_PLUGIN_ROOT\}/templates/([\w-]+\.md)")
@@ -106,3 +116,86 @@ def test_plugin_and_cli_templates_are_in_sync():
             f"{sorted(only_in_cli)}"
         )
     assert not messages, "\n".join(messages)
+
+
+def test_plugin_and_cli_templates_have_identical_content():
+    """Every template present in both trees must be byte-identical.
+
+    Filenames are not enough. The sibling test above compares basenames only,
+    and 23 templates had drifted in content while it passed (#784) — the same
+    bug test_plugin_and_cli_partials_are_in_sync already documents for
+    _partials/, one scope down. Sixteen of the 23 still carried the frozen
+    Document Control table that <!-- DOC-CONTROL-HEADER --> replaced, so the
+    RENDERING.md regime routing never fired for them at all.
+
+    This matters because commands resolve .arckit/templates/<name> in the
+    project root BEFORE falling back to ${CLAUDE_PLUGIN_ROOT}/templates/. In a
+    CLI-scaffolded project the mirror is the copy that actually renders, and
+    the plugin copy is never read.
+
+    The plugin tree is the source of truth; the CLI tree is its mirror. There
+    is no sync script for it (sync-shared-assets.py writes into plugin dirs
+    only), so the copy is manual.
+    """
+    drifted = []
+    for plugin in PLUGIN_SOURCES:
+        for path in sorted(glob.glob(os.path.join(REPO_ROOT, plugin, "templates", "*.md"))):
+            name = os.path.basename(path)
+            cli_path = os.path.join(CLI_TEMPLATES_DIR, name)
+            if not os.path.exists(cli_path):
+                continue  # absence is the sibling test's job, not this one
+            if not filecmp.cmp(path, cli_path, shallow=False):
+                drifted.append(f"{plugin}/templates/{name}")
+    assert not drifted, (
+        "Content differs between the plugin tree and .arckit/templates/ for "
+        f"{len(drifted)} template(s):\n  " + "\n  ".join(drifted) + "\n"
+        "Copy the plugin copy over the CLI copy — the plugin tree is the source of truth."
+    )
+
+
+def test_plugin_and_cli_partials_are_in_sync():
+    """Every _partials file in the core plugin must exist in .arckit/templates/_partials/
+    with identical content.
+
+    The sibling test globs templates/*.md non-recursively, so _partials/ was
+    never covered and document-control-at.md silently failed to mirror.
+
+    Content, not just filenames: the first version of this test compared
+    basenames only, and passed while .arckit/templates/_partials/RENDERING.md
+    still carried the pre-regime-routing config-only chain. RENDERING.md is the
+    normative resolution rule for the <!-- DOC-CONTROL-HEADER --> marker, so a
+    stale mirror means CLI-scaffolded projects render from a rule the plugin
+    stopped following. scripts/sync-shared-assets.py compares the same way.
+    """
+    plugin_partials_dir = os.path.join(
+        REPO_ROOT, "plugins", "arckit-claude", "templates", "_partials"
+    )
+    cli_partials_dir = os.path.join(CLI_TEMPLATES_DIR, "_partials")
+    plugin_partials = {
+        os.path.basename(p) for p in glob.glob(os.path.join(plugin_partials_dir, "*.md"))
+    }
+    assert plugin_partials, (
+        "No partials found in plugins/arckit-claude/templates/_partials/ — "
+        "the source directory is missing, empty, or has been renamed. This test "
+        "cannot verify the CLI mirror without it."
+    )
+    cli_partials = {os.path.basename(p) for p in glob.glob(os.path.join(cli_partials_dir, "*.md"))}
+    missing = plugin_partials - cli_partials
+    assert not missing, (
+        "In plugins/arckit-claude/templates/_partials/ but not .arckit/templates/_partials/: "
+        f"{sorted(missing)}"
+    )
+    drifted = sorted(
+        name
+        for name in plugin_partials
+        if not filecmp.cmp(
+            os.path.join(plugin_partials_dir, name),
+            os.path.join(cli_partials_dir, name),
+            shallow=False,
+        )
+    )
+    assert not drifted, (
+        "Content differs between plugins/arckit-claude/templates/_partials/ and "
+        f".arckit/templates/_partials/: {drifted}\n"
+        "Copy the core plugin's copy over the CLI copy — the plugin tree is the source of truth."
+    )

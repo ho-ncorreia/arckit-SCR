@@ -1,5 +1,6 @@
 ---
 description: Create or update a reusable supplier profile for G-Cloud submissions
+doc-type: SUPP
 effort: high
 handoffs:
   - command: /arckit:service-design
@@ -178,6 +179,8 @@ Populate the Document Control header and Revision History (version `1.0` for a n
 increment for an update and add a Revision History row describing what changed).
 
 ### 7. Write the supplier profile
+
+Before writing, read `${CLAUDE_PLUGIN_ROOT}/references/quality-checklist.md` and verify all **Common Checks** plus the **SUPP** per-type checks pass. Fix any failures before proceeding.
 
 Use the **Write tool** to save the completed document to:
 

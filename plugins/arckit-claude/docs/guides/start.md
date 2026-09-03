@@ -23,7 +23,7 @@ Examples below use Claude Code / OpenCode syntax. Translate commands using the t
 
 If ArcKit is already installed and enabled for your platform, skip to Step 1.
 
-For Claude Code, ArcKit v4.14.0 needs Claude Code **v2.1.121 or later**. From a terminal:
+For Claude Code, ArcKit needs Claude Code **v2.1.251 or later**. From a terminal:
 
 ```bash
 claude install latest
@@ -67,6 +67,8 @@ $arckit-init
 $arckit-principles
 ```
 
+> **Claude Code users — ArcKit "workflows" are unrelated to Claude Code's dynamic-workflows feature.** Throughout this guide, "workflow" means an ArcKit command sequence. Claude Code's built-in dynamic workflows (which fan work out across many agents) are a separate feature; as of Claude Code v2.1.160 their free-text trigger keyword is `ultracode` — the word *workflow* no longer starts one — so the term is safe to type here. ArcKit ships no `ultracode` content, and running a slash command (`/arckit:start`) or the `architecture-workflow` skill never starts a dynamic workflow. Other platforms (Codex, Gemini, OpenCode, Copilot) have no equivalent feature.
+
 ---
 
 ## Vibe Start — The 3-Prompt Super Prompt
@@ -97,7 +99,7 @@ If you want to skip the decision tree and let ArcKit do the heavy lifting, this 
 
 - **Heavily regulated work** (UK Gov Secure by Design, MOD, EU AI Act) where each artifact needs reviewer sign-off before the next is generated.
 - **Existing projects** with artifacts already on disk — run `/arckit:navigator` first to see what is missing rather than regenerating.
-- **Token-constrained sessions** — the full chain can run dozens of commands. Use Opus 4.7 or 4.8 with the `max` or `xhigh` effort levels.
+- **Token-constrained sessions** — the full chain can run dozens of commands. Use the Claude Code session default, normally Claude Sonnet 5, and move to Claude Fable 5.1 (the default Fable model since Claude Code v2.1.257) only where your tenant exposes it and the work justifies the higher tier.
 
 ### Tips For Vibe Start
 
@@ -136,7 +138,7 @@ Output: Console only (no file created). This is a navigation aid, not a governan
 
 ```text
 ArcKit — The Enterprise Architecture Governance Harness
-Version 4.7.1 | 70 commands | Plugin mode
+Plugin mode
 
 Your AI-powered harness for strategy, architecture, delivery, and assurance
 — all driven by templates and traceability.

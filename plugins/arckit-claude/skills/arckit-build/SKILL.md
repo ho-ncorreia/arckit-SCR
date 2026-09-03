@@ -1,6 +1,6 @@
 ---
 name: arckit-build
-description: "This skill should be used when the user wants to bulk-build ArcKit artefacts in parallel rather than running individual /arckit:* commands one at a time. Invoke manually with /arckit:arckit-build when the task sounds like 'kick off a build', 'build everything', 'generate all artefacts', 'run all the commands', 'rebuild this project from scratch', 'resume the build', 'pick up where we left off', 'refresh the artefacts', 'run the recipe', 'build the whole project end-to-end', or 'parallel build', or mentions `--plan`, `--resume`, `--target`, `--refresh`, `--recipe`, or `.arckit/state.json`. The skill orchestrates parallel /arckit:* generation using subagent isolation: reads project state, computes the artefact dependency DAG, dispatches one subagent per target per wave (each subagent invokes a /arckit:* skill in its own context), validates outputs, commits the wave, and persists progress to .arckit/state.json for resumability."
+description: "Bulk-builds a project's ArcKit artefacts in parallel from a YAML recipe: computes the artefact dependency DAG, dispatches one subagent per target per wave, validates each output, commits the wave and persists progress to .arckit/state.json so a build can resume. Manual only: run /arckit:arckit-build with --plan, --resume, --target, --refresh or --recipe. Not needed for a single artefact; run that /arckit:* command directly."
 disable-model-invocation: true
 ---
 
@@ -16,7 +16,7 @@ You are running the ArcKit build harness. Your job is **orchestration only** —
 - **State is sacred** — update `projects/{P}-{NAME}/.arckit/state.json` after every wave, before moving on.
 - **Single message, multiple Agent calls** for parallelism within a wave. Never loop sequential Agent calls.
 - **Idempotency**: if state says `complete`, the file exists at the recorded path, AND every input file's SHA-256 matches the hash recorded at build time, skip. Otherwise the target is **stale** — rebuild it (and propagate staleness through the DAG). See § "Input-hash change detection".
-- **Trust the path-allocation hook.** ArcKit's `validate-arc-filename.mjs` PreToolUse hook is the authoritative path normalizer — it allocates sequence numbers, applies subfolders, pads project IDs at write time. The orchestrator and workers never construct paths by string substitution or call `generate-document-id.sh` directly. Read the corrected path back from the Write tool result.
+- **Trust the path-allocation hook.** ArcKit's `validate-arc-filename.mjs` PreToolUse hook is the authoritative path normalizer — it allocates sequence numbers, applies subfolders, pads project IDs at write time. The orchestrator and workers never construct paths by string substitution or call `generate-document-id.mjs` directly. Read the corrected path back from the Write tool result.
 
 ## Args
 
@@ -106,6 +106,8 @@ The orchestrator substitutes these placeholders in `args` and `output.project` b
 
 `deps: ["ADR-*"]` matches all targets whose ID begins with `ADR-`. Exact IDs take precedence; globs expand at wave-computation time against the resolved target list (after optional-target filtering).
 
+An exact-ID dep naming an **optional target** orders the build only while that target is enabled: disabled optional-target IDs are pruned from every remaining target's `deps` at resolution time (step 4 below). A recipe may therefore declare the true ordering — `OAGOV` deps `[OAAL, OASEC]` in `oaa-full` — without `--exclude OASEC` leaving `OAGOV` waiting forever on a target that will never run. A dep naming a *non-optional* target that doesn't exist in the recipe is still an error.
+
 ## Input-hash change detection
 
 The orchestrator records the SHA-256 of every input artefact at build time and compares against the live filesystem on the next run. This catches the "user edited REQ after the build completed but never re-ran" case that pure `test -f` idempotency misses.
@@ -165,7 +167,14 @@ Standard topological sort with parallelism:
 3. While pending non-empty:
    - `wave = { t ∈ pending : deps(t) ⊆ done }` (after expanding globs)
    - If wave empty → cycle / unresolvable. Halt with error, list involved targets.
+   - **If `|wave| > 20`, split it**: dispatch the first 20 (stable sort by target ID), and leave the remainder in `pending` for the next iteration. They have no unmet deps, so they form the next wave immediately.
    - Emit wave; remove its members from pending; (after dispatch + validate) add to done.
+
+**Why the 20 cap is load-bearing.** Claude Code caps concurrently-running subagents at 20 by default (`CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS`, v2.1.217+) and **denies** over-cap spawns rather than queueing them — the 21st `Agent` call in a single message fails with *"Concurrent subagent limit reached … Do not retry"*. Because this harness is halt-on-fail, an over-wide wave does not run slower, it fails. No bundled recipe exceeds 16 (CI enforces this via `scripts/check_recipes.py`), but a user-authored recipe under `.arckit/recipes/` never passes through CI, so split at dispatch time rather than assuming the recipe is well-formed.
+
+There is **no longer a per-session spawn ceiling** to budget against: Claude Code v2.1.224 removed the 200-subagent-per-session cap, and `CLAUDE_CODE_MAX_SUBAGENTS_PER_SESSION` is now accepted in settings but never read. Concurrency (above) and nesting depth are the only subagent limits left. Do not reintroduce a per-session budget check here.
+
+A split wave is still one commit — commit after the whole logical wave completes, not after each chunk of 20.
 
 **Worked example** — for project 001 (UK-SaaS recipe) **starting from empty state**, the algorithm produces something like:
 
@@ -199,6 +208,8 @@ Wave {N}/{total}: {targets joined}
 ### 2. Single message, multiple Agent calls — all in parallel
 
 Use the **Agent tool** with `subagent_type: "general-purpose"`. One Agent call per target. **All in the same assistant message** so they run in parallel.
+
+**Pass `run_in_background: false` on every call in the wave.** Claude Code v2.1.232 made non-teammate `Agent` spawns background-by-default in interactive sessions — a backgrounded spawn returns `async_launched` and an `agentId`, *not* the worker's report. This harness needs the reports before it can validate, commit, and decide whether to halt, so a wave is exactly the case the parameter exists for. The parameter is stripped from the tool schema in some contexts; if it is unavailable, the spawns are background-only and you must **wait for every worker's completion notification before step 3** — do not proceed on `async_launched` results, and never infer a worker's outcome from the fact that it launched.
 
 Per-agent prompt template (substitute `{...}` placeholders from the resolved target):
 
@@ -240,7 +251,7 @@ Steps:
    corrected path as `updatedInput.file_path` and the actual write proceeds
    there. You will see this corrected path in the Skill tool's result.
 
-   Read `ACTUAL_PATH` from that result. Do NOT call `generate-document-id.sh`
+   Read `ACTUAL_PATH` from that result. Do NOT call `generate-document-id.mjs`
    yourself or construct paths by string substitution — the hook is the
    authoritative path allocator.
 
@@ -263,7 +274,7 @@ Do NOT include the document content in your report. Just the summary.
 
 ### 3. Wait for all agents
 
-When all return, collect summaries.
+When all return, collect summaries. "Return" means the worker's ≤200-word report is in hand — not that its `Agent` call succeeded. A launch acknowledgement is not a result (see the `run_in_background` note in step 2).
 
 ### 4. Validate
 
@@ -310,7 +321,7 @@ Build wave {N}: {targets joined} via arckit-build
 
 {One-line per target with line count and headline result}
 
-Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
+Co-Authored-By: Claude Code <noreply@anthropic.com>
 EOF
 )"
 ```
@@ -363,7 +374,7 @@ State written by older versions (`state_format_version: "0.3"`) is read-compatib
 1. **Parse arguments** from skill input (project, --plan, --resume, --recipe, --enable, --exclude, etc.). If project not specified, ask user.
 2. **Detect project**: resolve `<project>` arg → `projects/{P}-{slug}/`. Confirm directory exists.
 3. **Load recipe**: resolve `--recipe NAME` (default `uk-saas`) against the precedence list. Read the YAML with the Read tool. Validate top-level shape (`recipe`, `schema_version`, `targets`, `defaults.version`). Halt with a clear error if the recipe file is missing or malformed.
-4. **Resolve enabled targets**: drop `optional_targets` whose `default: false` unless `--enable ID` was passed; drop `optional_targets` named in `--exclude ID`. Apply `{P}/{NAME}/{V}/{TOPIC}` substitution to every `args` and `output.project` field.
+4. **Resolve enabled targets**: drop `optional_targets` whose `default: false` unless `--enable ID` was passed; drop `optional_targets` named in `--exclude ID`. Then prune every dropped optional-target ID from the remaining targets' `deps` lists — a dep on an optional target orders the build only when that target is enabled; without pruning, the dependent target's deps could never all be `done` and it would sit in `pending` forever. Apply `{P}/{NAME}/{V}/{TOPIC}` substitution to every `args` and `output.project` field.
 5. **Load state.json** at `projects/{P}-{NAME}/.arckit/state.json`. If absent, scan project dir for existing `ARC-{P}-*-v*.md` files and infer initial state.
 6. **Subagent capability smoke-test** (first wave only, skip on `--resume`): before dispatching the real wave, spawn one throwaway `general-purpose` Agent with this prompt:
 

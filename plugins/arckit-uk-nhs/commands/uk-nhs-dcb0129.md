@@ -1,5 +1,6 @@
 ---
 description: "[COMMUNITY] Generate a NHS DCB0129 manufacturer Clinical Safety Case Report and Hazard Log (Marcus Baw SAFETY.md 3-file spec) for a digital health product placed on the NHS market."
+doc-type: none
 argument-hint: "<project ID or product, e.g. '001', 'paediatric growth tool'>"
 effort: high
 keep-coding-instructions: true
@@ -30,7 +31,7 @@ $ARGUMENTS
 
 ## Context
 
-NHS DCB0129 ("Clinical Risk Management: its Application in the Manufacture of Health IT Systems") is the NHS England information standard that defines the clinical risk management process a manufacturer of health IT must follow. It is mandated under the Health and Social Care Act 2012 s250 for any system that will be deployed in the NHS. The standard requires four deliverables:
+NHS DCB0129 ("Clinical Risk Management: its Application in the Manufacture of Health IT Systems") is the NHS England information standard that defines the clinical risk management process a manufacturer of health IT must follow. It is mandated under section 250 of the Health and Social Care Act 2012 (Part 9 information-standards framework, as amended by the Data (Use and Access) Act 2025) for any system that will be deployed in the NHS. The standard requires four deliverables:
 
 1. **Clinical Risk Management Plan** (process) — covered briefly in `SAFETY.md`; can be expanded to a separate `SAFETY-PLAN.md` for Tier 3 / SaMD products
 2. **Hazard Log** — `HAZARD-LOG.md` (YAML frontmatter + rendered table)
@@ -52,7 +53,7 @@ NHS DCB0129 ("Clinical Risk Management: its Application in the Manufacture of He
 - **Risk level**: `unacceptable` | `high` | `medium` | `low`
 - **Status**: `open` | `mitigated` | `accepted` | `closed`
 
-> Note: the DCB0129 scale inverts the usual ArcKit / Orange Book convention where 5 = highest. We follow DCB0129 because that is what CSOs sign off against. Templates carry the legend prominently.
+> Note: ArcKit numbers the DCB0129 labels 1 (worst) to 5 (least) to store them; DCB0129 itself puts no numbers on the severity/likelihood axes (word-labelled), and its only numbers are the Risk Class cells (1-5, 5 = unacceptable/highest, the conventional direction). ArcKit keeps the DCB0129 label order because that is what CSOs sign off against; templates carry the legend prominently.
 
 ## Process
 
@@ -72,7 +73,7 @@ NHS DCB0129 ("Clinical Risk Management: its Application in the Manufacture of He
 
    Required template files: `uk-nhs-dcb0129-safety-template.md` (root `SAFETY.md` anchor), `uk-nhs-dcb0129-case-template.md` (`SAFETY-CASE.md`), `uk-nhs-dcb0129-hazard-template.md` (`HAZARD-LOG.md`). The wrapper template `uk-nhs-dcb0129-template.md` exists only for `/arckit:customize` listing — do not write its content.
 
-3. **Resolve the project**: use `scripts/bash/create-project.sh --json <project-name>` if the project does not yet exist; otherwise locate `projects/{NNN}-<slug>/`.
+3. **Resolve the project**: use `scripts/bash/create-project.sh --json --name "<project-name>"` if the project does not yet exist; otherwise locate `projects/{NNN}-<slug>/`.
 
 4. **Ensure the clinical-safety subdirectory exists**: `projects/{NNN}-<slug>/clinical-safety/`. Use `mkdir -p` via the Bash tool if needed. All three Marcus files land in this directory.
 
@@ -88,6 +89,7 @@ NHS DCB0129 ("Clinical Risk Management: its Application in the Manufacture of He
    - `last-reviewed` — today's date
    - **Summary** section (one to two paragraphs): what the product does, intended clinical context, scope of safety claim, summary of safety approach
    - **Documents** section: relative links to `./SAFETY-CASE.md` and `./HAZARD-LOG.md` (plus `./SAFETY-PLAN.md` if the user explicitly asked for a Tier 3 build)
+   - **Applicable standards and assurance domains** and **Roles and responsibilities** tables: populate using the screening questions in `${CLAUDE_PLUGIN_ROOT}/references/duaa2025.md`. The CSO owns only the clinical-safety row; adjacent domains are cross-referenced, not annexed.
 
 7. **Generate `SAFETY-CASE.md`** following the GSN-inspired six-section structure:
    1. **Intended Use** — clinical purpose, indications, contraindications, intended user population (clinicians / patients / both), intended clinical context
@@ -108,12 +110,14 @@ NHS DCB0129 ("Clinical Risk Management: its Application in the Manufacture of He
    - `controls:` array — at minimum the corresponding controls (C001+) referenced by the hazards
    - Render the human-readable Markdown table below the frontmatter showing ID, Description, Sev, Like, Risk, Controls, Residual Risk, Status
    - Each hazard MUST have `cso-reviewed: false` and `status: open` in the initial generation (the CSO transitions these during review)
+   Before finalising, walk every hazard-archetype family in `${CLAUDE_PLUGIN_ROOT}/references/hazard-archetypes.md`. For each family, either raise at least one hazard or record in the safety case why the family is not applicable to this product. This makes hazard discovery coverage-led, not example-led.
 
 9. **Adapt to the actual project**: the six starter hazards above are baseline. If the project's requirements suggest additional product-specific hazards (e.g. an AI-powered decision support tool has additional model-drift / model-bias hazards), add them. Do not pad with generic hazards just to hit a count.
 
 10. **Populate the External References section** at the foot of `SAFETY-CASE.md` per `${CLAUDE_PLUGIN_ROOT}/references/citation-instructions.md`. NHS DCB0129 and the Marcus SAFETY.md spec MUST appear in the Document Register.
 
 11. **Write all three files via the Write tool**:
+    Before writing the files, verify the checks in `${CLAUDE_PLUGIN_ROOT}/references/nhs-clinical-safety-checklist.md` and resolve any failures.
     - `projects/{NNN}-<slug>/clinical-safety/SAFETY.md`
     - `projects/{NNN}-<slug>/clinical-safety/SAFETY-CASE.md`
     - `projects/{NNN}-<slug>/clinical-safety/HAZARD-LOG.md`

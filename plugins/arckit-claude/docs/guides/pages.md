@@ -27,6 +27,14 @@ Output:
 - `docs/index.html` - Main documentation site
 - `docs/manifest.json` - Document index
 - `docs/llms.txt` - LLM/agent-friendly markdown index ([llmstxt.org](https://llmstxt.org/) format) linking to every artifact, guide, and project. Hand-curated `docs/llms.txt` files (without the ArcKit generation marker) are preserved.
+- `docs/telemetry.json` - Session telemetry rollup (newer-first, capped at 50 sessions). Written by the `session-learner.mjs` Stop hook when `docs/` exists; powers the dashboard's Session Telemetry + Recent Sessions panels.
+
+Guide grouping metadata is sourced from `config/guide-groups.mjs`. The
+manifest includes each guide's functional `category`, top-level `section`,
+optional overlay/community `pack`, lifecycle `status`, plus
+`guideSectionOrder` and `guideCategoryOrder` for deterministic UI sorting.
+The fallback `Other / Uncategorised` section is reserved for guides without an
+explicit mapping.
 
 ---
 
@@ -170,6 +178,8 @@ The dashboard (`#dashboard`) is the default landing page, providing an instant p
 | Project Artifact Coverage | Horizontal bar chart per project with color coding (green >=80%, amber >=50%, red <50%) |
 | Projects Table | Name, Docs, Diagrams, ADRs, Vendors, Coverage mini-bar |
 | Governance Coverage | Checklist of key artifact types present/absent across portfolio |
+| Session Telemetry | Aggregate tool calls, median p50 latency, agents spawned, MCP calls across the last 10 sessions (only renders when `docs/telemetry.json` exists — written by `session-learner.mjs`) |
+| Recent Sessions | Last 5 sessions with date, type, tool count, p50, agent count, MCP count |
 
 ### Coverage Calculation
 

@@ -1,13 +1,13 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "arckit",
-  "version": "5.15.0",
-  "description": "The Enterprise Architecture Governance Harness - 73 slash commands across strategy, architecture, delivery, and assurance",
+  "version": "6.13.0",
+  "description": "The Enterprise Architecture Governance Harness - 75 slash commands across strategy, architecture, delivery, and assurance",
   "author": {
     "name": "TractorJuice",
     "url": "https://github.com/tractorjuice"
   },
-  "repository": "https://github.com/tractorjuice/arc-kit",
+  "repository": "https://github.com/tractorjuice/arckit-claude",
   "license": "MIT",
   "mcpServers": "./.mcp.json",
   "experimental": {
@@ -23,13 +23,13 @@
   "userConfig": {
     "GOOGLE_API_KEY": {
       "title": "Google API Key",
-      "description": "Google API key for the google-developer-knowledge MCP server (optional — leave blank to disable)",
+      "description": "Google API key for the google-developer-knowledge MCP server, used by /arckit:gcp-research. Only needed if you run that command. Left blank, the server shows as 'failed to connect' in /plugin — harmless, and everything else works normally.",
       "type": "string",
       "sensitive": true
     },
     "DATA_COMMONS_API_KEY": {
       "title": "Data Commons API Key",
-      "description": "Data Commons API key for the datacommons-mcp MCP server (optional — leave blank to disable)",
+      "description": "Data Commons API key (from apikeys.datacommons.org) for the datacommons-mcp MCP server, used by /arckit:datascout. Only needed if you run that command. Left blank, the server shows as 'failed to connect' in /plugin — harmless, and everything else works normally.",
       "type": "string",
       "sensitive": true
     },
@@ -40,17 +40,17 @@
     },
     "default_classification": {
       "title": "Default Classification",
-      "description": "Default document classification: PUBLIC, OFFICIAL, OFFICIAL-SENSITIVE, or SECRET",
+      "description": "Default document classification, using the values of the active classification_scheme (UK: PUBLIC / OFFICIAL / OFFICIAL-SENSITIVE / SECRET; UAE Smart Data: Open / Shared / Confidential / Secret / Top Secret; AT InfoSiG: Offen / Eingeschränkt / Vertraulich / Geheim / Streng geheim). Applies to jurisdiction-agnostic artefacts only — an artefact whose doc-type declares a regime (a Canadian PIA, an Australian PSPF scorecard) uses that regime's ladder regardless of this setting.",
       "type": "string"
     },
     "governance_framework": {
       "title": "Governance Framework",
-      "description": "Default governance framework: 'UK Gov' for Service Standard/TCoP/NCSC CAF, 'UAE Federal' for UAE Cabinet instruments + PDPL + IAS, or 'Generic' for non-government",
+      "description": "Default governance framework: 'UK Gov' for Service Standard/TCoP/NCSC CAF, 'UAE Federal' for UAE Cabinet instruments + PDPL + IAS, 'AT Gov' for Austrian federal bodies (DSG/NISG/BVergG + InfoSiG classification), or 'Generic' for non-government",
       "type": "string"
     },
     "classification_scheme": {
       "title": "Classification Scheme",
-      "description": "Classification ladder used in Document Control headers: 'UK' (PUBLIC / OFFICIAL / OFFICIAL-SENSITIVE / SECRET) or 'UAE Smart Data' (Open / Shared / Confidential / Secret / Top Secret). Defaults to UK when blank.",
+      "description": "Classification ladder used in Document Control headers: 'UK' (PUBLIC / OFFICIAL / OFFICIAL-SENSITIVE / SECRET), 'UAE Smart Data' (Open / Shared / Confidential / Secret / Top Secret), or 'AT InfoSiG' (Offen / Eingeschränkt / Vertraulich / Geheim / Streng geheim, per Informationssicherheitsgesetz). Defaults to UK when blank. Applies to jurisdiction-agnostic artefacts only — an artefact whose doc-type declares a regime (a Canadian PIA, an Australian PSPF scorecard) uses that regime's ladder regardless of this setting.",
       "type": "string"
     },
     "desktop_notifications": {

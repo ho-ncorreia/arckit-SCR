@@ -1,5 +1,6 @@
 ---
 description: "[COMMUNITY] Assess SecNumCloud 3.2 qualification compliance for French sovereign cloud procurement and OIV/OSE obligations"
+doc-type: SECNUM
 argument-hint: "<project ID or cloud service description, e.g. '001', 'health data platform for CHR'>"
 effort: high
 handoffs:
@@ -73,6 +74,7 @@ Read all documents from Step 0. Extract and note key data classification levels,
 - **First**, check if `.arckit/templates/fr-secnumcloud-template.md` exists in the project root
 - **If found**: Read the user's customized template
 - **If not found**: Read `${CLAUDE_PLUGIN_ROOT}/templates/fr-secnumcloud-template.md`
+- **Then read** `${CLAUDE_PLUGIN_ROOT}/templates/_partials/RENDERING.md` and resolve the `<!-- DOC-CONTROL-HEADER -->` marker in the template before writing. `SECNUM` carries the France regime, which hard-routes to `_partials/document-control-fr.md` whatever the operator's user config says.
 
 ### Step 4: Entity and Sensitivity Scoping
 
@@ -104,7 +106,7 @@ Show a brief scoping summary before generating the full document.
    - Status: DRAFT
    - Created Date: {current_date}
    - Next Review Date: {current_date + 12 months}
-   - Classification: OFFICIAL-SENSITIVE (minimum for cloud assessments)
+   - Classification: Diffusion Restreinte (minimum for cloud assessments)
 
 3. **Section 1: Context and Scope**
    - Project sensitivity classification from Step 4
@@ -144,7 +146,7 @@ Show a brief scoping summary before generating the full document.
     - Shortlist providers by qualification status, extraterritorial risk, and fit to requirements
     - State clear recommendation with rationale based on data sensitivity level
 
-Before writing the file, read `${CLAUDE_PLUGIN_ROOT}/references/quality-checklist.md` and verify all **Common Checks** pass.
+Before writing the file, read `${CLAUDE_PLUGIN_ROOT}/references/quality-checklist.md` and verify all **Common Checks** plus **SECNUM** per-type checks pass.
 
 Write the document to:
 
@@ -162,7 +164,7 @@ projects/{project_id}/ARC-{PROJECT_ID}-SECNUM-v{VERSION}.md
 📄 Document: projects/{project_id}/ARC-{PROJECT_ID}-SECNUM-v{VERSION}.md
 📋 Document ID: {document_id}
 📅 Assessment Date: {date}
-🔒 Classification: OFFICIAL-SENSITIVE
+🔒 Classification: Diffusion Restreinte
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📊 Scoping Summary
@@ -198,6 +200,7 @@ Next steps:
 
 - **Qualification vs Visa**: A SecNumCloud Visa (provisional) does NOT confer the same assurance level as a full Qualification. Always distinguish in procurement documents.
 - **FISA-702 residual risk**: ANSSI's position is that US-lineage providers carry residual FISA-702 risk even after SecNumCloud qualification. This must be explicitly acknowledged and risk-accepted at the appropriate authority level.
+- **OIV/OSE terminology is being succeeded by EE/EI**: France's NIS2 transposition ("loi Résilience") moves former OIV/OSE entities into two new categories — Entités Essentielles (EE) and Entités Importantes (EI) — with a much larger population in scope than the legacy regime. This command still uses OIV/OSE as the working vocabulary; confirm current terminology and designation with the client's legal/compliance function before relying on it, as the exact transposition timeline was not independently confirmed against a primary source at the time of writing.
 - **Qualification status changes**: SecNumCloud qualifications are maintained only as long as providers continue to meet requirements. Include a contractual clause requiring maintained qualification throughout the contract period.
 - **Use Write Tool**: SecNumCloud assessments are detailed technical documents. Always use the Write tool.
 
@@ -206,10 +209,10 @@ Next steps:
 | Document | Publisher | URL |
 |----------|-----------|-----|
 | SecNumCloud qualification scheme — official page | ANSSI | https://cyber.gouv.fr/secnumcloud |
-| SecNumCloud 3.2 referential (requirements document) | ANSSI | https://cyber.gouv.fr/publications/referentiel-secnumcloud-32 |
-| List of SecNumCloud-qualified providers | ANSSI | https://cyber.gouv.fr/prestataires-de-service-qualifies-secnumcloud |
+| SecNumCloud 3.2 referential (requirements document) | ANSSI | https://cyber.gouv.fr/enjeux-technologiques/cloud/ |
+| List of SecNumCloud-qualified providers | ANSSI | https://cyber.gouv.fr/offre-de-service/solutions-certifiees-et-qualifiees/services-de-securite-evalue/ |
 | UGAP catalogue — sovereign cloud framework agreements | UGAP | https://www.ugap.fr/ |
-| ANSSI — OIV obligations | ANSSI | https://cyber.gouv.fr/les-oiv-quest-ce-que-cest |
+| ANSSI — OIV obligations | ANSSI | https://cyber.gouv.fr/le-dispositif-saiv |
 | NIS2 Directive — OSE obligations | EUR-Lex | https://eur-lex.europa.eu/eli/dir/2022/2555/oj |
 | DINUM cloud doctrine for French public administration | DINUM | https://www.numerique.gouv.fr/services/cloud/doctrine/ |
 
@@ -226,7 +229,7 @@ Next steps:
 - ✅ UGAP catalogue guidance included
 - ✅ Residual risk register populated
 - ✅ Decision matrix with recommendation provided
-- ✅ Document classified OFFICIAL-SENSITIVE
+- ✅ Document classified Diffusion Restreinte
 
 ## Example Usage
 

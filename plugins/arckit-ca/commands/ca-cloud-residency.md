@@ -1,5 +1,6 @@
 ---
 description: "[COMMUNITY] Generate a Canada sovereign cloud residency assessment — GC Cloud Adoption Strategy alignment, Direction on the Secure Use of Commercial Cloud Services, residency at Protected B+, sovereign options matrix (AWS Canada, Azure Canada Central/East, GCP Canada), CLOUD Act foreign-access analysis, exit and portability plan."
+doc-type: CACR
 argument-hint: "<project ID or service name>"
 effort: high
 keep-coding-instructions: true
@@ -36,8 +37,8 @@ You are an enterprise architect generating a Canada sovereign cloud residency as
    - **First**, check `.arckit/templates-custom/ca-cloud-residency-template.md` (user override)
    - **Then**, `.arckit/templates/ca-cloud-residency-template.md`
    - **Fallback**, `${CLAUDE_PLUGIN_ROOT}/templates/ca-cloud-residency-template.md`
-3. Use `scripts/bash/generate-document-id.sh <PROJECT_ID> CACR --filename` for the artefact filename.
-4. Resolve the `<!-- DOC-CONTROL-HEADER -->` marker per `RENDERING.md`. Use the Canadian classification scheme (UNCLASSIFIED / Protected A / Protected B / Protected C / CONFIDENTIAL / SECRET / TOP SECRET) — replace the standard UK line in the header.
+3. Use `node scripts/generate-document-id.mjs <PROJECT_ID> CACR --filename` for the artefact filename.
+4. Resolve the `<!-- DOC-CONTROL-HEADER -->` marker per `RENDERING.md` before writing the artefact. `RENDERING.md` hard-routes the CA regime to `_partials/document-control-ca.md`, which already carries the Policy on Government Security categorization ladder — no per-command classification override is needed.
 5. Generate the following sections (the template provides skeletons for each):
    - **Workload Categorisation** — pull the system-level categorisation and the C / I / A scores from `ca-itsg-33` if that artefact is present. Otherwise, perform the categorisation here using the TBS *Standard on Security Categorization* injury-based matrix and state the resulting Protected level. The categorisation drives every downstream choice; do not skip the working.
    - **Residency Requirement Statement** — state residency expectations for data at rest, in transit, and in processing. Capture backup and disaster-recovery location requirements. Note any policy-derived constraints (Privacy Act §8 routine-uses, lawful-authority drivers) and any data-class-derived constraints (Indigenous data per `ca-ocap`, Cabinet-confidence material, classified information). Where a managed service routes processing through a foreign region, treat that as a residency event.
@@ -52,8 +53,9 @@ You are an enterprise architect generating a Canada sovereign cloud residency as
    - **Operational Topology** — regions, availability zones, network paths (private link, transit gateway, peering), dedicated interconnects (Direct Connect / ExpressRoute / Cloud Interconnect), encryption-in-transit posture between zones, and the BYOK / HYOK / external-key-store custody decision per workload.
    - **Open Items** — outstanding sovereign-cloud option choices, pending Protected B authorisations on the candidate provider, unresolved sub-processor flags, exit-dry-run schedule, and any condition the security authority has placed on go-live.
 6. Populate the External References section per `${CLAUDE_PLUGIN_ROOT}/references/citation-instructions.md`. The TBS *Direction on the Secure Use of Commercial Cloud Services*, the *Government of Canada Cloud Adoption Strategy*, CSE *ITSP.50.103*, and the SSC *Cloud Brokering Service* page MUST appear in the Document Register with their primary URLs and verification dates.
-7. Write the artefact via the Write tool to `projects/<project-id>/<filename>`.
-8. Show only a summary to the user (one paragraph plus the system-level categorisation, the chosen sovereign cloud option, the CLOUD-Act exposure posture, and any open Protected B authorisation or sub-processor flags).
+7. Before writing the file, read `${CLAUDE_PLUGIN_ROOT}/references/quality-checklist.md` and verify all **Common Checks** plus the **CACR** per-type checks pass. Fix any failures before proceeding.
+8. Write the artefact via the Write tool to `projects/<project-id>/<filename>`.
+9. Show only a summary to the user (one paragraph plus the system-level categorisation, the chosen sovereign cloud option, the CLOUD-Act exposure posture, and any open Protected B authorisation or sub-processor flags).
 
 ## Authoritative anchor
 

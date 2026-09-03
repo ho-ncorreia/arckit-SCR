@@ -1,5 +1,6 @@
 ---
 description: "[COMMUNITY] Assess EU AI Act (Regulation 2024/1689) compliance obligations, risk classification, and conformity requirements for AI systems"
+doc-type: AIACT
 argument-hint: "<project ID or AI system description, e.g. '001', 'automated CV screening tool for public employment service'>"
 effort: high
 handoffs:
@@ -78,6 +79,7 @@ Read all documents from Step 0. Identify:
 - **First**, check if `.arckit/templates/eu-ai-act-template.md` exists in the project root
 - **If found**: Read the user's customized template
 - **If not found**: Read `${CLAUDE_PLUGIN_ROOT}/templates/eu-ai-act-template.md`
+- **Then read** `${CLAUDE_PLUGIN_ROOT}/templates/_partials/RENDERING.md` and resolve the `<!-- DOC-CONTROL-HEADER -->` marker in the template before writing. Do not hand-write the Document Control table: the partial `RENDERING.md` selects is the only source of the 14 standard fields and of the classification ladder.
 
 ### Step 4: Risk Classification (Critical Step)
 

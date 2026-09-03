@@ -1,5 +1,6 @@
 ---
 description: "[COMMUNITY] Assess public code reuse opportunities before building from scratch — search code.gouv.fr, the SILL, and European public code repositories; produce a build-vs-reuse decision matrix"
+doc-type: REUSE
 argument-hint: "<project ID or component description, e.g. '001', 'citizen authentication portal, document management, API gateway'>"
 effort: medium
 handoffs:
@@ -87,6 +88,7 @@ Read all documents from Step 0. Extract:
 - **First**, check if `.arckit/templates/fr-code-reuse-template.md` exists in the project root
 - **If found**: Read the user's customized template
 - **If not found**: Read `${CLAUDE_PLUGIN_ROOT}/templates/fr-code-reuse-template.md`
+- **Then read** `${CLAUDE_PLUGIN_ROOT}/templates/_partials/RENDERING.md` and resolve the `<!-- DOC-CONTROL-HEADER -->` marker in the template before writing. `REUSE` carries the France regime, which hard-routes to `_partials/document-control-fr.md` whatever the operator's user config says.
 
 ### Step 4: Reuse Assessment
 
@@ -189,7 +191,7 @@ Assess which code developed for this project must be published as open source:
    - Status: DRAFT
    - Created Date: {current_date}
    - Next Review Date: {current_date + 12 months}
-   - Classification: PUBLIC / OFFICIAL (reuse assessment is typically not sensitive)
+   - Classification: Non protégé (reuse assessment is typically not sensitive)
 
 3. Write the complete assessment following the template.
 

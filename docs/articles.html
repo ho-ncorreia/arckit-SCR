@@ -2,6 +2,15 @@
 <html lang="en" class="govuk-template">
 <head>
     <meta charset="UTF-8">
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-SX6P1GM31K"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-SX6P1GM31K');
+    </script>
     <script>(function(){var t=localStorage.getItem('arckit-theme');if(t==='dark')document.documentElement.classList.add('dark-mode');else if(t==='light')document.documentElement.classList.add('light-mode');else if(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)document.documentElement.classList.add('dark-mode')})();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="description" content="ArcKit articles on the AI harness, enterprise architecture, AI governance, Wardley Mapping, procurement data, regulatory overlays, and toolkit release notes.">
@@ -295,7 +304,7 @@
                 <a href="https://github.com/tractorjuice/arc-kit" class="app-icon-link" aria-label="GitHub repository" title="GitHub repository">
                     <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
                 </a>
-                <a href="https://discord.gg/JqgjQSnD" target="_blank" rel="noopener" class="app-icon-link" aria-label="Discord community" title="Discord community">
+                <a href="https://discord.gg/HsA4Y3hQ4" target="_blank" rel="noopener" class="app-icon-link" aria-label="Discord community" title="Discord community">
                     <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor"><path d="M13.545 2.907a13.227 13.227 0 0 0-3.257-1.011.05.05 0 0 0-.052.025c-.141.25-.297.577-.406.833a12.19 12.19 0 0 0-3.658 0 8.258 8.258 0 0 0-.412-.833.051.051 0 0 0-.052-.025c-1.125.194-2.22.534-3.257 1.011a.041.041 0 0 0-.021.018C.356 6.024-.213 9.047.066 12.032c.001.014.01.028.021.037a13.276 13.276 0 0 0 3.995 2.02.05.05 0 0 0 .056-.019c.308-.42.582-.863.818-1.329a.05.05 0 0 0-.01-.059.051.051 0 0 0-.018-.011 8.875 8.875 0 0 1-1.248-.595.05.05 0 0 1-.02-.066.051.051 0 0 1 .015-.019c.084-.063.168-.129.248-.195a.05.05 0 0 1 .051-.007c2.619 1.196 5.454 1.196 8.041 0a.052.052 0 0 1 .053.007c.08.066.164.132.248.195a.051.051 0 0 1-.004.085 8.254 8.254 0 0 1-1.249.594.05.05 0 0 0-.03.03.052.052 0 0 0 .003.041c.24.465.515.909.817 1.329a.05.05 0 0 0 .056.019 13.235 13.235 0 0 0 4.001-2.02.049.049 0 0 0 .021-.037c.334-3.451-.559-6.449-2.366-9.106a.034.034 0 0 0-.02-.019Zm-8.198 7.307c-.789 0-1.438-.724-1.438-1.612 0-.889.637-1.613 1.438-1.613.807 0 1.45.73 1.438 1.613 0 .888-.637 1.612-1.438 1.612Zm5.316 0c-.788 0-1.438-.724-1.438-1.612 0-.889.637-1.613 1.438-1.613.807 0 1.451.73 1.438 1.613 0 .888-.631 1.612-1.438 1.612Z"/></svg>
                 </a>
                 <button class="app-theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle theme"></button>
@@ -318,6 +327,102 @@
             <p class="govuk-body-l">Read ArcKit product updates and practical analysis for architecture governance teams, from the AI harness and UK public-sector procurement to compliance overlays, Wardley Mapping, and AI-assisted delivery workflows.</p>
 
             <div class="app-article-grid">
+
+                <!-- 2026-08-19 ArcKit v6.11 release round-up -->
+                <article class="app-article-card">
+                    <a class="app-article-card__media" href="article-viewer.html?a=2026-08-19-arckit-v611-new-plugins">
+                        <img src="articles/2026-08-19-arckit-v611-new-plugins-hero.png" alt="ArcKit v6.11 hero: a row of jurisdiction pack flags for the UK, EU, Netherlands, Austria, France, Canada, USA, Australia and UAE with NEW badges on the EU, Netherlands and Austria, above three panels for the arckit-nl Netherlands pack, the arckit-repo codebase audit plugin, and method packs for TOGAF ADM and AI agent architecture">
+                    </a>
+                    <div class="app-article-card__body">
+                        <div class="app-article-card__meta">
+                            <span class="app-article-card__tag app-article-card__tag--release">Release</span>
+                            <span class="app-article-card__date">19 August 2026</span>
+                        </div>
+                        <h2 class="govuk-heading-s app-article-card__title">ArcKit v6.11: Four New Plugins, Twenty-Five New Commands</h2>
+                        <p class="app-article-card__summary">Everything shipped since the last release write-up: a Netherlands public-sector pack covering BIO2 and Rijksbreed cloudbeleid, an EU Cloud Sovereignty assessment, Austrian accessibility, a codebase audit plugin that checks the architecture you built against the one you intended, TOGAF ADM and AI agent architecture overlays, Open Knowledge Format import and export, and Kimi Code CLI as a ninth distribution format. Document Control also stopped guessing: a Canadian assessment now carries Canadian classification markings.</p>
+                        <a href="article-viewer.html?a=2026-08-19-arckit-v611-new-plugins" class="govuk-link app-article-card__link">Read article &rarr;</a>
+                    </div>
+                </article>
+
+                <!-- 2026-07-22 Atomic Task Graphs (arXiv:2607.01942 analysis) -->
+                <article class="app-article-card">
+                    <a class="app-article-card__media" href="article-viewer.html?a=2026-07-22-atomic-task-graphs-documents-not-tool-calls">
+                        <img src="articles/2026-07-22-atomic-task-graphs-documents-not-tool-calls-hero-1200x630.png" alt="Atomic Task Graphs hero: a five-wave dependency graph of ArcKit artefacts from Principles to Requirements and Stakeholders to Risk Register and High-Level Design to Business Case to a stale Traceability Matrix, under the tagline The graph is the product">
+                    </a>
+                    <div class="app-article-card__body">
+                        <div class="app-article-card__meta">
+                            <span class="app-article-card__tag app-article-card__tag--technical">Technical</span>
+                            <span class="app-article-card__date">22 July 2026</span>
+                        </div>
+                        <h2 class="govuk-heading-s app-article-card__title">Atomic Task Graphs for Documents, Not Tool Calls</h2>
+                        <p class="app-article-card__summary">A July 2026 agentic-control paper (arXiv:2607.01942) independently arrives at the same architecture as ArcKit's parallel build harness: an explicit dependency DAG, isolated per-node context, validated incremental state, and localised repair. This piece maps the paper's four mechanisms onto the harness (two already shipped, one roadmapped, one genuinely missing) and lets its ablation numbers reorder what to build next.</p>
+                        <a href="article-viewer.html?a=2026-07-22-atomic-task-graphs-documents-not-tool-calls" class="govuk-link app-article-card__link">Read article &rarr;</a>
+                    </div>
+                </article>
+
+                <!-- 2026-07-01 TOGAF ADM overlay -->
+                <article class="app-article-card">
+                    <a class="app-article-card__media" href="article-viewer.html?a=2026-07-01-arckit-togaf-adm">
+                        <img src="articles/2026-07-01-arckit-togaf-adm-hero.png" alt="ArcKit TOGAF ADM hero showing ADM phases as versioned ArcKit artefacts with 9 command document codes and the togaf-adm-full recipe">
+                    </a>
+                    <div class="app-article-card__body">
+                        <div class="app-article-card__meta">
+                            <span class="app-article-card__tag app-article-card__tag--release">Release</span>
+                            <span class="app-article-card__date">1 July 2026</span>
+                        </div>
+                        <h2 class="govuk-heading-s app-article-card__title">ArcKit TOGAF ADM: The Method Becomes a Governed Workflow</h2>
+                        <p class="app-article-card__summary"><code>arckit-togaf-adm</code> turns the TOGAF Architecture Development Method into versioned ArcKit artefacts. The new community overlay adds 9 commands for ADM preliminary work, capability mapping, application inventory, rationalization, gap analysis, transition architecture, architecture board, change management and repository synthesis, plus the <code>togaf-adm-full</code> build recipe.</p>
+                        <a href="article-viewer.html?a=2026-07-01-arckit-togaf-adm" class="govuk-link app-article-card__link">Read article &rarr;</a>
+                    </div>
+                </article>
+
+                <!-- 2026-06-30 AI Agent Architecture overlay -->
+                <article class="app-article-card">
+                    <a class="app-article-card__media" href="article-viewer.html?a=2026-06-30-arckit-agent-architecture">
+                        <img src="articles/2026-06-30-arckit-agent-architecture-hero.png" alt="ArcKit AI Agent Architecture hero showing inventory, design, integration, governance, security and maturity nodes with the 6 agent document codes">
+                    </a>
+                    <div class="app-article-card__body">
+                        <div class="app-article-card__meta">
+                            <span class="app-article-card__tag app-article-card__tag--release">Release</span>
+                            <span class="app-article-card__date">30 June 2026</span>
+                        </div>
+                        <h2 class="govuk-heading-s app-article-card__title">ArcKit AI Agent Architecture: Governed Design for Autonomous Systems</h2>
+                        <p class="app-article-card__summary"><code>arckit-agent-architecture</code> gives autonomous agent programmes the same governance discipline ArcKit already brings to requirements, risks, decisions and assurance. The overlay adds 6 commands for agent inventory, design, governance, integration, security and maturity, plus the <code>agent-architecture</code> build recipe.</p>
+                        <a href="article-viewer.html?a=2026-06-30-arckit-agent-architecture" class="govuk-link app-article-card__link">Read article &rarr;</a>
+                    </div>
+                </article>
+
+                <!-- 2026-06-29 Thank you for using ArcKit -->
+                <article class="app-article-card">
+                    <a class="app-article-card__media" href="article-viewer.html?a=2026-06-29-arckit-usage-signals">
+                        <img src="articles/2026-06-29-arckit-usage-signals-hero.png" alt="Thank you for using ArcKit hero - dark data dashboard showing public usage signals from GitHub, Cloudflare and Google Search Console">
+                    </a>
+                    <div class="app-article-card__body">
+                        <div class="app-article-card__meta">
+                            <span class="app-article-card__tag app-article-card__tag--community">Community</span>
+                            <span class="app-article-card__date">29 June 2026</span>
+                        </div>
+                        <h2 class="govuk-heading-s app-article-card__title">I Built ArcKit for Myself. Thank You for Using It.</h2>
+                        <p class="app-article-card__summary">ArcKit started as a personal working method for making architecture governance less wasteful and more traceable. The public signals now show something more: thousands of GitHub clone events, hundreds of daily site visitors, search demand by name, and assistant-specific extension usage. This is a thank-you note to everyone trying it, cloning it, improving it and making it useful beyond its original purpose.</p>
+                        <a href="article-viewer.html?a=2026-06-29-arckit-usage-signals" class="govuk-link app-article-card__link">Read article &rarr;</a>
+                    </div>
+                </article>
+
+                <!-- 2026-06-25 ArcKit Architects directory -->
+                <article class="app-article-card">
+                    <a class="app-article-card__media" href="article-viewer.html?a=2026-06-25-arckit-architects-directory">
+                        <img src="articles/2026-06-25-arckit-architects-directory-hero.png" alt="ArcKit Architects directory hero — dark technical diagram showing ArcKit Architects title, a directory of professionals, with three cards showing Mark Craddock profile, a placeholder for future architects, and a link to all contributors at arckit.org/contributors">
+                    </a>
+                    <div class="app-article-card__body">
+                        <div class="app-article-card__meta">
+                            <span class="app-article-card__tag app-article-card__tag--community">Community</span>
+                            <span class="app-article-card__date">25 June 2026</span>
+                        </div>
+                        <h2 class="govuk-heading-s app-article-card__title">ArcKit Architects: A Directory for Enterprise Architecture Professionals</h2>
+                        <p class="app-article-card__summary">Introducing the ArcKit Architects directory — a place to find experienced professionals who have proven expertise using ArcKit in real-world engagements. The directory currently features Mark Craddock, the creator of ArcKit, and provides a path for other senior practitioners to join. Organizations can browse the directory to find architects for consulting, training, or embedded architecture support.</p>
+                        <a href="article-viewer.html?a=2026-06-25-arckit-architects-directory" class="govuk-link app-article-card__link">Read article &rarr;</a>
+                    </div>
+                </article>
 
                 <!-- 2026-06-19 OKF compatibility workflows -->
                 <article class="app-article-card">

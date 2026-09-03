@@ -7,7 +7,7 @@
 ## Document Control
 
 <!-- DOC-CONTROL-HEADER -->
-<!-- Resolved at command-execution time to _partials/document-control-uk.md or _partials/document-control-uae.md based on plugin userConfig classification_scheme + governance_framework. See _partials/RENDERING.md (when present). -->
+<!-- Resolved at command-execution time per _partials/RENDERING.md. -->
 
 ## Revision History
 
@@ -27,7 +27,7 @@
 
 ---
 
-## 1. State Cloud Doctrine (Doctrine cloud de l'État — Circular 6264/SG)
+## 1. State Cloud Doctrine (Doctrine cloud de l'État — Circular 6282/SG)
 
 The French cloud-first policy mandates evaluation in order:
 

@@ -7,6 +7,1039 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`plugins/arckit-claude/docs/ENFORCEMENT.md` — what ArcKit enforces, what it asks, and what you own.** One page, modelled on the `docs/safety.md` two-tier table in Anthropic's [`commerce-agents`](https://github.com/anthropics/commerce-agents) reference, stating for every ArcKit rule which tier it sits in. **Tier 1, enforced in code:** filename convention and registered doc-type codes, protected files, secrets in prompts and in written files, vendor-score shape, Wardley Map consistency, reader-payload sanitisation and schema validation, reader/writer tool allowlists, provenance stamping, the gitignore guard on the published index, stale-artefact detection, MCP auto-approval scope, the manual-only build harness and the client version floor — each with its hook or script, the event it runs on and what happens on failure. **Tier 2, asked of the model:** Document Control completeness, regime-driven classification, `DRAFT` status and human sign-off, placeholder removal, template adherence, citation markers, fenced-text-as-data, requirement traceability and clean Markdown — each with where it is stated and what, if anything, checks it after the fact, plus the note that CI guards the *asking* (every checklist and citation instruction resolves) even though it cannot guard the *doing*. **Tier 3, the deploying organisation's:** approval, classification handling, permissions and egress, added MCP servers, API keys, model and effort, retention, and the five non-Claude runtimes on which every Tier 1 row is a Tier 2 row. A closing section lists the repository CI guards that hold the two tiers consistent. Linked from `hooks/README.md`, the plugin README and `CLAUDE.md`, each with the rule that a change to a gate updates the page in the same PR.
+
+### Changed
+
+- **Core skill descriptions rewritten in request-class style.** The five `plugins/arckit-claude/skills/*/SKILL.md` descriptions were lists of sample utterances ("Load whenever the task sounds like 'I'm starting a new project', 'guide me through', …"). Each now names the class of request it serves, leads with the key use case (the skill listing Claude sees truncates `description` plus `when_to_use` at 1,536 characters, per the Claude Code skills docs), and ends with a *not needed when* clause that hands off to the sibling skill or the governing `/arckit:*` command — `mermaid-syntax` points at `plantuml-syntax` and `/arckit:diagram`, `wardley-mapping` at the five `/arckit:wardley*` commands, `architecture-workflow` at a command the user has already named. `arckit-build` carries `disable-model-invocation: true`, so its description is never in Claude's context and is now written for the person reading the `/` menu. The style follows the skill conventions in Anthropic's [`commerce-agents`](https://github.com/anthropics/commerce-agents) reference ("the description names the request class; it carries no sample utterances"). Bodies are unchanged. Verified with `claude plugin validate`, a full converter run (the seven generated extensions pick up the new text through `strip_claude_only_skill_fields`), the plugin structure tests and the Codex/Kimi/Gemini extension suites.
+
+### Security
+
+- **`validate-handoff.mjs` sanitises reader payloads before schema validation.** Every three-tier command's orchestrator and writer consume the validator's stdout as the "normalised payload", but until now normalised meant shape-checked: `maxLength`, `pattern` and `enum` held, while a reader's free-text `summary` or `reason` field could carry zero-width-spelled instructions, a forged `</tool_result>` or a `\n\nassistant:` turn marker straight through to the writer. The validator now NFKC-normalises every string leaf and object key and strips invisible and format characters (so a full-width homoglyph cannot slip past an enum its ASCII form would fail, and a hidden-instruction carrier is removed), and **rejects** with a path-addressed error the three shapes that are evidence of source text trying to be read as conversation: Unicode tag characters (invisible ASCII), transcript-shaped markup (`<tool_result>`, `<function_calls>`, `<invoke>`, `<system>`, `<system-reminder>`, `<|...|>` tokens, namespaced and closing forms) and forged turn markers. A rejection consumes the reader's one re-dispatch like a schema failure, so a page carrying an injection becomes a logged gap rather than writer input. Every regex is bounded so hostile unclosed input stays linear. The pattern set follows the fence sanitiser in Anthropic's [`commerce-agents`](https://github.com/anthropics/commerce-agents) reference (`commerce_common/fencing.py`). All 63 existing handoff fixtures pass unchanged; `tests/plugin/sanitize-handoff.test.mjs` adds 26 cases pinning what is normalised, what is rejected, the benign prose that must pass (`<system requirements>`, a mid-sentence `system:`, a one-letter `A:` list marker, ordinary HTML) and the linear-time bound, and `research-handoff/` gains three text-shaped injection fixtures. `READER-PATTERN.md` documents the contract.
+
+### Changed
+
+- **Claude Code minimum-version floor raised from v2.1.234 to v2.1.251** (#580). Drivers, in order: v2.1.251 stops the file tools following a symlink swapped inside the working directory *after* the permission check and makes Grep/Glob honour `Read()` deny rules through symlinked paths — the same bypass class the v2.1.222–v2.1.224 fixes closed for Bash, and the one ArcKit's `file-protection` and `secret-file-scanner` gates sit in front of; v2.1.251 also sends Opus 5 `effort: xhigh`/`max` as `high` on thinking-off sessions instead of failing, so the docs can describe one behaviour; and v2.1.246 fixed four plugin-loading bugs that hit ArcKit's exact layout (`/reload-plugins` counting 0 skills for `skills/*/SKILL.md`, literal `${CLAUDE_PLUGIN_ROOT}` in hook errors, duplicate plugin-cache directories, `claude plugin update <bare-name>`). Deliberately **not** v2.1.258: it was a day old at triage time and v2.1.257 fails to launch on macOS 12, so any later bump must land on v2.1.258 or above. `version-check.mjs` gains three driver bullets and was verified by executing the hook — a simulated v2.1.245 client warns with the new bullets rendering, v2.1.251 is silent. Every other `2.1.234` reference was audited: floor statements in the READMEs, `CLAUDE.md`, the guides, `.claude/settings.json` and the test-repo scaffold moved to v2.1.251; historical mentions (both CHANGELOGs, the v2.1.234 driver bullet, the enterprise guide's changelog rows) stay.
+
+### Documentation
+
+- **Claude Code v2.1.236 → v2.1.258 adoption, from the #580 triage.** Claude Fable 5.1 is now the default Fable model (v2.1.257), so `CLAUDE.md`, `start.md` and the enterprise guide name it as the top tier, with the caveat that a Claude apps gateway keeps resolving `fable`/`best` to Fable 5 until it is configured for 5.1. The enterprise guide's model-governance section gains `ANTHROPIC_DEFAULT_MODEL` (v2.1.236), `modelPicker` and `modelPricing` (v2.1.243), and records that `CLAUDE_CODE_SUBAGENT_MODEL` became a default rather than an override in v2.1.251 with `CLAUDE_CODE_SUBAGENT_MODEL_FORCE` (v2.1.257) restoring the override — every ArcKit agent declares `model: inherit`, and until the precedence of that declaration is verified a fleet routing subagents to a cheaper model should use `_FORCE`. Its marketplace section notes the `owner/*` wildcards (v2.1.223), its security baseline adds `permissions.blockReadsOutsideWorkingDirectories` (v2.1.257), and its changelog table gains rows for v2.1.236 through v2.1.258. `hooks/README.md` documents the one effort downgrade the provenance stamp cannot see: from v2.1.251 an Opus 5 request at `xhigh`/`max` with thinking disabled is sent as `high` instead of failing, so Effective Effort over-reports on thinking-off sessions. `READER-PATTERN.md` adds the orchestrator invariant that a reader return marked partial (a subagent stopping at `maxTurns`, v2.1.246) is retry-or-halt, never writer input. `mcp-servers.md` and `byo-llm.md` note that Bedrock, Vertex and Foundry sessions are told about MCP connection failures from v2.1.246, where previously the model concluded the tools did not exist. `RELEASING.md` gains a `claude plugin validate` step. `research.md` and `autoresearch.md` document the 15-minute `WebFetch` URL cache and `CLAUDE_CODE_WEBFETCH_CACHE_TTL_MS` (v2.1.233); `autoresearch.md` also loses the stale claim that sessions cap at 200 subagent spawns — the same v2.1.224 removal #817 corrected in `build.md`, which this guide had restated. `experimental` (v2.1.248, currently only `experimental.cacheTtl`) is added to the agent frontmatter list and to `CLAUDE_ONLY_AGENT_FIELDS` in the converter and its CI guard, pre-emptively, so it can never leak into the non-Claude targets.
+
+### Fixed
+
+- **The #825 review leftovers are closed out.** Three items deliberately deferred by #828: the marketplace descriptions for the core plugin still said **73** slash commands in both `marketplace.json` files while `plugin.json` and the commands directory say 75 (the review caught the `plugin.json` half; the marketplace half had drifted separately); the `arckit-build` skill now defines **dep-pruning semantics for excluded optional targets** — disabled optional-target IDs are pruned from every remaining target's `deps` at resolution time, so `oaa-full` can declare `OAGOV`'s true ordering deps `[OAAL, OASEC]` without `--exclude OASEC` leaving `OAGOV` waiting forever on a target that will never run; and the OAA launch article no longer implies a released ArcKit ever bundled O-AA inside `arckit-togaf-adm` — the split happened in review, before anything shipped. The review's IMPORTANT 1 (`pages.md` filing `OASTR` under Architecture while the registry says Planning) turned out to be already fixed inside #828 itself; verified against today's `main`, where all five OAA codes match their `doc-types.mjs` categories.
+
+- **`scripts/bump-version.sh` works on macOS.** Its four `sed -i -E` edits silently no-op'd under BSD sed — which parses `-E` as `-i`'s backup suffix and then evaluates the expression as BRE, where `+` is a literal — so a Mac-run bump left `pyproject.toml`, the README release links, and the `docs/README.md` footer at the old version and scattered `*-E` backup files; the v6.13.0 release shipped those edits by hand. The seds now write to a temp file and move it back (as the script's jq edits always did) and assert the expected literal landed, so a pattern that stops matching fails the bump loudly instead of silently. Verified end-to-end under `/bin/bash` 3.2 on macOS: full bump, idempotent same-version re-run, and a deliberate pattern-drift failure.
+
+  The landing assertion also settles the fifth sed's fate: `docs/index.html` lost its visible "Version X.Y.Z - Month Year" line long ago, so that sed had matched nothing for years while the JSON-LD `softwareVersion` — what search engines actually read — sat stale at 4.21.0. The section now updates that field, and it is brought current to 6.13.0.
+
+  The two `mapfile` calls became `while read` loops so the script runs under macOS's stock bash 3.2, with the community-plugin loop's empty-array expansion guarded (`set -u` treats expanding an empty array as unbound before bash 4.4) and an explicit error when `marketplace.json` yields no plugin names. `docs/RELEASING.md` gains a "Releasing from macOS" section covering what still differs on a Mac: `tag-plugins.sh` / `push-extensions.sh` need a brew-installed bash ≥ 4, the uv invocations for `converter.py` and the extension test suite, the `http.postBuffer` fix for `protocol error: bad line length` pushes, and sourcing `GH_TOKEN` from `gh auth token`. The `/release` skill's gotchas point at it.
+
+## [6.13.0] — 2026-08-31
+
+### Added
+
+- **New community plugin `arckit-oaa` — Open Agile Architecture (O-AA, standard C208).** Five new commands (`oaa-adm-lite`, `product-architecture`, `agile-strategy`, `agile-security`, `agile-governance`) in a standalone plugin with its own `/arckit-oaa:` command namespace, five doc-type codes (`OASTR`, `OAPR`, `OAAL`, `OASEC`, `OAGOV`), the `oaa-full` build recipe, and `userConfig` placeholder support. Registered in both marketplaces, the doc-type registry, `pages.md`, `llms.txt`, and all extension formats. Complementary to `arckit-togaf-adm`, which keeps the full document-centric ADM; neither depends on the other. Core `references/quality-checklist.md` gains the five OAA per-type sections and `references/citation-instructions.md` the O-AA C208 derivation row, so every plugin keeps the shared assets byte-identical to core. The core `plugin.json` description's command count is also corrected (73 → 75). Contributed by @terrygzhou (#825), carried unchanged in #828.
+
+- **`scripts/check-customize-table.py`, wired into `lint-markdown.yml`.** Holds the table to the templates on disk: every core template has a row, every row names a template that exists, every row's `/arckit:<command>` reference resolves to a real command file, and no template is listed twice. It also asserts the scope wording is still present, so the silent-partial-answer failure mode cannot come back by deletion. All five failure modes were verified against deliberately reintroduced instances, including the exact `uk-gov-tcop` row this PR removes.
+
+  This fits the existing guard pattern (`check-doc-type-registry.py`, `check-multi-instance-parity.py`, `check-guide-parity.py`). Nothing had ever looked at this table, which is why it drifted through both halves undetected.
+
+### Fixed
+
+- **`/arckit:tenders` and `/arckit:competitors` now work on every non-Claude runtime (#447).** Both commands were born three-tier in #558 and never got the pre-split monolith that `converter.py` swaps in for Codex, Gemini, OpenCode, Copilot, Paperclip, Vibe and Kimi. With no monolith the converter falls through to the orchestrator body, so all seven extensions have been shipping `Dispatch the reader using the Agent tool with subagent_type: "arckit-tenders-reader"` since v5.9.0 — an instruction none of those runtimes can honour. Adds `agents/arckit-tenders.md` and `agents/arckit-competitors.md`, single-agent prompts that do the MCP querying, derivation and rendering in one role, with the same guardrails, hard limits, mandatory awarded-value caveat and quality-checklist step as the split tiers. Claude Code is unaffected and keeps the three-tier path.
+
+  This is the same defect #447 reported against `datascout` in #446, which was fixed by retaining that command's monolith. It recurred because nothing derived the rule: `tests/codex/test_codex_extension.py` checked three hardcoded skill names, on one target, so two commands added afterwards were never in scope.
+
+- **New CI guard: `scripts/check-orchestrator-leaks.py`.** Enumerates every `plugins/*/commands/*.md`, resolves each through `converter.py`'s own `build_agent_map()`, and fails if the prompt a non-Claude target would receive contains subagent-dispatch vocabulary. Because it reuses the converter's resolution logic rather than restating it, the check cannot drift from what the converter actually emits, and a new split command is covered the day it lands. `CLAUDE_ONLY_COMMANDS` is promoted from a function-local literal in `converter.py` to a module constant so there is exactly one copy. The matching Codex test now enumerates all skills instead of naming three, and `AGENT_BACKED_SKILLS` is derived from the plugin source for the same reason.
+
+- **Mistral Vibe no longer registers the Claude-only reader/writer subagents.** `generate_vibe_agent_toml_files()` was the one generation path missing the `is_subagent_file()` filter that every other target applies, so the Vibe extension shipped 29 agent definitions — 19 of them subagents whose own descriptions read "Not user-invocable — only the orchestrator dispatches this subagent via the Agent tool". Vibe surfaces every agent file as a user-invocable `--agent` target and has no orchestrator-dispatch primitive, so those 19 were unusable noise. Vibe now ships 12 single-tier agents, matching the other targets.
+
+- **Mermaid ER guard rails for `/arckit:data-model` and the `mermaid-syntax` skill (#435).** `/arckit:diagram` has carried the `PK, FK` comma rule since #78; `/arckit:data-model` never did, and it is the command that emitted the `uuid tenant_id FK UK` attribute that failed to render in #435. Adds a Mermaid ERD Rules block to `data-model.md`, a combined-key note to both copies of `data-model-template.md`, and three ER rows to the skill's gotchas table (combined keys, attribute comments, cardinality tokens) in place of a "missing semicolons in ER" row that described no real error. The skill's `paths:` now auto-activates on `ARC-*-DATA-*.md` as well as `ARC-*-DIAG-*.md`, having never fired on the artefact class that broke. Note the rule is *not* "one key per attribute" as #435 states — Mermaid accepts multiple keys comma-separated; `FK UK` fails only for the missing comma. Every claim verified against `mermaid@11.15.0`: `FK UK` and `PK_FK` are parse errors, `FK, UK` and `PK, FK` parse.
+
+- **`/arckit:customize list` now covers the community overlays too, closing #717.** Piece 1 fixed the silent-partial-answer; this completes the reachability half. `list` globs `${CLAUDE_PLUGIN_ROOT}/plugins/**/templates/` alongside the core tree and renders the overlay templates grouped by owning plugin, derived from the path (`plugins/uk/finance/` is `arckit-uk-finance`). Copy-by-name already reached the overlays as of piece 1, so `/arckit:customize codebase-audit` worked but nothing told you the name existed. Discovery was the last gap.
+
+  Overlay templates are deliberately **not** added to the hardcoded table: `list` renders them from the glob, so a newly added overlay appears without editing the command, and 118 extra rows would bloat a command body that sits in context on every invocation.
+
+  **`all` stays core-only, on purpose**, and now says so as a documented decision rather than an unstated limitation. Expanding it to all 183 would drop twelve UAE, twelve France, twelve Canada and ten US templates into a project that uses none of them.
+
+  `check-customize-table.py` gains a section-aware check that the overlay glob is present in *both* the `list` action and the copy-by-name fallback. A global occurrence count was not enough: `list` losing the glob while the fallback kept it is exactly the regression #717 was about, and the first version of the check did not catch it.
+
+- **`/arckit:customize` no longer presents a core-only result as the full inventory** (#717, piece 1). The command globs `${CLAUDE_PLUGIN_ROOT}/templates/`, which resolves to the plugin it ships in, so the community overlays' templates are invisible to it: 118 of the 183 templates in the repo, or 64%. Nothing in the command's 130-odd lines said so, so `list` presented a core-only list as the complete catalogue and `all` reported success having copied 65 of 183. A user asking for all templates and getting a third of them had no signal that anything was missing.
+
+  The reachability fix is piece 2 and is tracked separately. What changes here is that the command stops giving a wrong answer: `list` and `all` state their scope, the "not found" branch checks the overlays before dead-ending, and the command explains how to copy an overlay template by hand. That path uses `${CLAUDE_PLUGIN_ROOT}/plugins/**/templates/`, because the core plugin bundles a copy of every overlay under its own root, so no plugin-cache walking is involved.
+
+- **The `customize.md` template table matches the templates on disk.** It had drifted in both directions. Twenty core templates were absent from it (`competitors`, `conformance-assessment`, `data-source-profile`, `dfd`, `framework-overview`, `gcp-research`, `glossary`, the four `gov-*` and `wardley-*` sets, `grants`, `maturity-model`, `presentation`, `tech-note`, `tenders`, `vendor-profile`), and one row named `uk-gov-tcop`, a template that has never existed, so asking for it hit the "source template does not exist" branch while the docs said it was valid. The table now carries all 65 core templates, sorted, with the phantom row removed.
+
+- **`docs/guides/customize.md` describes the plugin's template locations correctly.** It told plugin users that defaults live in `.arckit/templates/`, which is the CLI and non-Claude-extension story; under the Claude Code plugin they live in `${CLAUDE_PLUGIN_ROOT}/templates/`. The guide now covers both, states the same overlay scope as the command, and stops implying that its truncated sample table is the catalogue.
+
+## [6.12.0] — 2026-08-19
+
+### Added
+
+- **`scripts/check-action-pins.py`, wired into `lint-markdown.yml`** (#466 item 17). Asserts every `uses:` reference in `.github/workflows/` is a full 40-character commit SHA carrying a `# <version>` comment. Catches three shapes: a mutable tag, a mutable branch, and a SHA with no version comment (which is pinned but unreadable, so nobody can tell when it went stale). Each was verified against a deliberately reintroduced instance.
+
+- **The three cloud-research commands now run as three-tier reader/orchestrator/writer splits** (#466, item 1 remainder). `/arckit:aws-research`, `/arckit:azure-research` and `/arckit:gcp-research` complete the item: **every research agent in ArcKit is now split**, and `arckit-framework` is the only single-tier agent left, deliberately exempt as synthesis-only over artefacts already in the repository.
+
+  **Three readers, one writer, one schema.** Each provider keeps its own reader, allowlisting only that provider's MCP server — an AWS reader must not be able to reach Microsoft Learn, and that is the whole point of the tier. They share `arckit-cloud-research-writer`, because a writer holds no network tools and there is nothing to isolate between providers; sharing it is what keeps the three artefacts structurally comparable, which is what makes them worth putting side by side in `/arckit:evaluate`.
+
+  **The star ratings stop being decorative.** All three templates carry a pillar table:
+
+  ```text
+  | Pillar                 | Rating      | Notes |
+  | Operational Excellence | ⭐⭐⭐⭐⭐ | ...   |
+  | Security               | ⭐⭐⭐⭐⭐ | ...   |
+  ```
+
+  Nothing defined what earned a fifth star, so a reader could not tell a service that scored five because its documentation states customer-managed keys, private networking and audit logging from one that scored five because the model was feeling generous. In practice the tables trended to five across every pillar, which made them useless for the one job they had: comparing two services. `cloud-research-generic.yaml` derives all six pillars from documented capabilities, and the artefact renders the numeric score and the evidence behind each star. The six pillars are AWS Well-Architected's and map cleanly onto the Azure Well-Architected Framework and the Google Cloud Architecture Framework, which is why one rubric serves all three providers.
+
+  **Region availability is a gate, not a score.** A service unavailable in a region the project requires cannot be traded off against a strong security posture, so it never enters the weighted total: it is excluded from the recommendation, rendered in the artefact with the reason, and cited. A row the reader never checked is recorded as a coverage gap rather than as unavailability — the distinction the AWS availability tool makes between `isNotAvailableIn` and `Not Found`, preserved through the schema's status enum.
+
+- **`schemas/cloud-research-handoff.schema.json` and `cloud-research-{generic,uk-gov}.yaml`.** The schema has no pillar rating, star, rank or recommendation field, and `architecture_signals` is a 21-value allowlist of capabilities the provider's *documentation states* — the readers are explicitly forbidden from inferring `multi-az-supported` from a service being a managed database, because that shortcut would score every service identically and destroy the rubric. The UK-Gov variant lifts security 25→30 and sustainability 10→15 (Greening Government ICT makes carbon reporting an obligation, not a preference), and adds two gates for UK region availability and published UK assurance.
+
+- **`tests/plugin/fixtures/cloud-research-handoff/` (3 valid + 6 reject) and `test_validate_cloud_research_handoff.mjs`, wired into `lint-markdown.yml`.** The rejects cover a reader emitting its own `well_architected` ratings and a `recommendation`, a fabricated off-allowlist `best-in-class-security` signal, an off-enum region status, and an unknown provider. One valid fixture is a **preview-lifecycle service with no SLA and no compliance evidence**, which must round-trip cleanly: it is the case the rubric most needs to score low rather than reject.
+
+- **`/arckit:gov-landscape` now runs as a three-tier reader/orchestrator/writer split** (#466, item 1 remainder). This completes the govreposcrape family and leaves only the three cloud-research agents unsplit. The reader holds both govreposcrape MCP tools and `WebFetch`; the orchestrator holds neither; the writer holds the only `Write`.
+
+  **The maturity score stops being an impression.** The single-tier agent assigned five 1-5 dimension scores by eye and averaged them into a Production-Grade / Mature / Developing / Experimental label. Those dimensions had no defined inputs — "Documentation (1=no docs, 5=comprehensive README, guides, API docs, architecture docs)" left the model to decide what *comprehensive* meant, differently on each run — so the resulting label carried an authority the underlying judgement did not support. `gov-landscape-generic.yaml` derives all five from extracted evidence, and the artefact renders the dimension values and the evidence behind them alongside the band. The 1-5 scale and the four band names are preserved so existing GLND artefacts remain comparable.
+
+  The rubric deliberately produces **no overall maturity grade for the domain**. Averaging across repositories of wildly different purpose yields a number that reads as meaningful and is not; the artefact reports the median and the distribution instead.
+
+  One asymmetry is load-bearing and documented in both tiers: a **missing** `has_tests` scores 40, an explicit **`false`** scores 10. The reader is instructed to omit the field rather than guess `false` when it could not see the repository's file listing, and the orchestrator must not coerce missing to false. Getting this wrong silently pushes repositories down a maturity band on no evidence.
+
+- **`gov-repo-handoff.schema.json` gains an `advisories[]` array**, so the shared schema now serves both govreposcrape commands rather than a second one being authored. `advisory_id` is pattern-constrained to real CVE, GHSA or OSV identifier forms: the pattern is the allowlist, so a reader cannot report an advisory it invented a name for. Severity is an enum, counts are bounded integers, and there is no field for remediation advice or exploitability.
+
+  **Absence of data is not absence of vulnerabilities.** Where `vulnerability_exposure` returns nothing for a scope, that scope has *unknown* exposure. The reader records an explicit error, the orchestrator carries `scopes_with_no_data` through to the writer, and the writer must render those scopes under a heading saying exposure is unknown rather than omitting the section — an omitted supply-chain section reads as a clean result.
+
+- **Four more fixtures on the shared `gov-repo-handoff` suite** (now 3 valid + 10 reject), covering an organisation bucket with advisories, a fabricated advisory identifier, an off-enum severity, and a reader emitting its own `maturity_band` and `maturity_score_5`.
+
+- **`/arckit:gov-code-search` now runs as a three-tier reader/orchestrator/writer split** (#466, item 1 remainder). `arckit-gov-code-search-reader` (govreposcrape MCP + `WebFetch`, no `Write`/`Edit`/`Bash`/`Agent`) searches one query variation; the orchestrator is the slash-command body and touches neither the MCP nor the web; `arckit-gov-code-search-writer` (`Read`, `Glob`, `Write`, `Edit`) holds the only `Write` tool. Anyone can open a public repository, and a README is a document an attacker controls end to end, so this boundary matters even though the index itself is trusted.
+
+  **The relevance grade stops being an opinion.** The single-tier agent classified results as "High relevance" or "Medium relevance" by eye, which meant the same query could rank the same repository differently on two runs with nothing recording why. `gov-code-search-generic.yaml` computes it from six weighted criteria, the largest being `query_corroboration` — how many distinct query variations surfaced the repository. That signal only exists because the orchestrator sees every variation at once; no reader can compute it, and the old agent never tried. Every artefact now shows the per-criterion breakdown that produced the band.
+
+- **`schemas/gov-repo-handoff.schema.json`**, deliberately shared rather than per-command. It carries a `bucket_type` of `query-variation`, `organisation` or `technology-facet`, so `/arckit:gov-landscape` can reuse it with `bucket_type: organisation` instead of a third govreposcrape schema being authored. Its `language`, `framework_hints` and `licence` enums are kept identical to `gov-reuse-handoff.schema.json` so the two agree on how a repository is described. It has no relevance, score or rank field, and `match_rank` is defined as the index's own answer that the reader must not reorder.
+
+- **`tests/plugin/fixtures/gov-repo-handoff/` (2 valid + 7 reject) and `test_validate_gov_repo_handoff.mjs`, wired into `lint-markdown.yml`.** The rejects include a reader emitting its own `relevance_band`/`score`, a fabricated off-allowlist standards signal, and an HTML-comment instruction smuggled through `summary_one_liner` — that last one is caught by the `SafeText` pattern excluding angle brackets, not by length.
+
+  One valid fixture is an **empty result set**. A search that finds nothing must round-trip cleanly, because the command's honest-reporting requirement depends on it: a thin or empty index result is evidence about index coverage, not a finding about what government has built, and the artefact now has to say so in the Executive Summary when fewer than ten distinct repositories are found.
+
+- **A repository-level statement of what ArcKit does not do** (#466, items 9 and 21). Every community overlay already carried a "review by qualified DPO / CSO / federal counsel before reliance" banner. The officially-maintained baseline carried none, and it is the baseline that ships `/arckit:dpia`, `/arckit:secure`, `/arckit:mod-secure`, `/arckit:atrs`, `/arckit:jsp-936` and `/arckit:sobc`. A grep for disclaimer language across `README.md` and every `docs/*.md` returned nothing, so the unsupported overlays were better hedged than the supported core.
+
+  `README.md` gains a `## What ArcKit does not do` section, placed immediately before the UK Government Compliance section so a reader meets the limits before the compliance claims. It enumerates them concretely rather than generically: a generated DPIA is not a completed DPIA, because UK GDPR Article 35 places the assessment on the controller and Article 36 requires ICO consultation where high residual risk remains; Secure by Design and JSP 936 packs are input to an assurance decision made by named accountable individuals, not the decision itself; the EU overlay drafts documentation referencing the AI Act, NIS2, DORA and the CRA but performs no conformity assessment and is not a notified-body activity; DCB0129 / DCB0160 need a registered Clinical Safety Officer. It closes with who must review what, and states that it applies to all of ArcKit rather than only the community overlays.
+
+  Two cross-cutting limits are stated because neither is obvious from an artefact that looks finished: citations reflect the moment they were fetched, and generated content can be wrong — schema validation and deterministic scoring reduce the blast radius of a hostile or inaccurate source page without making its facts true.
+
+  `docs/index.html` carries a condensed version of the same statement, because a disclaimer that exists only on GitHub and not on arckit.org is half a fix.
+
+- **`/arckit:research` now runs as a three-tier reader/orchestrator/writer split** (#466, item 1 remainder). It was the largest untrusted-input surface left in the plugin and the last single-tier agent holding `Bash`, `Write` and `WebFetch` in one context: vendor sites, pricing pages, marketplaces and AI-generated comparison pages are written to persuade, and the agent that read them could also execute and write.
+
+  - `arckit-research-reader` (`WebSearch`, `WebFetch`, `Read`, `Glob`, `Grep`, `TodoWrite` — no `Write`, `Edit`, `Bash` or `Agent`) fetches evidence for one research category and returns JSON.
+  - The orchestrator is the slash-command body in the main thread, per `docs/READER-PATTERN.md` step 5. It never calls `WebSearch` or `WebFetch`; it reads reader output only after `validate-handoff.mjs` has validated it.
+  - `arckit-research-writer` (`Read`, `Glob`, `Write`, `Edit` — no network, no `Agent`) holds the only `Write` tool and renders the RSCH artefact, the per-vendor profiles and the tech-notes.
+
+  `agents/arckit-research.md` stays exactly where it is: `converter.py` replaces a command body wholesale with the agent prompt when generating the seven non-Claude targets, which cannot dispatch subagents, so deleting it would break `/arckit:research` on all of them. It keeps its `tools:` allowlist for the same reason the other three monoliths do.
+
+- **`schemas/research-handoff.schema.json`** — the reader's output contract, driven from `templates/research-findings-template.md` rather than from the old agent prompt. It has no `score`, `rank`, `recommendation`, `pros` or `cons` field, so a judgement has nowhere to land even if the reader's prompt is overridden by a fetched page. Every enum is an allowlist: a vendor page cannot introduce a novel certification, licence or procurement vehicle by asserting one. Free-text is confined to `notable_limits`, capped at 200 characters and pattern-restricted to exclude angle brackets, so markup cannot cross the boundary into the artefact.
+
+- **`schemas/scoring-rubrics/research-generic.yaml` and `research-uk-gov.yaml`** — seven weighted criteria (requirements fit, 3-year TCO, compliance, integration, vendor viability, exit risk, procurement readiness) computed as set overlaps and arithmetic bands. The UK-Gov variant reweights procurement readiness 5→15 and compliance 15→20, because a product with no G-Cloud or Digital Outcomes listing is a procurement exercise rather than a purchase, and deliberately drops vendor viability 10→5 so the rubric does not entrench incumbents against the SME-access duty. It adds two fixed rules: a +10 bonus for an already-procured GOV.UK platform, and a score cap of 70 for a public-facing option with no evidence of WCAG 2.1/2.2 AA conformance.
+
+  `analyst_rating` is captured as evidence and rendered in the artefact but is deliberately given no weight in either rubric — a Gartner quadrant position is a fact about a report, not a fact about fit.
+
+- **`tests/plugin/fixtures/research-handoff/` (2 valid + 7 reject) and `test_validate_research_handoff.mjs`, wired into `lint-markdown.yml`.** The reject fixtures cover the four injection shapes this boundary exists to stop: a reader emitting `score`/`recommendation`, a fabricated off-allowlist certification, an oversized persuasive free-text field, and markup plus an instruction string smuggled through `notable_limits`.
+
+- **`scripts/check-agent-frontmatter.py`, wired into `lint-markdown.yml`** (#466). Asserts that every agent declares a non-empty `tools:` allowlist, that `agents/` contains nothing but `arckit-*.md` agent files, that no file carries the `copy_agent_stripped()` writeback signature, and that MCP entries use the `mcp__plugin_<package>_<server>__<tool>` prefix. Each of the four checks was verified against a deliberately reintroduced instance of the defect it guards. Fourteen `check-*.py` guards existed and not one looked at `agents/`, which is why both defects above went unobserved.
+
+### Changed
+
+- **Claude Code minimum-version floor raised to v2.1.234** (#580). Set in `plugins/arckit-claude/hooks/version-check.mjs`; the SessionStart warning gains a bullet per new driver, and the repo dogfood plus the test-repo scaffold move with it.
+
+  The headline driver is a secret-exposure path that lands squarely on ArcKit's own configuration. **v2.1.234 stopped Claude Code's MCP diagnostics printing resolved secrets** — scope-conflict warnings now show the configured `${VAR}` form, and connection-failure details show only the server origin. ArcKit bundles two keyed MCP servers, `google-developer-knowledge` and `datacommons-mcp`, whose `${user_config.*}` API keys sit in request headers; on a session with no keys configured those connections fail *by design* and are documented as expected. ArcKit therefore produces exactly the diagnostics this fixed, routinely, as normal operation.
+
+  Four more fixes below the new floor affect shipped ArcKit behaviour rather than hypotheticals:
+
+  - **v2.1.221** — `WebSearch` returned a 400 at `effort: xhigh`/`max` when thinking was disabled. ArcKit runs 18 commands and three research agents at `effort: max`, so every search from `/arckit:research`, `/arckit:datascout` and `/arckit:grants` failed for anyone running with thinking off. Same shape as the v2.1.172 `WebFetch` wildcard fix that justified an earlier bump: shipped ArcKit configuration, silently inert below a specific release.
+  - **v2.1.222** — PreToolUse auto-allow hooks bypassed tool restrictions inside background agent tasks. This became load-bearing rather than theoretical when v2.1.232 made subagent spawns background by default.
+  - **v2.1.223** — Bash permission-check bypasses where a crafted command could hide part of itself from the approval dialog, and an agent definition's `bypassPermissions` ignoring org policy.
+  - **v2.1.224** — sandbox `denyRead`/`denyWrite` entries written with a trailing slash were silently bypassable, project paths over 200 characters resolved into another project's session directory, and sandbox violations now report which access was denied.
+
+  The floor carries forward every prior driver: v2.1.219 Claude Opus 5, v2.1.200 project-scoped plugin loading from git worktrees and `claude agents --plugin-dir` visibility, the v2.1.198-v2.1.199 background-subagent reliability and hook stderr fixes, v2.1.197 Claude Sonnet 5, and the v2.1.172 wildcard-domain `WebFetch` fix.
+
+  As before, this is a **soft** SessionStart warning, not a hard gate — model choice and update policy stay with the user or org. Per-feature thresholds in the warning body, the `enterprise-scale.md` changelog rows, and historical references are deliberately left at their own versions rather than swept up in the bump.
+
+- **`docs/guides/build.md` "Session limits" corrected, and subagent dispatch made explicit about background-by-default** (#580, PR #817). Claude Code v2.1.224 removed the 200-subagent-per-session spawn cap that #675 had documented, and `CLAUDE_CODE_MAX_SUBAGENTS_PER_SESSION` is now accepted in settings but never read — so setting it looks like it worked and does nothing. The same section also claimed every cap denies; the WebSearch cap never did. Over budget it returns a normal result with `searchCount: 0` telling the model to continue with what it has, so a research-heavy build keeps producing artefacts on thinner evidence instead of halting — for a governance artefact, the worse failure. It now gets its own paragraph rather than a table row that says "denies".
+
+  Separately, v2.1.232 made non-teammate `Agent` spawns background-by-default: the call returns `async_launched` and an `agentId`, not the subagent's report. `/arckit:build`'s wave barrier and every reader → validate → writer handoff are written against synchronous returns, so both now dispatch with `run_in_background: false` — and, because the parameter is stripped from the tool schema in some contexts, both also say what to do when it is unavailable.
+
+- **Every GitHub Action is pinned to a commit SHA** (#466 item 17). All 13 references across the four workflows were on floating tags, and `pypa/gh-action-pypi-publish` was on `release/v1` — a moving **branch**, which advances on every release of that action with no version boundary at all.
+
+  This is not hypothetical hygiene. A tag or branch resolves to whatever it points at *when the workflow runs*, so whoever controls the action repository can repoint one and every downstream workflow picks up the new code silently. ArcKit's workflows run with `contents: write`, and the release workflow additionally holds `id-token: write` for PyPI trusted publishing, so a repointed tag is an arbitrary-code-execution path into a job holding publish credentials.
+
+  Pins were taken at the **current major**, not the version in use: `actions/checkout` v4→v5, `actions/setup-python` v5→v6, `actions/setup-node` v4→v5, `markdownlint-cli2-action` v19→v20, `gh-action-pypi-publish` `release/v1`→v1.14.2 (the same commit that branch pointed at). Pinning at the old majors would have frozen a deprecation GitHub has already announced: the v6.11.0 release log carries `Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-python@v5`.
+
+- **`/arckit:research`'s build-vs-buy verdict is now a rule applied to computed numbers, not a judgement.** Buy when the top option scores ≥ 70 and costs less than building; build when nothing clears 50 or everything above it costs more; hybrid when the top option scores well but covers under 70% of required capabilities; and `insufficient evidence` when fewer than two options published pricing at all — that last case previously produced a confident recommendation from a single data point. The build option's cost is an orchestrator estimate and is now explicitly labelled as one, because no reader ever fetched it.
+
+- **`docs/READER-PATTERN.md`** now records which agents have been split and names the five that remain (`aws-research`, `azure-research`, `gcp-research`, `gov-code-search`, `gov-landscape`).
+
+- **Corrected the Agent System section of `CLAUDE.md`** (#466). It claimed 16 agents (there are 19), said the reader/writer subagents are "dispatched only by the corresponding orchestrator agent" (`READER-PATTERN.md` step 5 requires the orchestrator to be the slash command, and the command bodies say so explicitly), and listed `arckit-datascout`, `arckit-gov-reuse` and `arckit-grants` as the agents their commands delegate to, which stopped being true at #446. Those three files are now documented for what they actually are: pre-split monoliths retained solely because the converter replaces a command body wholesale with the agent prompt for non-Claude targets, which cannot dispatch subagents. The MCP tool-naming example in the same section was also wrong — it gave the bare `mcp__<server>__<tool>` form.
+
+### Fixed
+
+- **`READER-PATTERN.md` stopped prescribing a tool that no longer exists** (#580, PR #817). Claude Code v2.1.233 removed `TodoWrite` and the `TaskCreate*` tools on Opus 4.8, Sonnet 5, Fable 5, Opus 5 and newer (`CLAUDE_CODE_ENABLE_TODO_TOOLS=1` restores them). The canonical reader allowlist in the pattern document listed `TodoWrite`, so it would have propagated into every future reader. The 20 existing agent allowlists are deliberately unchanged: an allowlist entry for a tool that does not exist is inert rather than an error, and keeping it preserves the to-do surface for older models, for anyone re-enabling the tools, and for the non-Claude runtimes where `converter.py` maps `TodoWrite` to `todo`.
+
+  `telemetry.mjs` needed no behaviour change but did need a comment: its `tool === 'TaskCreate'` branch is now dead while the adjacent `event === 'TaskCreated'` branch — a different mechanism with a confusingly similar name, still live in v2.1.235 — carries all agent-spawn telemetry. Without the note the obvious cleanup deletes the hook registration.
+
+  Also corrects a miss from #674: that PR fixed the stale "subagents cannot spawn subagents" claim in the pattern document's prose but left the identical claim standing in the step-by-step checklist at the bottom, which is the copy a contributor actually follows.
+
+- **Documented why the PyPI publish job has never worked**, in the job itself (#730). The job was added at v6.8.0 and has failed on every release since — v6.8.0, v6.9.0, v6.10.0 and v6.11.0 — leaving `arckit-cli` on PyPI at 6.4.1, which is the exact problem #730 added it to solve. It is not a regression and not a defect in the workflow: the failure is
+
+  ```text
+  Trusted publishing exchange failure:
+  * `invalid-publisher`: valid token, but no corresponding publisher
+  ```
+
+  meaning the OIDC token mints correctly and PyPI has no Trusted Publisher matching the claims. The one-time PyPI-side setup the job's own comment documents (Owner `tractorjuice`, Repository `arc-kit`, Workflow `release.yml`, Environment `pypi`) was never completed. **Nothing in this repository can fix it**, so the job now carries a dated status block recording the failure and the exact claims that must match, rather than leaving each release to rediscover it.
+
+- **Restored the `tools:` allowlist, `effort:` and `maxTurns:` on `arckit-datascout`, `arckit-grants` and `arckit-gov-reuse`** (#466). PR #445 migrated all ten research agents off a `disallowedTools` denylist onto an explicit `tools:` allowlist, so that tools added by future Claude Code versions cannot auto-grant to an existing agent. PR #446 — the three-tier reader/writer split — silently reverted it on exactly the three agents it touched, and the regression survived three months and seven minor releases. Both changes are recorded as shipped in #466's own "already done" list.
+
+  The cause was mechanical, not a hand-edit. `converter.py::copy_agent_stripped()` pops the five `CLAUDE_ONLY_AGENT_FIELDS` and rebuilds the block with `yaml.dump()`; run with its destination pointing at the source tree it strips `effort`/`maxTurns`/`tools` from the plugin itself and leaves an alphabetised `description, model, name` block with the description reflowed from a `|` literal into a single-quoted folded scalar. All three damaged files carried that signature exactly; the other sixteen agents kept their authored field order. Until now those three ran with every tool in the harness, at session effort, with no turn cap.
+
+  `arckit-gov-reuse`'s MCP entry is restored in the `mcp__plugin_arckit_govreposcrape__search_uk_gov_code` form rather than the bare `mcp__govreposcrape__…` it originally shipped with, which matches nothing in plugin context.
+
+- **`READER-PATTERN.md` is no longer registered as a dispatchable agent** (#466). Claude Code registers *every* `.md` under a plugin's `agents/` directory, including one with no frontmatter, which then resolves to an unrestricted tool grant. A design reference therefore surfaced as an agent named `READER-PATTERN` with "All tools", and `claude plugin details arckit` billed it as a 2–7K on-invoke skill — it was listed as one in README's own footprint table, captured from that command. Moved to `plugins/arckit-claude/docs/READER-PATTERN.md`, next to `DEPENDENCY-MATRIX.md`.
+
+  Not to `references/`: that tree is read at runtime by 55 commands and is consequently copied into all 15 overlay plugins by `sync-shared-assets.py`, while no command has ever read this document.
+
+## [6.11.0] — 2026-08-19
+
+### Documentation
+
+- **A Bring Your Own LLM guide** (#805). ArcKit has always been runnable against a self-hosted or non-Anthropic model and nothing in `docs/` or `README.md` said so, so the only discoverable answer was that it could not be done. `docs/guides/byo-llm.md` documents the three routes that exist today, none of which need ArcKit-specific code: Claude Code against a server that serves `/v1/messages` natively (vLLM, llama.cpp, Ollama v0.14.0+, SGLang, LM Studio), which removes the translation proxy this used to require; Codex CLI or OpenCode, which speak the OpenAI protocol natively and reach the same servers with no translation at all; and an organisational LLM gateway.
+
+  Each route records what it keeps, what it loses, and the per-server defects live at the time of writing (SGLang's `input_tokens: 0` in `message_start`, Ollama's `count_tokens` hang, vLLM's tool-parser flags and its rejection of model names containing `/`). It states plainly that Anthropic does not support routing Claude Code to non-Claude models through any gateway.
+
+  Carries a governance section, because the point of the harness is that its artefacts can be relied on: `provenance-stamp.mjs` takes the model identifier from the footer the model writes about itself, so a remapped local model may stamp a wrong or absent one; and `downgradeEffort` treats an unrecognised model ID as supporting every level, so a command declaring `effort: max` is stamped as having run at `max` regardless, making the effort row decorative on a non-Claude model.
+
+  Registered at four enumeration points, not one: `docs/guides.html`, `docs/llms.txt`, the plugin guide tree so it ships to all seven generated extensions, and `config/guide-groups.mjs`. The fourth was missed on the first commit and caught only by `tests/codex/`, which asserts no guide lands in "Other / Uncategorised" — `check-guide-parity.py` and `check-guide-site-links.py` both passed on the broken tree, so neither guard can see a missing section classification.
+
+- **Removed the broken star-history chart and the DeepWiki integration from `README.md`** (#804). Both rendered as dead images.
+
+### Fixed
+
+- **The EU Cloud Sovereignty Framework (EUCSF) assessment shipped three wrong objective weights** — `SOV-1 Strategic Sovereignty` **15%** (should be **20%**), `SOV-5 Supply Chain Sovereignty` **20%** (should be **10%**), `SOV-7 Security & Compliance Sovereignty` **10%** (should be **15%**) — verified against the European Commission's [Implementation guidance](https://commission.europa.eu/document/download/2ad80a48-166f-4c77-a513-80c53ca2a128_en?filename=Cloud+Sovereignty+Framework+-+Implementation+guidance.pdf) p.7 and the [Annex calculator](https://commission.europa.eu/document/download/3acb8fe8-8a4a-4339-ae74-f56138d913d1_en?filename=Annex+-+Sovereignty+assessment+calculator.xlsx) XLSX cells D4/D45/D76/D102/D133/D169/D195/D231. The other five objectives were already correct.
+
+  **The wrong set is a permutation of the correct one** — the same eight numbers, three of them assigned to the wrong objective — so it still sums to exactly 100%. That is why it survived two independent "totals 100%" checks: `quality-checklist.md`'s EUCSF item (*"Weight table reproduces the framework weights and totals exactly 100%"*) and this document's own predecessor guard both evaluate a sum, and a sum is invariant to a permutation of its addends. Neither check has ever verified a single objective's weight against its own known-correct value. `scripts/tests/test-csf-weights.mjs` closes that gap: it asserts each of the eight `SOV-N` weights individually, globbed across every canonical source and generated mirror (`plugins/arckit-eu/**`, `plugins/arckit-claude/plugins/eu/**`, `.arckit/templates/**`, `docs/guides/eu-cloud-sovereignty.md`, `plugins/arckit-claude/docs/guides/**`), and `quality-checklist.md`'s EUCSF check now lists all eight weights explicitly rather than only their total.
+
+  The guard's red run, before any data was corrected, named exactly the three wrong objectives across every file carrying the table (7 files, 48 individual weight-occurrence failures):
+
+  ```text
+  [FAIL] plugins/arckit-eu/commands/eu-cloud-sovereignty.md:198: SOV-1 weight is 15%, the framework says 20%
+  [FAIL] plugins/arckit-eu/commands/eu-cloud-sovereignty.md:202: SOV-5 weight is 20%, the framework says 10%
+  [FAIL] plugins/arckit-eu/commands/eu-cloud-sovereignty.md:204: SOV-7 weight is 10%, the framework says 15%
+  [FAIL] plugins/arckit-eu/templates/eu-cloud-sovereignty-template.md:30: SOV-1 weight is 15%, the framework says 20%
+  [FAIL] plugins/arckit-eu/templates/eu-cloud-sovereignty-template.md:34: SOV-5 weight is 20%, the framework says 10%
+  [FAIL] plugins/arckit-eu/templates/eu-cloud-sovereignty-template.md:36: SOV-7 weight is 10%, the framework says 15%
+  ... (and the same three-objective pattern repeated across three tables and eight `(Weight: ...)` subsection headers per file, and across every generated mirror in `plugins/arckit-claude/plugins/eu/`, `.arckit/templates/`, and both `docs/guides/` trees)
+  ```
+
+  **The checklist item that states the eight weights is itself guarded**, after review found it was not. Replacing the sum-only check with an explicit eight-weight list is the right fix, but that list is *prose* — not a table row, not a `(Weight: ...)` header — and its 31 copies (one per plugin) sit outside the weight-table roots, so reverting `SOV-1` and `SOV-5` in the checklist alone still produced a green run. The guard now recognises a third shape, `SOV-<n> <objective name> <NN>%`, and collects `quality-checklist.md` by basename so a new plugin is covered the day it is added. Coverage goes from 128 occurrences across 7 files to 376 across 38.
+
+  Anchoring that shape on the objective's own name, rather than on a loose `SOV-<n>...<NN>%` scan, is load-bearing twice over. It avoids a false positive the same checklist line would otherwise produce (*"weights summing to 100%"* reads as SOV-8 being 100%), and it buys a second assertion: a code paired with **another objective's name** now fails too. That is the permutation defect wearing its other face — the same one that let `SEAL-3` ship as *"Digital Resilience"*.
+
+  `SEAL-2`'s *"EU jurisdictions apply, with material dependencies remain"* is ungrammatical in the Commission's own text and is now marked in the command as verbatim-on-purpose, so a later contributor does not silently repair it and put the artefact out of step with the normative wording a tender is assessed against.
+
+  Also corrected in `plugins/arckit-eu/commands/eu-cloud-sovereignty.md`: `SEAL-3` was named **"Digital Resilience"**, which does not appear anywhere in the framework's SEAL scale — renamed to **"Technological Sovereignty"** per the Implementation guidance p.2-3. `SEAL-2` and `SEAL-4`'s wording was also drifting from that same normative rendering (*"EU law applicable and enforceable"* vs. the source's *"EU jurisdictions apply"*; *"subject only to EU law"* vs. *"subject only to EU jurisdiction"*) and is now verbatim.
+- **`/arckit:eu-cloud-sovereignty` recorded a SEAL per objective but had no aggregate SEAL concept at all**, while already framing "minimum SEAL" as the tender's rejection gate. The framework defines that aggregation, and it is a **minimum** — never an average and never a mode. Implementation guidance p.9, quoted verbatim: *"The overall SEAL level is the lowest SEAL level achieved in any of the objectives."* The Annex calculator XLSX implements that same overall rule at finer granularity, cell F2: `="SEAL-"&MIN(H5:H251)`, where each row's SEAL is `=IF(E<n>,1*F<n>,"")` — the minimum over every answered criterion. `H5:H251` spans every answer row across **all eight** objectives (header rows 4/45/76/102/133/169/195/231), so `F2` is the **Overall** SEAL; it is the workbook's only `MIN()`, and there is no per-objective SEAL cell anywhere in it. The per-objective minimum is therefore a property of the framework that the calculator leaves implicit, and is cited as such rather than attributed to a cell. The two levels agree only because an objective's own SEAL is already the minimum across its criteria, so the framework's Overall SEAL is a minimum-of-minimums.
+
+  The template's Executive Summary and a new Section 3.3 now carry the **Overall SEAL** alongside its **governing criterion** — the objective, and where identifiable the specific contributing factor, whose evidenced SEAL set the minimum — instead of leaving the aggregate as an unattributed number. A new Section 3.0b reproduces guidance p.10's per-objective SEAL-2/3/4 requirements table, with the note that it starts at SEAL-2 because that was the minimum set for the Commission's own competition, not a floor the framework itself imposes.
+
+  Two further properties from the same guidance pages are now stated as properties of the derivation rather than left implicit: a criterion whose every recorded answer is SEAL-4 can never bind the minimum (p.9 — *"it must be understood that the criterion has no impact on the SEAL calculation"*), and the Overall SEAL, not the Sovereignty Score, is the framework's actual rejection gate (p.10 — *"the prevalence of the SEAL criterion over the Sovereignty Score... Sovereignty score is used to compare the offers that have reached the minimum required SEAL"*). The Commission's own SEAL-4 attainability caveat (p.13, "Lessons learnt", published 1 June 2026) is carried attributed and dated, framed as a limitation it proposes to revisit rather than a permanent property of SEAL-4.
+
+  `references/quality-checklist.md`'s `EUCSF` section now asserts the Overall SEAL is present, derived as a minimum with its governing criterion named, and that no averaging or modal language appears in the derivation.
+- **`/arckit:eu-cloud-sovereignty` stated its Sovereignty Score formula without ever defining `Score(SOVn)` or `Max.Score(SOVn)`** (#782), so the model had to invent a scale each time and the result — published as a tender **award criterion** — could disagree across two runs over identical evidence.
+
+  Both terms are now defined from the official Annex calculator, transcribed at `plugins/arckit-eu/data/csf-criteria-calculator-2026-06-01.json`: `Score(SOVn)` is the sum of the selected answers' point values per objective; `Max.Score(SOVn)` is a shared **nominal 1000** for every objective, not each objective's own computed maximum. Because the calculator rounds answer values to 2dp, the actual per-objective maxima are 1000.03 / 1002.00 / 1000.00 / 1002.00 / 1001.00 / 1000.00 / 1001.00 / 1000.00 — so a **maximal response scores 100.0756%, not 100%**. That overshoot is the framework's own documented behaviour and is reported faithfully rather than clamped.
+
+  The command now also states explicitly that **SEAL is not an input to the Score and the Score does not determine SEAL** — both are independent readings of the same 48 answers, and Overall SEAL is the *minimum* SEAL across every answered criterion, not an average. The generated artefact carries a new **Appendix A** with per-criterion arithmetic for all 48 criteria, so the score is checkable without re-running the scorer. The Implementation guidance's narrative describes 43 questions; the published calculator scores 48 — both counts are recorded, with the discrepancy stated.
+
+  **`arckit init` now scaffolds `.arckit/data/`**, without which the fix never reached the runtimes it was written for. The generated Codex, OpenCode and Copilot command bodies are rewritten to read `.arckit/data/csf-criteria-calculator-2026-06-01.json` and call it *"the ONLY source"* for `Score(SOVn)`, `Max.Score(SOVn)` and each criterion's SEAL, with *"never invent, estimate, or paraphrase these values"*. That path was never created: `get_data_paths()` builds an explicit per-directory key list and `data` had no entry, so the model was pointed at a missing file and fell back to inventing the scale — #782 verbatim, on a CLI-scaffolded project. The plugin path was always fine.
+
+  Copied unconditionally, next to `references`, rather than inside the Codex branch: all three CLI targets are rewritten to `.arckit/data/`, so gating it on one would have left `--ai opencode` and `--ai copilot` still broken. `"data"` is also added to `REQUIRED_ASSETS` in `hatch_build.py` so a hollow build cannot ship the extension without it — verified by removing the directory and confirming the check reports it.
+
+  This is the fifth registry the change had to reach, after the three the original work found plus the `.gitignore` rule. Same signature as the others: `data/` reached every extension tree and every generated command, and every local check passed regardless.
+
+  Two notes added to the catalogue itself, both about telling the Commission's gaps apart from ours. The two `label: null` answers on SOV-1 criterion 6 are the **workbook's** blank cells (rows 31 and 33), not a transcription loss. And `provenance.publicationDate` now records where the date came from — the Commission's download page — because neither artefact's own metadata states it and the two disagree (workbook `docProps` created 2026-05-28, guidance PDF `CreationDate` 2026-06-03), while the date is load-bearing: it names the file, chosen over the framework version because the two disagree on the question count.
+
+  New: `plugins/arckit-claude/scripts/csf-score.mjs`, a pure-Node scorer implementing these definitions (Claude Code / Python-CLI targets only — Codex, Gemini, OpenCode, and Copilot ship the calculator data and command markdown but not the script, per the existing non-Claude script-degradation pattern; the artefact's per-criterion arithmetic requirement makes the assessment checkable either way). Guarded by `scripts/tests/test-csf-score.mjs`, wired into `lint-markdown.yml`.
+
+## [6.10.0] — 2026-08-18
+
+### Added
+
+- **The doc-control guard rejects a classification ladder restated under the marker** (#746). `check-doc-control-resolution.py` check 2 asked whether the required comment was PRESENT, so anything added after it was invisible — which is how 34 templates came to carry a second ladder the router cannot see, 10 of them the wrong one. The new check 4 fails on a `| Classification | ... |` row inside the marker comment block and names the offending line. A note that adds something beyond the menu is not a row and is unaffected.
+
+- **A guard that per-type quality-checklist checks match the artefact's own regime ladder** (#790, follow-up to #787). `scripts/check-quality-checklist-ladders.py` asserts that a section for a doc-type whose regime hard-routes — AT, AU, CA, FR, NL, UAE — never demands a classification from a different regime's ladder. That state is invisible at runtime: the artefact renders `Diffusion Restreinte` from `document-control-fr.md`, the check demands `OFFICIAL-SENSITIVE`, and a correctly classified artefact fails the check its own command gates on. Seven sections were in it until #788, every one from copying a UK section when adding an overlay type.
+
+  Derived end to end from `config/doc-types.mjs` (`DOC_TYPES`, `REGIME_PARTIALS`, `UK_FALLBACK_BY_DESIGN`) and each partial's own `**Classification**` row, so a new regime extends the guard with no edit here. Enumerating the schemes by hand is the defect #788 fixed *in the checklist itself*, where a list of three had drifted from a registry of six, and a test asserts no ladder value is hardcoded in the guard.
+
+  Anchored on the two assertion phrasings actually in use rather than scanning for ladder tokens. A bare token scan cannot work: `OFFICIAL` and `SECRET` sit on three ladders at once, and `Open`, `Shared`, `Secret` and `Confidential` are ordinary English — the #787 detection pass false-positived on FITAA's *"Open Items"*. The three fall-through regimes (UK, MOD, EU) are deliberately not policed, because they resolve through user config and can legitimately render a UAE or AT ladder. US was a fourth until #746 gave it a ladder of its own.
+
+  Resolution is per plugin, matching `check-quality-checklist-refs.py`: `${CLAUDE_PLUGIN_ROOT}` has no cross-plugin fallback, so each overlay is checked against its own checklist and its own partials. Run against the tree as it stood before #788 it reports all seven, in each of the 16 copies; `tests/plugin/test_quality_checklist_ladders.py` reproduces that failure against the real registry, because a guard that cannot demonstrate a failure reads as coverage.
+
+- **Two new `arckit-uk-gcloud` templates**: `gcloud-competitors-template.md` (`GCMP`) and `review-template.md` (`GCRV`), both with the marker, Revision History and External References. `arckit-uk-gcloud` is not in `PLUGIN_SOURCES`, so neither mirrors into `.arckit/templates/`.
+
+- **A fourth check in `scripts/check-doc-control-resolution.py`**: a command declaring a `doc-type:` must reference a template file. The first three checks walk *templates* and ask who reads them, so a command with no template was invisible to them — which is why `GCMP` and `GCRV` needed a separate sweep rather than surfacing in the #760 pass. `doc-type: none` commands are out of scope. Both exemption lists (`NO_READER_KNOWN`, `NO_TEMPLATE_KNOWN`) are now empty, and a test asserts they stay that way.
+
+- **`Unmet Must-Have Requirements`** in `gcloud-requirements-template.md`, plus the G-Cloud framework notes ported from the old inline skeleton. A per-service gap belongs in that service's block; a requirement *nothing* on the shortlist meets changes the procurement decision rather than the ranking, so it now has its own place and an explicit "write None rather than omitting" instruction.
+
+- **`scripts/check-doc-control-resolution.py`** — the guard #760 asked for, wired into `lint-markdown.yml` beside `check-quality-checklist-refs.py`. It checks three things: every marker template has a reader (command *or* writer subagent) that references `_partials/RENDERING.md`; the marker comment is the current one-line form; and the converse, that a template hand-maintaining a Document Control block without the marker is declared deliberate with a reason.
+
+  `arckit-uk-nhs`'s six DCB0129/DCB0160 safety-case templates are recorded in `INLINE_BY_DESIGN`: they follow the Marcus Baw `SAFETY.md` spec convention, whose Document ID is the literal `SAFETY.md` with no `ARC-` prefix, and converting them would break that convention on purpose. `apply_doc_control_marker.py` carries the same exemption, having converted all six by accident during this work. `uk-nhs-dtac-template.md` and `uk-mdr-classification-template.md` are explicitly **not** exempt.
+
+  Three templates are recorded in `NO_READER_KNOWN` rather than fixed, and tracked on #792: `backlog-template.md`, `gcloud-clarify-template.md` and `gcloud-requirements-template.md` each name their owning command in their own header, and that command writes its artefact from a skeleton inlined in the command body instead — with no `## Document Control` and no `## Revision History` at all, which makes Common Checks 1, 4 and 6 unsatisfiable for `BKLG`, `GCLC` and `GCLD`. Against the Template-Driven Generation rule in `CLAUDE.md`, and a behaviour change rather than a wording one. The guard walks templates and asks who reads them, so a command writing a governed artefact with **no** template is invisible to it — `arckit-uk-gcloud`'s `gcloud-competitors` (`GCMP`) and `review` (`GCRV`) have the same defect and needed a separate sweep to find. Both noted on #792.
+
+  15 tests in `tests/plugin/test_doc_control_resolution.py`, weighted toward the negative cases: the guard fails on an unresolved marker, an unread template, a stale comment, an undeclared inline table, a stale exemption, and on matching nothing at all.
+
+### Changed
+
+- **One convention for per-command classification instructions across the hard-routing regimes** (#799, split out of #790's blocker 1). Since #744 made Document Control routing regime-first, the AU, CA, FR and AT commands were still carrying instructions written when the per-command line was the only thing producing the right ladder. Four shapes were live at once, and that disagreement was what blocked extending #798's guard to command files: an anchored scan flags `OFFICIAL` in `at-bvergg.md` and has no way to tell it from the drift #788 fixed.
+
+  The split turns on what each shape actually does. **`RENDERING.md` picks the ladder; the command picks the value on that ladder** — the partials ship a placeholder menu (`document-control-ca.md:6` is `[UNCLASSIFIED / Protected A / …]`), so something has to choose from it. Restating the menu is duplication; asserting a value is editorial judgement `RENDERING.md` cannot supply.
+
+  - **AU (10 commands) and CA (12)** restated the menu — *"Use the Australian classification scheme (…) — replace the standard UK line in the header"* — and now defer in NL's words instead, naming the partial and the framework without repeating the values. The three carrying an extra editorial note (`au-soci-cirmp`, `ca-ocap`, `ca-soia`) keep it.
+  - **FR (12) and AT (3)** assert a value with a reason — *"Diffusion Restreinte minimum (cartography reveals attack surface)"* — and are unchanged in substance.
+  - **AT's five dual-notation sites** across `at-bvergg.md`, `at-dsgvo.md` and `at-barrierefreiheit.md` lost the vestigial UK token. Each already ended *"Emit the AT InfoSiG value"*, so `Classification: OFFICIAL — under the AT InfoSiG scheme use **Offen**` was carrying a UK value it then told the model to discard. It also gave `OFFICIAL` a second partner: `RENDERING.md` step 6 maps `OFFICIAL` → `Eingeschränkt`, `at-bvergg.md` paired it with `Offen`.
+  - **15 `RENDERING.md` pointer sentences** (FR 12, AT 3) lost the ladder menu inlined in the parenthetical, which duplicated the Regime routing table. The sentence still names the doc-type, the regime and the partial.
+  - **`fr-irn.md`** was the one FR command using a flat `**Classification**:` list item rather than the nested `- Classification:` shape the other 11 use, so one anchor now matches all 12.
+
+  No behavioural change is intended for AU or CA: both regimes already hard-route, so the removed sentences did not affect what renders. Verified statically end to end for `/arckit:au-pia` (`AUPIA`) and `/arckit:ca-pia` (`PIA`) — doc-type declared, template referenced, marker present, `_partials/RENDERING.md` referenced, code listed in the Regime index, regime hard-routing to the right partial, and that partial carrying the right ladder. **`arckit-at` is now internally consistent too**: `at-nisg.md` already deferred and the other three no longer contradict it.
+
+### Fixed
+
+- **Citation instructions now resolve to tables that exist** (#783). 40 templates across ten plugins told the model to populate an `## External References` section whose tables the template did not ship. `references/citation-instructions.md` is explicit that it does not create that section — *"The template ships with these tables already; the rules below describe how to fill them"* — so where the tables were absent the instruction resolved to nothing. Nothing errored and nothing was logged; the artefact was simply written with no citation trail, and a reader had no way to check a generated claim against its source.
+
+  `plugins/arckit-nl/commands/nl-cloud.md` was the sharpest case: it *mandated* that the Herziening rijksbreed cloudbeleid 2026 and VIRBI 2025 appear in a Document Register `nl-cloud-template.md` did not have. No `_partials/` file supplies the section either, so nothing rescued it at render time.
+
+  It matters most where it was worst. `arckit-uk-finance` and `arckit-uk-gcloud` accounted for the largest share, and both write artefacts whose value is auditability — safeguarding reconciliations, CTP dependency registers, SCA-RTS exemption matrices, G-Cloud service definitions and supplier declarations. Those are read by a regulator or a buyer, and the citation trail is the part that makes a generated claim checkable.
+
+  The defect came in four shapes, not one, and the issue's reproduction (a substring test for `External References`) saw only the first:
+
+  - **23 templates had no section at all** and gained the canonical block. The four `nl-*` registers are seeded with the sources their command mandates, taking URLs from each command's own authoritative-sources table; `nl-bio` keeps a placeholder because BIO2 has no stable published URL and inventing one would be worse than the gap.
+  - **Six carried the heading and one flat source table** with entirely different columns (`au-aescsf`, `au-energy-compliance`, `au-ot-security`, `au-soci-cirmp`, `uk-mdr-classification`, `uk-nhs-dtac`). The existing table is preserved under `### Authoritative Sources` and the three canonical tables follow it.
+  - **`au-ism-controls` and `au-pspf` had `## External References` with an empty body.** Their registers sat under the *following* `## ArcKit Evidence Integration` heading, so the section the instruction named was literally empty. Reordered so the registers sit under External References, with the missing tables added.
+  - **Four had the section as a `###` stub nested inside Traceability** (`application-inventory`, `architecture-change`, `gap-analysis`, `agent-maturity`), holding a one-row placeholder rather than a register. Promoted to a top-level numbered section carrying the canonical tables.
+
+  Two things deliberately not changed. The **four `uk-fs-*` fragment templates** the issue listed are not artefacts: `uk-fs-sca-rts-exemption-matrix-template.md` and its three siblings define the shape of one block inlined into a parent, they carry no Document Control, and the parent now carries the citation trail — giving each fragment its own register would emit duplicate tables inside a single artefact. And **column names are untouched**: several plugins carry the three tables with locally-divergent columns (`Source` for `Source Location`, four-column registers throughout `arckit-ca`), and normalising them is a separate change from making the section exist.
+
+  The eight `arckit-uk-gcloud` templates are plugin-copy-only. That plugin is deliberately absent from `PLUGIN_SOURCES` in `tests/plugin/test_template_consistency.py` and ships its own proprietary `LICENSE`, so mirroring them into `.arckit/templates/` would push proprietary content into MIT-licensed CLI package data. The other 32 are mirrored as usual.
+
+  `au-aescsf` and `au-energy-compliance` also had a second `## Document Register` — a metadata table listing Document Type and Template Origin, unrelated to citations. Renamed `## Document Metadata` so the instruction names one thing.
+
+- **New CI guard: `scripts/check-citation-section-refs.py`** (#783), run by `lint-markdown.yml` alongside `check-quality-checklist-refs.py`, which exists for the same defect class: an instruction that points at a section that is not there. For every command **or agent** referencing `references/citation-instructions.md`, every `*-template.md` it names under its own `templates/` directory must carry all three `###` sub-headings.
+
+  Sub-headings, not the `## External References` heading. A presence-only check would have passed 16 of the 40 broken pairs on day one and frozen that drift in as compliant — the same lesson as #792, where a marker guard that only checked presence could not see what the marker said. Scanning agents as well as commands matters because the writer subagents, not the commands, hold the template reference for several research artefacts.
+
+  Resolution is per plugin, matching `${CLAUDE_PLUGIN_ROOT}`. Templates with no Document Control block are skipped as inlined fragments, and `plugins/arckit-claude/plugins/**` is skipped as the generated publish-layout mirror, in line with the four sibling guards. No exemption list.
+
+- **The USA Federal regime renders a US classification ladder** (#746, follow-up to #744). `REGIME_PARTIALS.US` pointed at `document-control-uk.md` and `US` sat in `UK_FALLBACK_BY_DESIGN`, so all 10 USA Federal Civilian doc-types — the FedRAMP SSP and RAR, FISMA / NIST 800-53, CISA Zero Trust, ICAM, the NIST AI RMF, the M-24-10 AI impact assessment, the E-Gov §208 PIA and the EO 14028 SBOM attestation — put `[PUBLIC / OFFICIAL / OFFICIAL-SENSITIVE / SECRET]` in the Document Control header of a US federal artefact. Six of the ten are HIGH severity.
+
+  `document-control-us.md` now ships and US hard-routes. The ladder is `UNCLASSIFIED / CUI / CONFIDENTIAL / SECRET / TOP SECRET`, taken from the primary instruments rather than from memory: **EO 13526 §1.2** for the three classified tiers, which states that no other terms identify US classified information, and **32 CFR 2002.20** for CUI. #746 deferred rather than guessed because nothing in the repository stated a ladder, and the judgement it was waiting on is now recorded as step 7 of `RENDERING.md`: **CUI is a control marking, not a classification level**, so category and limited-dissemination markings (`CUI//SP-PRIV`, `CUI//NOFORN`) belong in `Distribution`; and a FIPS 199 impact level never belongs in the field at all, being a different axis that categorises the system rather than marking the document — the `FIPS199` artefact deriving it is itself commonly marked `CUI`.
+
+  Two things the issue did not name had to move with it, or the new partial would have been contradicted or unreachable:
+
+  - **All 10 `us-*` templates mandated the UK ladder** under the marker — `<!-- Classification line MUST be: -->` followed by the UK row. A `MUST` in the template outranks the router at render time, so it would have overridden `document-control-us.md`, and it already overrode the user-config chain the deferral was meant to preserve: a UAE- or AT-configured entity running a `us-*` command was told to emit the UK line regardless. 34 templates across US, CA, AU and AU-energy carried a restatement of this shape and all 34 lose the row; the notes that say something the menu does not (`au-soci-cirmp`, `ca-ocap`, `ca-soia`) stay.
+  - **No `us-*` command resolved the marker.** All 10 listed `_partials/RENDERING.md` among their prerequisites, which is enough to satisfy reader-matching in `check-doc-control-resolution.py`, but none instructed the model to resolve it — the only overlay of nine missing that step (AT 4/4, AU 10/10, CA 12/12, EU 8/8, FR 12/12, NL 4/4, UAE 12/12, **US 0/10**). Each now carries it in the form #799 settled for a hard-routing regime.
+
+  `docs/guides/us-federal-overlay.md` recorded *"CUI / Confidential / Secret / Top Secret marking is not covered in v1"* as a known limitation. That is now scoped to what the overlay genuinely does not do — CUI categorisation and classified-system architecture, which stay with the future `arckit-us-dod` overlay — rather than to how the artefacts mark themselves.
+
+- **Five commands wrote a governed `ARC-*` artefact with no Document Control block and no Revision History** (#792). Each built its document from a skeleton inlined in the command body rather than from a template, against the Template-Driven Generation rule in `CLAUDE.md`. All five now read their template and resolve the `<!-- DOC-CONTROL-HEADER -->` marker.
+
+  Three had a template that named its own command in its header and was never read — `/arckit:backlog` (`BKLG`), `/arckit:gcloud-clarify` (`GCLC`) and `/arckit:gcloud-search` (`GCLD`). Two had **no template at all**: `arckit-uk-gcloud`'s `/arckit:gcloud-competitors` (`GCMP`) and `/arckit:review` (`GCRV`), whose command bodies said *"there is no separate template for this doc-type; structure the report inline"*. Both now ship one.
+
+  This was **fully-wired coverage aimed at impossible documents**, not a coverage gap. All five codes already had a `### <CODE>` section in `references/quality-checklist.md`, and all five commands instructed the model to verify the Common Checks — of which 1 (*Document Control complete: all 14 fields*), 4 (*Classification set*) and 6 (*Revision History present*) cannot be satisfied by a document with no Document Control block. Two commands went further and carried a **CRITICAL - Auto-Populate Document Control Fields** block for a header they never emitted.
+
+  `GCMP` and `GCRV` are registered `regime: 'UK'` and listed in `RENDERING.md`'s regime index, so the index had been claiming routing coverage for two doc-types whose artefacts structurally could not hold a Classification field.
+
+  Citation traceability was broken in the same way for the three core commands: `## External References` was in all three templates and none of the three skeletons, while `/arckit:backlog` instructed the model to *"populate the 'External References' section in the template"* — a section its own output never contained.
+
+- **`Review Date` corrected to `Next Review Date` in 33 commands and agents.** The Document Control Standard has no `Review Date` field; the calculated-fields instruction had been naming one for the whole 14-field block, which is the same 13-vs-14 drift the six worked examples carried before #791.
+
+- **`<!-- DOC-CONTROL-HEADER -->` templates now have a command that actually resolves them** (#760). `templates/_partials/RENDERING.md` states the rule normatively — *the command that reads the template MUST resolve the marker* — and nothing enforced it. **91 template/command pairs did not**, so those artefacts rendered a literal HTML comment and no Document Control block at all, which is strictly worse than the short hand-maintained table the marker replaced.
+
+  The sharpest case was **France**. `FR` hard-routes and `document-control-fr.md` shipped in #752, but **0 of 12 `fr-*` commands read `RENDERING.md`**, so the French ladder was unreachable from the commands it was added for and `/arckit:fr-anssi` rendered a UK ladder for a hard-routed French artefact. **Austria** was 1 of 4, the three older commands predating `at-barrierefreiheit` (#773). Both regimes are now 100%.
+
+  Resolution was added to 74 commands and 6 agents in total. The **writer subagents** matter most: `arckit-tenders-writer`, `arckit-competitors-writer`, `arckit-datascout-writer`, `arckit-gov-reuse-writer` and `arckit-grants-writer` are the tier that holds the `Write` call, and **0 of 20 agents referenced `RENDERING.md`** before this. Their instruction covers spawned per-item profiles and tech-notes too, not just the main artefact.
+
+- **The marker comment contradicted the file it pointed at, on 121 of 168 templates.** It restated the routing rule as *"resolved to `document-control-uk.md` or `document-control-uae.md` based on plugin userConfig"* — true before #744 made routing regime-first, and naming two partials when there are now seven. `apply_doc_control_marker.py`'s `MARKER` constant was never updated, so the conversion in #761 wrote the stale wording into all 16 templates it converted. The comment now defers instead of paraphrasing (`<!-- Resolved at command-execution time per _partials/RENDERING.md. -->`), which is what stops it drifting again, and the script normalises existing markers rather than only converting new ones.
+
+- **The pre-#744 classification fallback was still live in 47 commands and 9 agents.** They instructed the model to substitute `[CLASSIFICATION]` from `${user_config.default_classification}` — the operator-driven path #744 replaced with regime routing — against a placeholder that survives in **exactly 1 of 168 templates** (the MARP footer in `presentation-template.md`). All 56 now defer to the resolved header. This was also the stated reason #761 deferred the guard, on the understanding that core resolved the marker by a second legitimate mechanism; it did not.
+
+- **Six core commands shipped a worked example that contradicted the partial.** `adr`, `requirements`, `secure`, `sow`, `tcop` and `traceability` each carried an "Example Fully Populated Document Control Section" — a **13-field** table using `Review Date` instead of `Next Review Date` and omitting `Review Cycle`. Being a concrete example, it outranked the 14-field partial for the model copying it. Replaced with the marker.
+
+- **`/arckit:template-builder` was a factory for the defect.** Every template it generated carried a hand-written 14-row Document Control table with a hardcoded UK ladder, so each user-built template was born outside regime routing. It now emits the marker.
+
+## [6.9.0] — 2026-08-13
+
+### Added
+
+- **`/arckit:at-barrierefreiheit` — Austrian digital accessibility, across both of Austria's transposition tracks** (#710, requested by @gtonic). The Austrian overlay covered data protection, NIS2 and procurement but had no accessibility command, which became a live gap when the **BaFG** (*Bundesgesetz über Barrierefreiheitsanforderungen für Produkte und Dienstleistungen*, BGBl. I Nr. 76/2023) became applicable on **28 June 2025** as Austria's transposition of the European Accessibility Act.
+
+  Austria transposed the EU accessibility regime along two separate tracks, and which one applies is a question about the **entity**, not the technology. The **BaFG** binds economic actors — manufacturers, importers, distributors, service providers. The **WZG** (*Web-Zugänglichkeits-Gesetz*, BGBl. I Nr. 59/2019, transposing Directive (EU) 2016/2102) binds federal public bodies for their websites and apps. A federal body running an in-scope e-commerce or banking service is subject to both. The command therefore leads with an applicability determination that decides each track independently and supports "both", then writes one artefact in which non-applicable sections are marked N/A with the reason rather than omitted.
+
+  A single neutrally-named doc-type, **`ATBFR`** — Austrian Accessibility Assessment (BaFG / WZG) — carries both tracks. Naming it `BAFG` would have filed a public body's WZG assessment under a private-sector act's name; splitting it into `BAFG` and `WZG` would have needed the first `doc-type: [A, B]` list in the tree and duplicated the EN 301 549 mapping, which is the substantive half of the document and identical across both.
+
+  Four traps are handled in the command rather than left to the model. The **microenterprise exemption covers services only** — a nine-person importer of self-service terminals is fully in scope, and this is the most common misreading of the act. **An exemption without evidence is a gap**, because the Sozialministeriumservice can require the headcount and financial figures on request. **The federal WZG does not reach Land or municipal bodies**, which are routed to their Landesgesetz. And **the WZG has no fine regime**, so the BaFG's EUR 80,000 ceiling must not be carried into a public-sector assessment; the two exposures are stated separately, SMS against FFG.
+
+  Conformance is assessed against **EN 301 549 v3.2.1, giving WCAG 2.1 AA**, matching the position `/arckit:at-bvergg` now takes after #769. WCAG 2.2 AA arrives with v4.1.1, expected to be OJ-cited around October 2026, and appears only as an explicit forward-looking decision.
+
+  Ships with the template (plugin plus CLI mirror), `docs/guides/at-barrierefreiheit.md`, and an `ATBFR` quality-checklist section. BaFG paragraph references (§ 3 Z 19, § 6, § 21, § 36) are drawn from secondary sources and carry `[NEEDS VERIFICATION]` markers: RIS returned 503 on every attempt across three weeks of authoring.
+
+- **The Document Control classification ladder now follows the artefact's jurisdiction, not the person running the command.** A Canadian Privacy Impact Assessment carried the UK `PUBLIC / OFFICIAL / OFFICIAL-SENSITIVE / SECRET` ladder unless the operator happened to have configured a matching `classification_scheme`, which is the wrong dependency: the ladder is a property of the artefact and the regime it is written under, not of the workstation it was generated on. Each doc-type's existing `regime:` tag now selects the partial, via a new `REGIME_PARTIALS` map in `config/doc-types.mjs`, and regime beats user config — a `PIA` renders the Canadian ladder whoever runs it.
+
+  Three new partials ship with it: `document-control-ca.md` (UNCLASSIFIED / Protected A–C / CONFIDENTIAL / SECRET / TOP SECRET), `document-control-au.md` (UNOFFICIAL / OFFICIAL / OFFICIAL:Sensitive / PROTECTED / SECRET) and `document-control-nl.md`, which carries the VIRBI 2025 ladder ahead of the `NL` regime itself so that #739 is a registration change rather than a wording exercise. The Canadian and Australian overlays previously reached the right ladder only through a per-command instruction repeated in every `ca-*` and `au-*` command body; that inline override remains and now agrees with the routing rather than substituting for it.
+
+  **`UK`, `MOD`, `EU` and `US` deliberately do not hard-route.** They are registered in an explicit `UK_FALLBACK_BY_DESIGN` set and fall through to the existing user-config chain exactly as before, so the 41 doc-types tagged with those regimes render identically to previous releases and a UAE- or Austrian-configured entity running `/arckit:dpia` keeps its own ladder. For `US` this is a deferral rather than a decision: it has no authoritative ladder wording anywhere in this repository, and a wrong ladder inside a Document Control header reads more authoritative than a fallback does. It becomes a two-line change once a domain maintainer supplies the wording — see `FR`'s `document-control-fr.md` below for how that resolves in practice. `MOD` and `EU` are settled — MOD artefacts use the UK Government ladder, and the EU commands assess EU instruments from a member state's perspective, which EUCI does not govern.
+
+  **`FR` hard-routes as of this release.** `document-control-fr.md` (Non protégé / Diffusion Restreinte / Secret / Très Secret — a single linear row, consistent with `AT`/`UAE`/`UK`; Diffusion Restreinte is a protection mention under II 901/SGDSN/ANSSI, not a classification rung under IGI 1300) now ships and `FR` is registered in `REGIME_PARTIALS`, so the 12 `FR`-regime doc-types render the French ladder regardless of the operator's `classification_scheme`. The 26 inline classification instructions repeated across 10 `fr-*` command bodies (`fr-anssi`, `fr-anssi-carto`, `fr-code-reuse`, `fr-dinum`, `fr-ebios`, `fr-irn`, `fr-marche-public`, `fr-pssi`, `fr-rgpd`, `fr-secnumcloud`) are remapped to match (`OFFICIAL-SENSITIVE` → `Diffusion Restreinte`, `PUBLIC`/`OFFICIAL` → `Non protégé`), following the same in-agreement-with-routing pattern as the `CA`/`AU` overrides above.
+
+  `scripts/tests/test-regime-registration.mjs` enforces the routing rather than merely observing it: a regime outside the fallback set must name the partial derived from its own code, and a regime inside it must name the UK partial. Pointing `CA` at the Australian partial passed CI before this; it now fails with the regime named. The guard also holds `templates/_partials/RENDERING.md` to the registry, because that file — not `config/doc-types.mjs` — is what resolves the marker at runtime. Community overlay plugins ship `templates/_partials/` but no `config/` directory, so `RENDERING.md` is now self-contained: it carries the regime index and the routing table inline, and the resolution can be completed without opening another file. The CLI's `.arckit/templates/_partials/` mirror is compared by content in `tests/plugin/test_template_consistency.py`, after a basename-only comparison let it sit a whole feature behind.
+
+  Both of those tables are asserted cell by cell, addressed by column name rather than by position: the partial each regime names, its classification ladder against the partial's own Classification row, its label against `REGIME_LABELS`, and its routing against `UK_FALLBACK_BY_DESIGN` in **both** tables, so the two cannot contradict each other. The ladder comparison is exact, with the one legitimate abbreviation registered in the guard (CA's `Protected A–C` stands for three spelled-out rungs); comparing only the first and last rung accepted a row that kept its ends while describing an entirely different scheme in between, and the middle rungs are the jurisdiction-distinguishing part. A missing column, a ragged row, a duplicated regime, or a regime the registry does not know is now reported by name instead of crashing the run or passing silently. `Lint Markdown` triggers on the scripts it executes, so neither a guard's own test nor `sync-shared-assets.py` can be edited without running the job that owns it.
+
+- **Netherlands Public Sector Overlay (`arckit-nl`) — four commands, community-contributed.** The Netherlands had no overlay, and its central-government cloud rules changed substantially in 2025–2026 in ways that make generic EU guidance insufficient: the **Herziening rijksbreed cloudbeleid 2026** (Ministerie van Economische Zaken en Klimaat, 3 July 2026) replaced the 2022 policy, **VIRBI 2025** (BWBR0051482) came into force on 9 September 2025 and repealed VIRBI 2013 the same day, and the **Cyberbeveiligingswet** and **Wet weerbaarheid kritieke entiteiten** — the Dutch NIS2 and CER transpositions — came into force on 15 August 2026.
+
+  `/arckit:nl-cloud` (**RBCLOUD**) assesses a cloud deployment against the Rijksbreed cloudbeleid clause by clause, including the determination of *materieel publiek cloudgebruik*, the mandatory risk analysis, notification to CISO Rijk, and the eligibility rules that prohibit public cloud for staatsgeheim-classified information and for Te Beschermen Belangen levels 1–3, and that permit email and workplace services only where three cumulative conditions are met.
+
+  `/arckit:nl-tbb` (**TBB**) determines a Te Beschermen Belangen category by scoring Beschikbaarheid, Integriteit and Vertrouwelijkheid against the five kernbelangen, taking the highest of the three. It then derives an **indicative** VIRBI 2025 rubricering — recorded as a `voorstel` awaiting the departmental rubriceringsautoriteit, never as a determined classification, and never overriding a marking the information already carries. The asymmetry is stated prominently: information at Stg. GEHEIM implies TBB 2, but a TBB 2 process does not mean the information it holds is Stg. GEHEIM. Since the category can be driven by an availability or integrity score rather than a confidentiality one, treating the derived value as a determination would silently over-classify.
+
+  `/arckit:nl-bio` (**BIO2**) assesses conformance against the Baseline Informatiebeveiliging Overheid 2, established by the OBDO on 23 September 2025 and built on NEN-EN-ISO/IEC 27001:2023 and 27002:2022. `/arckit:nl-exit` (**NLEXIT**) produces the exit plan that clause 3.2 makes mandatory for material cloud use, covering both a planned exit and a disruptive interruption, with annual review.
+
+  Two deliberate omissions, both places where inventing content would have been worse than leaving a gap. Unlike France's SecNumCloud there is **no published Dutch qualification list**, so no commercial provider is named as compliant, and the overlay says so where a reader would otherwise expect one. And where the source text was not to hand — the remaining aspects of the clause 3.1 risk analysis, and the individual BIO2 overheidsmaatregelen — the commands instruct the assessor to consult the current text rather than shipping a plausible-looking list.
+
+  Registering the first **NL** regime also required the two-part change `CONTRIBUTING.md` describes (four codes in `config/doc-types.mjs`, plus `NL` in `REGIMES` and `REGIME_LABELS`), a row per code in the `/arckit:pages` known-artifact-types table, and entries in `.claude-plugin/marketplace.json` and the `converter.py` plugin list so the overlay reaches the non-Claude targets. All seven repository check scripts pass.
+
+- **`/arckit:eu-cloud-sovereignty` (`EUCSF`) — EU Cloud Sovereignty Framework assessment.** The Commission published the framework (v1.2.1, October 2025) to supplement security assurance with sovereignty-specific safeguards in cloud procurement, and it is beginning to be adopted as a national yardstick rather than only a Commission procurement tool — so an overlay command seemed more useful than leaving each contracting authority to encode it themselves.
+
+  The command assesses a cloud service against the eight Sovereignty Objectives (SOV-1 Strategic through SOV-8 Environmental Sustainability) using the framework's own weights — 15/10/10/15/20/15/10/5, summing to 100 — and records a Sovereignty Effectiveness Assurance Level per objective from SEAL-0 (no sovereignty) to SEAL-4 (full digital sovereignty). It computes the weighted Sovereignty Score the framework defines as an award criterion, and checks each objective against the minimum SEAL required.
+
+  Two points the command is deliberately loud about, because both are easy to get wrong. **Minimum SEAL levels come from the tender specification, not from the framework** — the framework supplies the scale, the contracting authority supplies the floor. And **a supplier's self-declared SEAL is an unverified claim until the assessor records evidence**, so the template carries an evidence column per objective drawn from the framework's own contributing factors, which are observable things: who holds decisive authority over the service, which legal system governs the contract, whether the customer alone holds cryptographic access, where support staff sit and under whose jurisdiction, the provenance of hardware, firmware and software, and whether APIs and licences actually permit exit. The command records an assessment; it does not certify. No commercial provider is named as sovereign or as achieving any SEAL level, and the command says explicitly that no published EU list of assessed providers exists.
+
+  Includes a member-state adoption section, with the Netherlands as the worked example: the Dutch *Notitie: Verkenning Overheidsbrede Soevereine Clouddiensten* (NDS Cloudprogramma, 11 June 2026) adopts the framework as its measure of sovereignty, publishes an official Dutch rendering of the SEAL levels, sets SEAL4 as the target for a government-wide sovereign cloud service, and — the part worth borrowing — applies SEAL on the **demand** side, so a workplace requiring SEAL3 requires a service achieving at least SEAL3.
+
+### Fixed
+
+- **The IGI 1300 citation in `fr-dr` was stale.** It read "Confidentiel Défense and above" as the boundary above Diffusion Restreinte, describing the pre-2021 three-tier scheme (Confidentiel/Secret/Très Secret Défense). The 2021 IGI 1300 reform collapsed that into two tiers (Secret / Très Secret), so the wording now reads "Secret or Très Secret" everywhere it appears: `plugins/arckit-fr/commands/fr-dr.md`, `plugins/arckit-fr/templates/fr-dr-template.md` and its `.arckit/templates/` CLI-package-data copy (overlay templates are dual-located and neither sync script compares that pair by content), `README.md`, and `docs/guides/fr-dr.md` (prose plus its DR-vs-classified table, now two rows instead of three).
+
+- **A follow-up audit of the whole `arckit-fr` overlay** (triggered by the fix above, going beyond the review that scoped it) found nine more issues, verified live against ANSSI/CNIL/Légifrance rather than from memory:
+  - `fr-algorithme-public` used `Classification: PUBLIC` — not on the FR ladder — in the same way the `fr-dr` fix corrected 10 other commands; the reviewer's file list hadn't included it. Now `Non protégé`.
+  - `.arckit/templates/fr-anssi-carto-template.md` (CLI copy) was a second instance of the exact dual-location drift the reviewer's blocker 2 found in `fr-dr-template.md`, on an unrelated file: it still used `INT-01`/`INT-xx` IDs, which `/arckit:traceability` and `/arckit:health` misread as unmet Integration Requirements — the plugin source had already been fixed to `ECX-NN` with an explanatory note, but no sync script compares this pair by content, so the CLI copy never caught up.
+  - 5 of 12 `fr-*` commands (`fr-irn`, `fr-rgpd`, `fr-secnumcloud`, `fr-marche-public`, `fr-dinum`) never invoked their own per-type quality-checklist section despite one existing for each — they checked only **Common Checks**. All 12 now gate on their per-type section (`check-quality-checklist-refs.py`'s `arckit-fr` count moves from 7 to 12).
+  - `fr-marche-public`'s procurement thresholds were two biennial cycles stale (`€215,000` / `€5.38M`, last correct for 2022–2023) — updated to the 2026–2027 EU thresholds in force since 1 January 2026 (`€216,000` / `€5,404,000`), with a note flagging the next revision (1 January 2028).
+  - `fr-pssi` cited a non-existent circular ("n°5926/SG") for the PSSIE; the actual founding text is **Circulaire du Premier Ministre n°5725/SG du 17 juillet 2014** (confirmed on Légifrance).
+  - `fr-dinum` and `fr-marche-public` cited **6264/SG** for the State cloud doctrine — that number belongs to a different circular (the open-source policy one, correctly cited elsewhere in `fr-code-reuse`). The cloud doctrine circular is **6282/SG du 5 juillet 2021**.
+  - `fr-ebios` said the EBIOS Risk Manager guide was "updated 2023" — ANSSI's update was published 26 March **2024**. The ANSSI cloud security recommendations cited in `fr-anssi` carried the same one-cycle-behind pattern ("2021") against a 8 July **2024** update.
+  - `fr-anssi`, `fr-pssi`, and `fr-secnumcloud` presented OIV/OSE as the sole current regulatory category; France's NIS2 transposition is moving former OIV/OSE entities into Entités Essentielles / Entités Importantes (EE/EI). A note now flags the terminology shift in all three (the exact transposition date wasn't confirmed against a primary source, so the note asks for verification rather than asserting a date).
+  - **11 dead or redirected URLs** across the overlay, all following the same pattern — ANSSI restructured `cyber.gouv.fr/publications/*` and several other paths at some point after these citations were written, and nothing in this repo checks external link liveness. Every citation was individually re-verified live (not assumed) and repointed to its current location.
+
+- **`/arckit:nl-tbb` no longer derives a VIRBI 2025 rubricering from the TBB category — the systematiek runs the other way** (#781). The command mapped the determined TBB category to a rubricering and recorded it as an *indicatieve rubricering (voorstel)*. Reading the primary source settles that this direction is not available: *Gereedschap: Te Beschermen Belangen (TBB) systematiek*, [v1.0, 6 June 2026](https://www.digitaleoverheid.nl/wp-content/uploads/sites/8/2026/05/Gereedschap-TBB-systematiek-PDF.pdf), publishes the relation as Tabel B in §3.1 and then forecloses one half of it in the sentence immediately beneath:
+
+  > Let wel, wanneer een te beschermen belang ingedeeld is in categorie TBB 2, hoeft dit niet te betekenen dat het proces of informatiesysteem gegevens verwerkt of bevat op het niveau van STG GEHEIM. […] Andersom geldt dit echter wel. Indien een proces of informatiesysteem gegevens verwerkt of bevat op het niveau van STG GEHEIM, dan is automatisch sprake van indeling in categorie TBB 2.
+
+  Three things in the source point the same way. §2.1 lists *"het rubriceringsniveau van de informatie of van het informatiesysteem"* first among the criteria the categorisation must take into account — the rubricering is an **input**, not an output. §2.1 also notes *"(Voor het VIRBI kijken we slechts/vooral naar Vertrouwelijkheid.)"*, while the category is set by the **highest** of the three BIV scores. And the document never uses *voorstel*, *indicatief* or *advies* of a rubricering anywhere; it describes the categorisation as a *"hulpmiddel voor prioritering bij de toewijzing van middelen"*.
+
+  The practical failure was real rather than cosmetic: a process scoring Hoog on **Beschikbaarheid** alone reached TBB 2 and was then stamped **Stg. GEHEIM**, a confidentiality marking produced by an availability score, flowing into the Document Control Classification row. Labelling it a *voorstel* changed the noun, not the arrow.
+
+  Step 7 is now inverted. It records the rubricering the information **already carries**, and applies the one direction the systematiek authorises as a **floor** on the category — Stg. GEHEIM ⇒ at least TBB 2, and so on. The floor never lowers a category; where both bounds exist, both are recorded with the one that applied identified. Where the information carries no marking, none is inferred: the artefact states "None recorded" and leaves the rubricering unstated. Tabel B survives in the artefact as cited reference with the source's caveat attached, never as a lookup that yields a marking.
+
+  The TBB scale runs backwards to its numbering, and the floor rule is stated in those terms so it cannot be resolved arithmetically. **TBB 1 is the most sensitive category and TBB 4 the least**, so the final category is the *more sensitive* of the two bounds, which is the **lower-numbered** one. Left as "the category is at least TBB 3", a numeric reading is satisfied by TBB 4 and the floor never applies: BIV scoring yielding TBB 4 against information marked Stg. CONFIDENTIEEL would stay at TBB 4 and miss the clause 5.2 public-cloud prohibition that TBB 1–3 triggers. Step 6 now anchors the ordering, Step 7 resolves the bounds by sensitivity with a worked example, and the per-type quality check enforces it. Only the `Stg. GEHEIM → TBB 2` row is quoted outright in §3.1; the other three extend the same authorised direction across Tabel B's pairings, which the command now says rather than implies.
+
+  Step 8's one-way warning now quotes the systematiek verbatim rather than resting on our own reasoning, and the sign-off line names the **beveiligingsautoriteit / BVA** — the role §1.5 actually names, appointed by the SG under the [Besluit BVA-stelsel Rijksdienst 2021](https://wetten.overheid.nl/BWBR0044617), noting that *"de exacte rolverdeling kan per departement verschillen"*. The command previously said *rubriceringsautoriteit*, which the systematiek does not use.
+
+  The TBB systematiek also gains a citable URL in Key References, where it previously carried *"(not linked — verify current text before citing)"* — which is why the question could not be settled from the overlay itself. Four-category ladder and highest-of-three rule are confirmed verbatim and unchanged.
+
+- **23 templates had drifted between the plugin tree and the `.arckit/templates/` CLI mirror, because the test guarding the two trees compared filenames and not contents** (#784). `test_plugin_and_cli_templates_are_in_sync` built two sets of `os.path.basename(p)` and asserted the symmetric difference was empty, so a template present in both trees passed however far the copies had diverged. `test_plugin_and_cli_partials_are_in_sync` already used `filecmp.cmp`, and its docstring records the same bug being fixed one scope down for `_partials/RENDERING.md`; the fix was applied to the partials and not to the templates beside them.
+
+  This reaches users rather than being tidy-up. `.arckit/templates/` ships as CLI package data and is scaffolded by `arckit init`, and commands resolve the project-root `.arckit/templates/<name>` **before** falling back to `${CLAUDE_PLUGIN_ROOT}/templates/`. In a CLI-scaffolded project the drifted copy is the one that renders and the plugin copy is never read.
+
+  Sixteen of the 23 still carried the frozen, fully-expanded Document Control table that `<!-- DOC-CONTROL-HEADER -->` replaced. With no marker there is nothing for `_partials/RENDERING.md` to resolve, so the regime routing added in #744 never fired for those templates at all, across `arckit-togaf-adm` (9), `arckit-uk-finance` (4) and `arckit-agent-architecture` (3). They also still used `{{DOCUMENT_ID}}` mustache placeholders against the tree's `[PLACEHOLDER]` convention.
+
+  The remaining seven were content staleness, and the sharpest was `fr-anssi-carto-template.md`: the CLI copy still numbered interconnection rows `INT-01`, which collides with the `INT-\d{1,3}` Integration Requirement pattern reserved in `hooks/hook-utils.mjs`, so every row surfaced as a missed requirement in `/arckit:traceability` and `/arckit:health` scans. The plugin copy had already renamed these to `ECX-NN`. The NHS DCB0129/DCB0160 copies were missing the Data (Use and Access) Act 2025 amendment to the Health and Social Care Act 2012 Part 9 citation, plus a re-review-triggers section and an applicable-standards register.
+
+  `test_plugin_and_cli_templates_have_identical_content` now compares contents with `filecmp.cmp`, matching the partials test. All 23 copies are resynced from the plugin tree, which stays the source of truth. Note there is still no sync script for this mirror: `sync-shared-assets.py` writes into plugin directories only, so the copy remains manual and is now merely guarded.
+
+- **Every scripted project-creation path in the overlay commands called `create-project.sh` in a form it rejects** (#775, #777). 41 files across eight plugins, in two spellings, neither of which can produce a project:
+
+  ```text
+  create-project.sh --json <project-name>   # 32 files → [ERROR] Unknown option: <project-name>
+  create-project.sh --json                  # 9 files  → [ERROR] Project name is required in JSON mode
+  ```
+
+  The script takes its name as `--name "NAME"`; it has no positional argument. The positional spelling was the large majority — the correct `--name` form appeared in only five files repo-wide, both in `arckit-uk-finance` and `arckit-uk-gcloud` — so it was what each new overlay was copied from.
+
+  **Five of the nameless callers were worse than a failed call: they used a create-only script as a lookup.** `wardley.value-chain`, `wardley.doctrine` and the three NHS commands instructed the model to "run `create-project.sh --json` to get the current project path", then read `project_id` and `project_path` out of the response. There is no response — the call exits 1 — and neither key exists under any invocation, since the script emits `project_number` and `project_dir`. All five now resolve the project from the **ArcKit Project Context** the `arckit-context.mjs` hook already injects, which is what the other 49 core commands do, and fall back to creating one only when none exists.
+
+  **The two `gov-*` agents had a second trap underneath the first.** Both state they work without a project context, and `create-project.sh` refuses in precisely that case: it requires `ARC-000-PRIN-*.md` and exits 1 without it, whatever `--name` says. They now pass `--force`, and are told to create the directory directly when `projects/` does not exist at all, since the script cannot resolve a repo root without it. This is the trap `repo-audit.md:103` already documented for the same script; the two agents predate that note.
+
+  Because these are prompts rather than scripts, the failure degraded rather than stopped: the model got a usage dump, improvised a directory, and the command appeared to work. What it skipped is everything `create-project.sh` does beyond `mkdir` — the `external/README.md`, the `000-global/policies` and `000-global/external` scaffolding, and the project README carrying the correct `ARC-{NNN}-*` filename list. #762 is the standing evidence that a wrong project README is not something people notice.
+
+  `scripts/check-create-project-invocations.py` is new and wired into `lint-markdown.yml`. It parses invocations out of code spans and fenced blocks only, leaving prose mentions alone, and rejects a positional argument, a missing `--name`, or a flag the script does not define. Against the pre-fix tree it reports all 42 occurrences; nothing before it would have noticed a command citing a flag that does not exist.
+
+- **`create_project_dir` wrote a whole project tree into an existing directory rather than refusing it** (#765). `create-project.sh` only ever creates, and the directory it builds is named `{freshly-allocated-number}-{slug}`, so a target that already exists means the numbering is wrong — not that the user picked a taken name. Bare `mkdir -p` in bash and `exist_ok=True` in Python both succeeded in that case, and the caller went on to write a README and a full set of `ARC-{NNN}-*` paths over the top of an existing project, exiting 0. That is why #762 was silent: the octal bug allocated a used number and nothing downstream objected.
+
+  The overwrite is worse than the duplicate directory the original report described. #762 happened to collide on a number while differing on the slug, so it produced a second `010-` directory alongside the first. When the slug matches too, the `cat > README.md` at `create-project.sh:229` replaces the existing project's README in place, and the run still reports `"success": true`. Both copies of the helper now refuse before anything is written.
+
+  A guard in `common.sh` alone would not have been enough. Under `set -euo pipefail` a bare failing call kills the script at line 126, long before the JSON block at line 385, so a `--json` caller received exit 1 with **zero bytes on stdout** — no error object, nothing to parse. Roughly 59 command files are instructed to run this with `--json` and read stdout. The call is now wrapped in `if !`, which suspends errexit deliberately, and emits `{"error": ..., "success": false}` matching the shape already used for a missing project name. The Python entrypoint does the same.
+
+  Applied to all four copies — both `common.sh`, both `common.py` — plus both `create-project` entrypoints. `check-common-parity.py` would not have caught a bash-only fix: it compares the root copy against the plugin copy *within* a language and says so in its own docstring, so a change landing in bash and missed in Python passes CI green. `tests/plugin/test_project_dir_collision.py` covers the cross-language contract: the guard refuses an existing target in all four copies, pre-existing content survives, a fresh target is still created in full, and end-to-end the entrypoints refuse a colliding number and report it as JSON. The refusal path is unreachable through correct numbering by construction, so the end-to-end tests inject a numbering fault the way #762 produced one.
+
+  The guard is deliberately not wired to `--force`, which means "skip the principles prerequisite check". A numbering fault is never something to force past. Side effect worth recording: two agents concurrently deriving the same next number now fail loudly instead of silently sharing a directory.
+
+- **The secret scanner's OIDC exemption only fired when the permission line was the last content in the input, so in the file scanner it never fired at all** (#737, reported by @johnfelipe). v6.8.0 exempted a value that is exactly `read`, `write`, `none`, `true`, `false` or `null` from the five reference-guarded key-value rules, so that `id-token: write` would stop being read as credential material. The exemption was anchored with `$`, but all nine rules are built with the `gi` flags and no `m`, so `$` matched end of *input* rather than end of line. The guard fired only when the permission line happened to be the final content in the string.
+
+  Real input is almost never shaped that way. `secret-file-scanner.mjs` runs on whole file contents, where a `permissions:` block is followed by the `jobs:` it authorises, so the OIDC case the v6.8.0 entry was written for stayed blocked in that hook throughout, this repository's own release workflow included. `secret-detection.mjs` blocked any prompt or subagent report that quoted the line mid-paragraph, which is what halted a long `/arckit:repo-audit` run part-way through. Trailing spaces after the value defeated the guard as well.
+
+  Both copies now spell end of line out as `[^\S\r\n]*(?:\r?\n|$)` instead of relying on `$`, which fixes it in one place per file rather than adding `m` to nine regex constructors. Literal credentials, provider token formats, and values that merely begin with a level word such as `token: writeKeyABC123` are still blocked, in the middle of a file as well as at the end.
+
+  Six regression tests in `tests/plugin/scanner-reference-guard.test.mjs` cover the multi-line and trailing-whitespace cases against both hooks. Every capability vector in that suite had been a single line with nothing following it, which is exactly why `$` looked correct when the guard shipped. The parity test now compares the `REF` and `LEVEL` guard constants as well as the pattern block, because the block interpolates them and this bug lived in a line the old comparison never read.
+
+- **`/arckit:at-bvergg` told Austrian buyers to write WCAG 2.2 AA into the accessibility clause, which is a UK position rather than an EU one** (#769). §107 BVergG invokes EN 301 549, and the version that matters is the one cited in the *Official Journal*, because that citation is what carries the presumption of conformity. That is **v3.2.1** (published March 2021, harmonised August 2021), which normatively references **WCAG 2.1 AA**. The command body and the BVergG template both named 2.2 AA flatly, so every generated Austrian tender pack overstated the legal floor without saying it was doing so.
+
+  This is #542 landing one jurisdiction too far. That change moved the UK baseline to 2.2 AA correctly — SI 2022/1097 replaced the fixed WCAG reference with a rolling one, and GDS has monitored against 2.2 since October 2024 — and it deliberately left the overlays alone, recording that `fr-dinum` and `ca-gc-digital-standards` "correctly remain on 2.1". The Austrian overlay did not exist yet, so it was never in that scope and picked up 2.2 independently. It now matches France rather than the UK.
+
+  The forward-looking half is kept rather than dropped: draft v4.1.0 went out for public review in November 2025 and final v4.1.1, expected to carry WCAG 2.2 AA, is anticipated to be OJ-cited around October 2026. The command, template and guide all say 2.2 AA may be specified where a contract runs past that citation, provided it is stated as a deliberate decision instead of copied in as the default. The date carries a `[NEEDS VERIFICATION]` marker. A new `BVERGG` quality-checklist item holds the distinction, and `docs/guides/at-bvergg.md` gains a Key Note explaining why the UK position does not transfer.
+
+- **Every public-facing description of `/arckit:at-nisg` still named the superseded law and the wrong reporting authority** (#770). #707 rewrote the command and its template from the mistaken "NISG 2024 / 2018-amendment" framing to the enacted standalone **NISG 2026** (BGBl. I Nr. 94/2025, in force 1 October 2026), but the correction stopped at the plugin. Five surfaces a prospective user reads *before* installing anything were left behind: `README.md` in both the community-overlay warning block and the command bullet, and three pages of the published site (`docs/commands.html`, `docs/guides.html`, `docs/contributors.html`).
+
+  Two errors, not one. The year was the visible half. The second was the authority: the README bullet and the contributors credit both headlined "GovCERT reporting", and the site pages said "BMI reporting timelines" and "BKA / BMI reporting", all of which describe the NISG 2018 regime. Under the enacted NISG 2026 the competent authority is the new **Bundesamt für Cybersicherheit** (§3a) and significant incidents go to the **responsible CSIRT** (§34 Abs. 1, CSIRTs per §8) via the NIS2-Meldeplattform, with CERT.at as national CSIRT and GovCERT only as the public-administration sectoral CSIRT. For anything outside public administration the old wording named a body that does not receive the report.
+
+  The `NISG 2024` string survived a targeted grep at the time because two of the five surfaces never carried the year, only the stale authority. Historical records are deliberately untouched: both `CHANGELOG.md` copies and `docs/articles/2026-04-20-v480-austrian-overlay.md` describe the position as it stood and are left as written. Documentation only, no command, template or converter output changes.
+
+- **`README.md` still called the Austrian overlay an unmaintained seed contribution.** Three passages described the AT commands as "a seed contribution inviting an Austrian domain maintainer", "pending a domain maintainer", and carrying markers "reflecting their seed status", with citations expected to be tightened by "a future domain maintainer". @gtonic took on that role and has since run a full legal-accuracy pass across all three commands (#707), which is already recorded in `.github/CODEOWNERS` and on `docs/contributors.html`. The README was the last surface still saying otherwise, and it is the first one a prospective user reads.
+
+  The `[NEEDS VERIFICATION]` note is kept but re-grounded. The markers are still there, twenty of them, and they now flag genuinely open points rather than unreviewed text: implementing ordinances not yet issued under the NISG 2026, Länder scope and opt-in, current guidance versions, and recent DSB case law.
+
+- **`create-project.sh` handed back a project number that already existed, once a repo passed seven projects** (#762, reported by @chrismckelt). `get_next_project_number` in both `common.sh` copies compared the zero-padded directory prefix inside an arithmetic context, where bash reads a leading `0` as octal. `008` and `009` are invalid octal, so the comparison errored and was skipped; `010` and `011` were silently read as decimal 8 and 9. `max_num` never reached the true maximum. With `001`–`011` present the function returned `010`, and `create_project_dir`'s bare `mkdir -p` landed a second `010-` project on top of the existing one, with a README and a full set of `ARC-010-*` artefact paths under the wrong project ID.
+
+  Nothing surfaced the failure. The failing `((...))` sits in an `if` condition, where `errexit` is suspended, so the script printed two stderr lines, reported `"success": true` and exited 0. `set -euo pipefail` was already in place; this is the second distinct way this same function has failed quietly under it, after the `find` interaction noted at `create-project.sh:70`.
+
+  Both arithmetic sites now force base 10. The bug reached users through the default path: 48 commands invoke `scripts/bash/create-project.sh`, and all six extensions that ship bash scripts carried the same copy. The Python implementation in `scripts/python/common.py` was always correct, so the two script sets disagreed on any repo past seven projects.
+
+  `tests/plugin/test_project_numbering.py` covers allocation across both copies for seven through twelve projects, asserts the allocation is silent, holds the bash and Python implementations to the same answer, and reproduces the original collision end-to-end. Seven is included deliberately: it is the last count the octal arithmetic got right, so a future rewrite cannot fix the tail by breaking the head.
+
+- **`slugify` deleted accented characters from project directory names for every plugin user, and had done since March** (#766). `slugify` is implemented four times: bash and Python, each in a root copy and a plugin copy. Commit `f8544b4a` (#204, "preserve accented characters in slugify") landed in `scripts/bash/common.sh` only. The other three kept the original `[^a-z0-9]` class, so a project named `Café Modernisation` became `caf-modernisation`, with the character dropped mid-word. Marketplace users never touch `scripts/bash/`, so the single copy that carried the fix was the one they never ran.
+
+  #204's approach would not have held anyway. `[:alnum:]` follows `LC_CTYPE`, so the root copy returned `cafe-zurich-ecole` under a UTF-8 locale and `caf-z-rich-cole` under `LC_ALL=C`: the same project name produced a different directory depending on the caller's environment.
+
+  All four copies now transliterate to ASCII, so `Café Zürich ÉCOLE` becomes `cafe-zurich-ecole` in every locale and in both languages. The table covers Latin-1 Supplement plus the Latin Extended-A characters used across European official languages, and drops anything outside it consistently. Transliteration was chosen over preserving the accent because these names become filesystem paths, git entries and published URLs, and because macOS stores accents decomposed (NFD) where Linux composes them (NFC), so a literal accented directory name can mismatch across a clone. The bash implementation pins `LC_ALL=C` for the byte-oriented steps and spells out its character classes rather than using `\+` or `\|`, which are GNU extensions absent from BSD sed.
+
+  `tests/plugin/test_slugify.py` holds all four copies to the same corpus, asserts the bash output is identical under `LC_ALL=C` and `C.UTF-8`, and asserts no copy can emit non-ASCII. The corpus includes the Turkish dotted capital `İ` deliberately: `str.lower()` maps it to `i` plus a combining dot, so Python lowercasing had to be restricted to A-Z to stay equal to bash.
+
+- **`scripts/check-common-parity.py` now holds both copies of `common.sh` and `common.py` in step**, so the drift above cannot recur silently (#766). The byte-identity assert used for the two `create-project.sh` copies could not work here, because one difference is deliberate: `find_repo_root` keys on `.arckit/` in the root copy and on `projects/` in the plugin copy, since a marketplace user has `projects/` but never runs `arckit init`. A whole-file diff would report that forever, and a guard that is always red teaches people to ignore it.
+
+  The guard compares definition by definition instead. Functions are keyed by name rather than position, because `get_templates_dir` sits at a different offset in each bash copy and that is cosmetic. Each function carries the comment block immediately above it, since #204 changed `slugify`'s comment as well as its body. Everything outside a definition is compared as one unit. Declared divergences carry their reason in the script, and **an allowlist entry that no longer describes a real difference is itself a failure**, so the allowlist cannot quietly grow into a list of things nobody checks. The bash parser splits on `name() {`; the Python side uses `ast` and covers module-level constants and the module docstring as well as functions.
+
+  Run against `main` as it stood before this release, the guard reports the `slugify` drift. It also reports **nothing** for the `common.py` pair, which is the honest limit of what it can do: both Python copies were equally stale, so they agreed with each other while disagreeing with the fixed bash copy. This guard checks root against plugin, not bash against Python. Cross-language agreement is held separately by `tests/plugin/test_slugify.py` and `tests/plugin/test_project_numbering.py`, and a new function shared by both languages needs a test of that kind.
+
+  `tests/plugin/test_common_parity.py` exercises the guard against synthetic pairs rather than only the real files, because a guard that cannot fail is decoration: it proves the guard catches a drifted body, a drifted comment, a function present in only one copy, and drift outside any function, while accepting a declared divergence and a pure ordering difference. The deliberate `find_repo_root` divergence is now also commented in both bash copies, which previously stated it only in the Python docstrings.
+
+- **Fifteen doc-types told the model to verify quality checks that did not exist, and it invented them instead.** Every command ends by instructing the model to read `references/quality-checklist.md` and verify "all **Common Checks** plus the **`<CODE>`** per-type checks". For nine `arckit-togaf-adm` codes (`ADMP` `BPCM` `APP` `APPR` `GAPA` `TRANS` `BORD` `ACHG` `REPO`) and six `arckit-agent-architecture` codes (`AAGI` `AAGR` `AASE` `AAIN` `AAOV` `AAMT`) the file had no such section. Nothing errored and nothing was logged — the model simply reached a heading that was not there and supplied its own criteria for the artefact it was about to write. Both overlays landed on 2026-06-30 and had shipped this way since (#749, PR #750). The canonical file goes from 75 sections to 90.
+
+  The content is derived, not invented, but **not from the source #748 assumes.** That issue proposes deriving per-type checks from each command's `## Success Criteria` section; only 30 of 180 commands have one, and coverage falls almost exactly on the regimes whose checklist sections already exist (`arckit-eu` 7/7, `arckit-fr` 12/12, `arckit-at` 3/3, against 0/9 and 0/6 for the two overlays fixed here). These sections come instead from each command's `## Instructions` and its template, which is where the checkable detail actually lives: ID schemes (`APP-xxx`, `WP-xxx`, `AGT-xxx`, `CNT-xxx`), decision enums (`KEEP / MERGE / REPLACE / RETIRE`, the three oversight tiers), and the derived-value rules the templates define. That last group carries most of the weight — the checks assert that a derived value **agrees with its inputs** rather than merely being present, so gap severity must match what the Size × Urgency matrix produces and rationalisation summary counts must reconcile with the per-application decisions.
+
+- **`scripts/check-quality-checklist-refs.py` now asserts that every per-type reference resolves** (PR #751), so this cannot recur silently. The invariant is keyed on what files emit, not on the doc-type registry: if a command or agent emits `**<CODE>** per-type checks`, a `### <CODE>` section must exist in the checklist that file will actually read. Resolution is **per plugin** — `${CLAUDE_PLUGIN_ROOT}` has no cross-plugin fallback, so checking against the core copy would pass a plugin carrying no checklist at all, which `arckit-fde` does today and would fail open on the moment it gained a governance command. It covers agents as well as commands (8 agent files emit these references; a `commands/`-only scan misses them) and fails when it matches nothing at all, so a tree-wide rewording cannot quietly turn it into decoration.
+
+  The obvious invariant would not have worked. Asserting that every regime-carrying doc-type has a section — #748's suggestion — is wrong in both directions: it misses all fifteen fixed here, because neither plugin's codes carry a `regime`, and it false-positives on `WVCH` and `MMOD`, which ask for Common Checks only by design, and on `WGAM`/`WCLM`, which point at the shared `WARD` section deliberately. The same `regime` filter is why the fifteen went unreported for two months.
+
+  **This does not close #748.** Sixty-one doc-types across the UK, UAE, CA, AU and US regimes still have no per-type section, and their commands reference the checklist in no phrasing at all — so they skip the ten Common Checks too, and the guard stays green over every one of them. Fixing those needs an invocation line added to each command as well as a section, in six overlays with no `## Success Criteria` to work from.
+
+- **`references/quality-checklist.md` checked artefacts against classification ladders they no longer render** (#787, PR #788). Regime routing above changed which ladder an artefact carries, but the checklist that gates the write was never brought along, so for six regimes the check and the partial disagreed about what a valid value is.
+
+  Common check 4 enumerated three schemes — UK, UAE and AT — against the six that hard-route, so `AU`, `CA`, `NL` and `FR` were all absent. A Canadian Privacy Impact Assessment correctly classified `Protected B` rendered that value from `document-control-ca.md` and then failed the check every `ca-*` command gates on. Rather than extend the list to seven and leave the next regime to drift in again, the check now defers to `templates/_partials/RENDERING.md`, whose tables `test-regime-registration.mjs` already holds to the doc-type registry. Nothing is added to the command's reading either way: the marker resolution has already opened that file by the time the check runs.
+
+  Seven per-type sections named a UK classification for doc-types routing elsewhere. Six are `FR` — `IRN`, `EBIOS`, `ANSSI`, `CARTO`, `ALGO`, `PSSI` — and take the values the `arckit-fr` remap settled (`OFFICIAL-SENSITIVE` → `Diffusion Restreinte`, and `PUBLIC` → `Non protégé` for `ALGO`, whose point is that the notice must be publicly accessible, so the intent survives the rename). Because that remap had already converted those commands' own inline checklists, each `fr-*` command was carrying **two contradictory checks for the same artefact**: `fr-anssi.md` asserted `Diffusion Restreinte minimum` at line 240 and `OFFICIAL-SENSITIVE minimum` through the shared checklist at line 564.
+
+  The seventh, `ATDSG`, has been live since regime routing landed. It becomes `Eingeschränkt`, rising to `Vertraulich` where criminal-law confidentiality applies — the pair `at-dsgvo.md` itself specifies, not `Vertraulich` alone. `at-dsgvo.md`'s own checklist line carried the same UK assertion and moves with it: unlike the `FR` commands, `AT` was internally consistent beforehand, so correcting the shared checklist alone would have created the contradiction rather than removed it.
+
+  The seven are the complete set, established by scanning all 157 per-type sections against the regime index for tokens belonging to another regime's ladder. No guard ships with this. Two things have to be settled first: hard-routed regimes currently use two conventions — local ladder only in `FR` and `AU`, dual UK-plus-local in `at-bvergg` and `at-barrierefreiheit` — and until one is chosen a guard cannot tell an intentional dual notation from drift; and naive token matching is too noisy to be the mechanism, since `OFFICIAL` and `SECRET` span three ladders and `Open`, `Secret`, `Shared` and `Confidential` are ordinary English words that appear in unrelated prose.
+
+## [6.8.0] — 2026-08-04
+
+### Added
+
+- **The CLI is published to PyPI automatically on tag push.** Publishing `arckit-cli` was a manual step, so it stopped happening: PyPI sat at **6.4.1** while the repo was on 6.7.5, and `pip install arckit-cli` served a three-release-old CLI to anyone not using the git URL. A `pypi` job in `.github/workflows/release.yml` now builds and uploads on the same `vX.Y.Z` tag that cuts the GitHub Release, so the two can no longer drift.
+
+  It uses [PyPI Trusted Publishing](https://docs.pypi.org/trusted-publishers/) rather than a stored API credential, which needs a one-time configuration on PyPI recorded in `docs/RELEASING.md` — that document had no PyPI section at all, which is the underlying reason the step was forgettable. Two guards: the job fails if the tag disagrees with the built version, because PyPI never lets a version number be reused and a wrong upload can only be yanked, not undone; and the build goes through `hatch_build.py`, so a wheel with empty extension trees cannot be published (#730).
+
+- **Every command now declares the doc-type it writes as data, and the registry gate asserts each recipe `output.type` matches it.** `check-doc-type-registry.py` could previously only tell whether a code *resolved*, not whether it named the *right* artefact. That blind spot was one plausible fix away from shipping: `UAE-PROC` de-prefixed to `PROC`, which **is** registered, to Canada's Federal Procurement Strategy. It would have passed every existing check while keying `.arckit/state.json` to the wrong type (#715).
+
+  The declaration is a `doc-type:` field in command frontmatter: a single code, a `[A, B]` list where a command writes more than one governed artefact, or `none` where it writes no `ARC-*` artefact at all (20 commands, including `/arckit:search`, `/arckit:health`, `/arckit:impact` and `/arckit:pages`, all of which produce console output or a docs site rather than a governed artefact). It sits on the **command** even where the command delegates to an agent holding the Write call: `/arckit:framework` declares `FWRK` although `arckit-framework` writes it. The declaration describes what running the command produces, which is what a recipe target names, and it keeps the gate from having to follow delegation.
+
+  Recipe-target coverage went from **52 of 398** checkable to **398 of 398**. The field is stripped by the converter, since nothing consumes it at runtime on any platform.
+
+- **`/arckit:repo-audit` takes `--diagram-format mermaid|plantuml`.** The as-built C4 container diagram was hardcoded as Mermaid in `codebase-audit-template.md`, with no way to choose. Mermaid stays the default, deliberately: an audit report is normally read in the repository it audits, and GitHub, GitLab and ArcKit Pages all render Mermaid inline with no toolchain, whereas PlantUML needs a server, the VS Code extension, or ArcKit Pages. `--diagram-format plantuml` emits C4-PlantUML instead, for the case where layout quality on a large container diagram matters more than portability — that format supports directional hints (`Lay_D`, `Lay_R`) which start to matter above roughly ten containers. `puml` and `c4-plantuml` are accepted synonyms, `mmd` for Mermaid, and an unrecognised value warns and falls back to Mermaid rather than aborting the audit. Check mode now reports the resolved format. Requested by @johnfelipe (#706).
+
+  Two supporting changes so the choice is discoverable rather than buried in a flag. The template now carries a comment explaining which format it uses, why, and how to change it permanently. And `docs/guides/repo-audit.md` documents the per-project route, including the fact that **`/arckit:customize` cannot copy this template** — it globs the core plugin's `templates/` directory and this one ships in `arckit-repo`, so the guide gives a tested `find`-based copy command instead. The plugin cache is version-pinned and the path differs depending on whether `arckit-repo` was installed standalone or bundled inside `arckit`, which is why a literal `cp` path would have been wrong.
+
+- **`scripts/check-doc-type-registry.py` — a CI gate asserting every doc-type reference resolves against the registry.** Three places name codes independently of `config/doc-types.mjs` and each drifted in its own way, so the gate covers all three: recipe `output.type` values; `ARC-{PID}-{CODE}-v` filenames in command and agent bodies, where an unregistered code is fatal because the PreToolUse hook blocks the write; and the `/arckit:pages` known-artifact-types table, the dual registration `doc-types.mjs` warns about in its header. It reports 161 registered codes against 398 recipe, 685 command/agent and 161 table references, and suggests the intended code where one is obvious (`'GLO' is not in DOC_TYPES (did you mean GLOS?)`).
+
+  This is the check @chrismckelt proposed on #712. He suggested `check_recipes.py`; it went into its own script instead because the drift spans commands and `pages.md` as well as recipes, following the `check-multi-instance-parity.py` precedent for cross-registry parity. It complements `check_doctype_collisions.py`, which asserts uniqueness *within* the registry rather than resolution of references *to* it. Two exemption lists keep it honest rather than over-firing: codes named only inside a negation (`uk-nhs-dcb0129.md` says the Document ID is the literal filename, "**not** an `ARC-NNN-CSCR-vX.Y` identifier"), and prose naming future work (`sobc.md` on the later `OBC`/`FBC` business-case stages). Both are documented inline with the reason.
+
+  Verified by mutation, not just by passing: reintroducing `GLO` in one recipe fails with the `GLOS` suggestion, and un-registering `GLOS` reproduces #712's exact signature of ten errors across `glossary.md` and `pages.md`.
+
+- **Austrian InfoSiG classification scheme.** A new `classification_scheme` value **`AT InfoSiG`** (and `governance_framework: AT Gov`) renders Document Control headers with the Informationssicherheitsgesetz ladder — **Offen / Eingeschränkt / Vertraulich / Geheim / Streng geheim** — via a new `_partials/document-control-at.md` partial. `RENDERING.md` now resolves UAE → AT → UK in order; the quality-checklist Classification check and `default_classification` are scheme-aware; and `/arckit:at-bvergg` / `/arckit:at-dsgvo` emit the InfoSiG equivalent of their former UK defaults. UK and UAE overlays are unaffected. (Closes #709.)
+
+### Changed
+
+- **`generate-document-id.sh` is now `generate-document-id.mjs`, and imports the doc-type registry instead of restating it.** The bash version carried its own `MULTI_INSTANCE_TYPES` string in two hand-maintained copies. That list drifted and shipped three times: v5.9.0 added `TNDR`/`CMPT` without updating bash, so every `/arckit:competitors` run emitted the same colliding ID (fixed v5.9.2, #566); `GRNT` went the same way and surfaced only while adding `CDAU`; and the script's own header comment was five types behind until #722. It needed a dedicated CI guard, `check-multi-instance-parity.py`, purely to police the duplication.
+
+  The Node version does `import { MULTI_INSTANCE_TYPES, KNOWN_TYPES, SUBDIR_MAP } from '../config/doc-types.mjs'`, so `config/doc-types.mjs` is the only copy of each list and there is nothing left to keep in sync. `check-multi-instance-parity.py` is removed along with its CI step, and registering a multi-instance doc-type is one place rather than three. Portability was **not** the motivation and does not on its own justify the move: 42 of the 66 calling commands also call `create-project.sh`, so a machine without bash fails either way (#723).
+
+  Two capabilities follow from having the registry in scope, neither of which the bash version could offer:
+
+  - **An unregistered doc-type code is now rejected at generation time**, with a message naming both places it has to be registered. Previously the generator had no registry knowledge at all and emitted `ARC-001-GLOS-v1.0.md` quite happily, leaving `validate-arc-filename.mjs` to block the write two steps later with no indication of what to fix. That is exactly how `/arckit:glossary` and `/arckit:framework` shipped unusable (#712, #714). The check found a live instance immediately: the script's own documented example used `HLD`, which is not a registered code — the artefact type is `HLDR`, one of the six recipe mismatches #714 corrected.
+  - **A new `--relpath` flag** applies `SUBDIR_MAP` and returns the project-relative path (`research/ARC-001-RSCH-001-v1.0.md`), so callers no longer hand-assemble `research/`, `decisions/` and `framework/` in prose.
+
+  It also validates that `PROJECT_ID` is numeric and says so when a doc-type has been passed in that slot, which is the precise shape of the bug that made all 12 `arckit-uae` call sites no-ops until #722.
+
+  `scripts/bash/generate-document-id.sh` and its plugin copy are now identical shims that `exec node` the generator, so projects scaffolded before this change keep working and pick up the current registry once `arckit init` refreshes `.arckit/`. Both will be removed a release later. Zero npm dependencies, matching `validate-handoff.mjs`: the marketplace clones the plugin but never runs `npm install`.
+
+  `arckit init` now scaffolds `.arckit/scripts/generate-document-id.mjs` and `.arckit/config/doc-types.mjs` side by side so the generator's relative import resolves, and the converter ships both into all seven generated extension formats. 82 call sites across 79 command, agent, skill and doc files were rewritten from `bash …/scripts/bash/generate-document-id.sh` to `node …/scripts/generate-document-id.mjs`, and the generator was added to the `allow-plugin-internals.mjs` and Codex hook allowlists so invocations are still auto-permitted.
+
+### Fixed
+
+- **The site's install FAQ told users to `pip install arckit` — a different project.** `arckit` on PyPI is an unrelated third-party package (tools for the Abstraction & Reasoning Corpus, v1.0.1); ArcKit's CLI is **`arckit-cli`**. The instruction sat in `docs/index.html`'s FAQ JSON-LD, which is what search engines' rich results and AI assistants quote, so it was the most-syndicated install line in the repo. Corrected to the git URL every other install doc uses, and the `--ai` list it quotes now includes `kimi`, which the CLI has supported since v6.4.0.
+
+- **`uv tool upgrade arckit-cli --from git+…` is not a valid command.** `uv tool upgrade` takes no `--from`; running the documented line fails with `error: unexpected argument '--from' found`, so the uv upgrade path in `README.md` and `docs/guides/upgrading.md` never worked. Replaced with `uv tool install --force arckit-cli --from git+…`, verified against uv. (`uv tool install --from` is fine — only `upgrade` rejects it.)
+
+- **The Copilot install section understated what the CLI scaffolds by half.** README claimed 80 prompt files; `arckit init --ai copilot` writes **165** — the 75 official commands plus the community overlays. The CLI's Gemini redirect quoted "all 48 commands", three formats out of date, and no longer hardcodes a number.
+
+- **The secret scanner blocked GitHub Actions OIDC permissions.** The generic key-value rule in `secret-detection.mjs` / `secret-file-scanner.mjs` matched the `id-token` key set to `write` — the required syntax for publishing without a stored credential — so ArcKit's own hooks refused every workflow that used it, this repo's release workflow included. A declared permission level is not credential material, so the five reference-guarded key-value rules now also exempt a value that is exactly `read`, `write`, `none`, `true`, `false` or `null`. Deliberately narrow: `write_this_down` and `readonly` still fail the word boundary and are still blocked, as are all the literal-secret and provider-format cases the suite already covered.
+
+- **`arckit init` scaffolded an empty project on Homebrew Python, because `get_data_paths()` trusted the interpreter's prefix over the module's own location.** Every candidate base came from `site.getsitepackages()`, which CPython derives from `sys.prefix`. Homebrew patches sysconfig's `osx_framework_library` scheme so pip writes purelib to `<brew>/lib/python3.11/site-packages` and shared data to `<brew>`, while `sys.prefix` still points inside the Framework bundle — two trees that never meet. Every probe missed and control reached `build_paths(source_root)`, which fabricated `/opt/homebrew/lib/python3.11/.arckit/templates`: a path that cannot exist on any machine, reported as a yellow warning under a green "initialized successfully" banner.
+
+  Resolution now starts from the one thing that is true regardless of what the interpreter believes its prefix to be — where the installed module actually sits. It walks up to the `site-packages`/`dist-packages` ancestor and takes the prefix above it, which also covers Debian's `dist-packages` and any venv. Each `sysconfig` scheme's `data` path is probed as well, so Homebrew's scheme is found by name rather than by hardcoding `/opt/homebrew` (the workaround proposed on the issue, which would have missed Intel macOS at `/usr/local` and Linuxbrew). `ARCKIT_DATA_DIR` overrides everything, for layouts nobody predicted. When nothing resolves, `find_data_root()` returns `None` and the caller prints the full candidate list instead of inventing a path — the original report cost a round trip precisely because the fabricated path looked like a deliberate answer. Reported by @designlabdotcx (#730).
+
+- **`arckit init` announced success no matter how much of the project was missing.** Every asset copy was best-effort with a yellow warning, after which the command printed `✓ ArcKit project initialized successfully!` and Next Steps that could not work — the reporter's own paste on #730 shows `Warning: Copilot prompts not found` three lines above the success banner. That is what turned two clear-cut bugs into a report that needed a round trip to diagnose: nothing in the output said the project was unusable.
+
+  Assets are now resolved and checked **before** anything is written, so a broken install exits 1 with the missing keys and their resolved paths, and leaves no half-scaffolded directory behind. Only assets that make a project unusable gate the run — the templates, the helper scripts, the document-ID generator and its registry (42 of 66 commands call it), plus whichever command tree the selected `--ai` needs; `--all-ai` requires both the Codex and OpenCode trees. Optional and degrading copies stay best-effort. `kimi` declares no assets of its own, since its commands arrive via the extension installed from inside the Kimi TUI, and a test asserts every `--ai` target declares its requirements so a new one cannot silently skip the gate.
+
+- **A wheel built from a git checkout shipped extensions with no commands in them.** `extensions/` is converter output and gitignored, so `pip install git+https://github.com/tractorjuice/arc-kit.git` — the only install route the README documents — packaged just each extension's tracked `README.md`, `VERSION` and `docs/`. `arckit init --ai copilot` then produced a project with no prompts, no agents and no `copilot-instructions.md`; `--ai codex` and `--ai opencode` were equally hollow and simply nobody had reported them. The published wheels were complete only by accident of being built from a working tree where `scripts/converter.py` had been run; the published sdist is hollow to this day, so `python -m build` (sdist first, then wheel *from* that sdist) reproduced the same empty package from a clean clone.
+
+  `hatch_build.py` is a hatchling build hook that regenerates the extension formats before either target is assembled, and refuses to package a tree still missing them, naming what is absent. `pyyaml` joins `[build-system] requires` because the converter parses command frontmatter. Verified end to end: a clean clone of the branch now builds a wheel carrying 165 Copilot prompts, 10 agents and `copilot-instructions.md`, installs, and scaffolds a complete project with no warnings — and with `ARCKIT_SKIP_CONVERTER=1` the same clone fails the build loudly rather than shipping the empty one. A test asserts the hook's required-asset manifest keeps covering every `extensions/*` entry in `shared-data`, so a future extension cannot inherit this silently (#730).
+
+- **`/arckit:pages` published a scan of the local disk, because only one of the two `docs/manifest.json` writers had a gitignore guard.** #690 taught `update-manifest.mjs` that "a published index must not reference a file that will never be published". `sync-guides.mjs`, which rewrites the *whole* manifest rather than appending one entry, never got the same guard. ArcKit gitignores its own `projects/`, so running the command here replaced the published index with whatever happened to be on that machine. `sync-guides.mjs` now applies the same rule at the point project directories are discovered, so `projects[]`, `global[]`, `dependencyGraph` and `projectHealth` are all correct by construction rather than pruned afterwards. That distinction matters: `dependencyGraph` comes from a separate scan and keys its nodes by document ID rather than storing an array, so a post-hoc walk of the finished manifest missed it and left gitignored paths published. Scoped to ArcKit artefact directories, not the whole manifest, so a repo that gitignores its generated `docs/` keeps its guides instead of silently losing the lot. Fails open when git is unavailable, still indexes untracked-but-not-ignored artefacts (the normal case for a freshly written one), and reports what it omitted. A no-op in every current test repo (#727).
+
+- **Hand-added `<head>` content in `docs/index.html` was destroyed on every `/arckit:pages` run.** The page is generated wholesale from `pages-template.html`, so arckit.org silently lost its analytics tag. The tag cannot simply live in the template: the template ships to every ArcKit user, and baking one site's measurement ID into it would put that ID on everybody's page. Content between `<!-- ARCKIT:PRESERVE -->` and `<!-- /ARCKIT:PRESERVE -->` is now carried across from the existing page into the regenerated one, so analytics tags, verification meta and custom fonts survive. A test asserts neither template copy contains anything shaped like a measurement ID.
+
+- **`docs/manifest.json` was the output of the generator #691 reverted**, carrying 4 of the 12 keys `sync-guides.mjs` produces. #683 added `scripts/generate-docs-manifest.py`, #691 removed it as "a duplicate, inferior implementation" — correctly — but left its output committed, and the `/arckit:pages` crash fixed in #726 meant nothing could regenerate it. Rebuilt with the real generator: 204 guides, 18 role guides, and `projects: []`, which is the honest answer for a repo that gitignores its own `projects/`. The previous file listed 33 pseudo-projects that were really guide groups.
+
+- **`update-manifest.mjs`'s ownership comment described an arrangement that ended in #691.** It named `scripts/generate-docs-manifest.py`, deleted in that revert, and claimed the two writers "do not overlap once the gitignore guard is in place". They did overlap, and the guard was only on one of them. Corrected to name `sync-guides.mjs` as the full generator and this hook as the incremental updater, both now guarded.
+
+- **Three `/arckit:build` recipe targets in `uk-nhs-clinical-safety.yaml` were keyed to the wrong artefact type, found by the new check on its first run.** `AWS_RESEARCH`, `AZURE_RESEARCH` and `GCP_RESEARCH` all set `output.type: RSCH`, but those commands write `AWRS`, `AZRS` and `GCRS`. `RSCH` is registered, to `/arckit:research`, so the codes resolved and nothing flagged them: this is the "resolves but names the wrong type" class in the wild, not a hypothetical. Five targets in that one recipe shared the `RSCH` key, so `--resume` and `--target` could not distinguish them. Every one of the seven other recipes with the same three targets already used `AWRS`/`AZRS`/`GCRS` with `multi_instance: true`; this one was the outlier and is now aligned (#715).
+
+- **`/arckit:pages` crashed before it could rebuild the dashboard, in any repo containing an `audits/` or `framework/` directory.** `sync-guides.mjs` routes each artefact into `project[<camelCased SUBDIR_MAP directory>]`, deriving those keys from `SUBDIR_MAP` — but the bucket list it pushed into was hand-written. Registering a doc-type with a new subdirectory therefore left an undefined array, and `scanProject` died on `project[key].push(...)`.
+
+  It shipped twice and was never reported, because the crash only fires in a repo that actually has the directory: `audits` arrived with `CDAU` in v6.7.0, `framework` with `FWRK` in #714. That is why `docs/manifest.json` went stale. The buckets are now derived from `SUBDIR_MAP` by the same `subdirKey()` helper the routing loop uses, so the two cannot diverge again, and `tests/plugin/sync-guides-buckets.test.mjs` pins it (it fails against the previous shape).
+
+- **Eight Node test suites, 64 tests, were never run by CI.** `lint-markdown.yml` globbed `tests/plugin/*.test.mjs` and listed one `test_*.mjs` file explicitly, leaving the other eight unrun — including `test_update_manifest.mjs`, the `docs/manifest.json` coverage, and the graph and OKF suites. The step's own comment claimed the glob "avoids the per-file enumeration drift that left suites unrun"; it did not, for the second naming convention. Both patterns are now globbed, taking the job from 166 tests to 266. Same class of gap as #719, where pytest ran 52 of 1,445.
+
+- **The doc-type registry gate was blind to every multi-instance filename, which is the one form all 20 `MULTI_INSTANCE_TYPES` codes are actually written in.** `check-doc-type-registry.py`'s command/agent check is the half that catches the *fatal* class of drift: `validate-arc-filename.mjs` blocks any write whose code is not in `KNOWN_TYPES`, and the command has no conforming name to fall back to. Its pattern required the code to be followed immediately by `-v`, so `ARC-001-WGAM-001-v1.0.md`, `ARC-{PID}-ADR-{NNN}-v1.0.md` and `ARC-{PROJECT_ID}-WGAM-{NUM}-v{VERSION}.md` produced no match at all. Only the literal `NN`/`NNN` placeholder form was ever checked, and only incidentally, because the code group swallowed it and the `NOT_A_CODE_IN_PROSE` fallback split it back off. An unregistered multi-instance code therefore passed the gate and was then blocked at runtime by the hook, which strips the sequence segment before its own `KNOWN_TYPES` lookup: the exact `GLOS`/`FWRK` failure, unguarded. The pattern now accepts an optional sequence segment (`-001`, `-{NNN}`, `-{NUM}`) and is pinned by `tests/plugin/test_doc_type_registry.py`, including an end-to-end probe asserting the gate fails on unregistered codes in that form. The check went from 685 to 785 resolved references on the current tree, with no new failures, so this closed the hole rather than revealing a live break (#715).
+
+- **All 12 `arckit-uae` commands called `generate-document-id.sh` with the doc-type in the `PROJECT_ID` slot, so the call could only ever fail.** They read `generate-document-id.sh FPRO --filename`; the script takes positionals as `PROJECT_ID` then `DOC_TYPE`, so every one of them exited 1 with `Error: DOC_TYPE required` and the model was left to invent a filename. Corrected to `<PROJECT_ID> FPRO --filename`, matching the idiom already used by the `arckit-ca`, `arckit-us`, `arckit-au`, `arckit-uk-finance` and `arckit-uk-nhs` overlays. Worth noting for #714's audit trail: the *code values* in those calls were right, so resolving `UAE-PROC` to `FPRO` and `UAE-PRIORITIES` to `NPRA` against them was still correct (#715).
+
+- **`generate-document-id.sh`'s header comment listed the multi-instance types and had drifted five behind the code.** It named 15 types while `MULTI_INSTANCE_TYPES` held 20, omitting `CDAU`, `GCSR`, `GLND`, `GOVR` and `GRNT`, so anyone consulting it to decide whether a type needs `--next-num` got the wrong answer for five of them. `check-multi-instance-parity.py` guards the variable across all three registries but only reads the `MULTI_INSTANCE_TYPES="..."` assignment, so it could not see the comment. The duplicate list is removed rather than re-synchronised: the comment now points at the variable, which eliminates the drift surface instead of recreating it. Applied to both tracked copies (#715).
+
+- **`/arckit:glossary` could never write a conforming filename — no glossary code was registered, so the hook blocked every run.** `commands/glossary.md` instructs the model to write `ARC-{PROJECT_ID}-GLOS-v1.0.md` in eight places, but `config/doc-types.mjs` had no `GLOS` entry, so `validate-arc-filename.mjs` rejected the write as an unknown document type and no fallback name existed. Three different spellings were in use and none was registered: `GLOS` in the command, `GLO` in six `/arckit:build` recipes, `GLOSS` in a seventh. `GLOS` is now registered — it is what the command already used, and the 3-character `GLO` was an outlier against the surrounding 4-character codes — with the seven recipes converged on it. Reported by @chrismckelt against 6.7.5 (#712).
+
+  The recipe spellings were the less serious half. `output.type` keys `.arckit/state.json` and is explicitly not used for path construction, so an unregistered code there did not block a write; it produced a state key `--resume` and `--target` could not match. The write-blocking half was entirely command-side.
+
+  Recipe **scope** disagreed too: six recipes wrote `project: "000-global"` while the seventh and the command both said per-project. Settled on per-project, because all seven pass `args: "{P}"`, whereas the genuinely repo-wide targets in the same recipes (`PRIN`, `STRAT`) pass `args: ""` — the six were self-contradictory.
+
+- **`/arckit:framework` was broken the same way, via an unregistered `FWRK`.** Not reported; found by the new registry gate below on its first run. `agents/arckit-framework.md` writes `projects/{P}-{NAME}/framework/ARC-{P}-FWRK-v{VERSION}.md` in three places, and `FWRK` was absent from the registry, so every framework build was blocked at the write. `FWRK` is now registered with a `SUBDIR_MAP` entry routing it to `framework/`, and `commands/framework.md` already told the model to verify "the **FWRK** per-type checks" in a checklist that had no such section — added, along with a `GLOS` section.
+
+  The same agent also described the executive guide as `ARC-{P}-EXEC-vN.N.md` in its deliverables list while its own write step says to name it `{Project-Name}-Executive-Guide.md` and that it is deliberately *not* an `ARC-*` artefact. The deliverables list is now consistent with the write step; no `EXEC` code was registered, since the file should not carry one.
+
+- **Five further classes of recipe code drift, all silent.** Each is a code whose command writes a *different* registered code, so nothing failed loudly: `AIP` → `AIPB`, `HLD` → `HLDR`, `SBD` → `SECD`, `TRACE` → `TRAC`, and twelve invented `UAE-`-prefixed codes in `uae-federal-ai.yaml` (`UAE-CLAS`, `UAE-PDPL`, `UAE-AICH`, …) whose commands write the bare form, as its sibling `uae-agentic-transformation.yaml` already did. Two of the twelve were not simple de-prefixings and were resolved against each command's `generate-document-id.sh` call: `UAE-PRIORITIES` → `NPRA` and `UAE-PROC` → `FPRO`.
+
+- **The Austrian overlay's NISG command and template described the wrong law.** They framed the NIS2 transposition as a 2018 amendment (`NISG, BGBl. I Nr. 111/2018 idF BGBl. I Nr. 94/2025`) and in places called it "NISG 2024". The enacted law is the standalone **NISG 2026** (BGBl. I Nr. 94/2025), which *replaces* the NISG 2018 (expiring 30 Sep 2026) and **enters into force on 1 October 2026** (§51), with registration due by 31 Dec 2026 (§29) — i.e. it is not yet in force. The competent authority is the new **Bundesamt für Cybersicherheit** (§3a), incident reports go to the responsible **CSIRT** (§8 — CERT.at as national CSIRT, GovCERT as public-administration sectoral CSIRT) via the NIS2-Meldeplattform (§34), and administrative penalties (§45) address the entity, not management personally (personal liability is not explicitly regulated). Fabricated paragraph references (§18, §§24-25, §4(4), §22, §3(4)) were replaced with the enacted numbering (§§2–14, 24, 29, 31–34, 45, 51) or honest `[NEEDS VERIFICATION]` flags. Verified against BGBl. I Nr. 94/2025 plus Schönherr and Hochleitner (iura.at) analyses.
+
+- **`/arckit:at-nisg` — full paragraph-level verification against the enacted NISG 2026 text (BGBl. I Nr. 94/2025), correcting the details the earlier pass had left approximate or flagged.** Checked every citation against the authentic Bundesgesetzblatt. Four substantive fixes: (1) the **Wirksamkeitsnachweis was conflated with the §33 Abs. 1 Selbstdeklaration** — the ~30 Sep 2027 milestone is the *self-declaration* of implemented measures (within 12 months of the registration duty), while the independent audit **Wirksamkeitsnachweis (§33 Abs. 2)** cannot be requested until at earliest two years after entry into force (~Oct 2028); both are now shown separately. (2) The claim that the old **€50k/€100k ceilings are "superseded" was wrong** — they survive as a *lower tier* in **§45 Abs. 4** for procedural breaches (registration, self-declaration, obstruction of supervision), alongside the **§45 Abs. 2/3** core-duty ceilings of *up to* €10M/2% (essential) and €7M/1.4% (important) — corrected from the misleading "≥" to the enacted "bis zu". (3) **Supervision and enforcement were mis-cited as §45** — they are **§38 (Aufsichtsmaßnahmen)** and **§39 (Durchsetzungsmaßnahmen)**; §45 is the penalty catalogue. (4) The fining authority is confirmed as the **Bezirksverwaltungsbehörde (§44 Abs. 1)** and the size-independent criticality designation resolved to **§26** (both previously `[NEEDS VERIFICATION]` / `[VERIFY §]`). The personal-liability note is now anchored to **§44** (legal-person attribution; §44 Abs. 5 waives §9 VStG punishment once the entity is fined). Entry into force (1 Oct 2026, §51) and the three-month registration window (§29 Abs. 3) re-confirmed against §51's nine-months-plus-month-start mechanic.
+
+  Three further corrections from a second pass over the authentic text: (5) **public-administration bodies were shown the §45 fine ceilings, which do not apply to them.** §46 operates expressly "abweichend von § 45": for Behörden and sonstige Stellen der öffentlichen Verwaltung — including Gebietskörperschaften and bodies constituted under private law — the Bezirksverwaltungsbehörde establishes non-compliance **by Bescheid** with a remediation deadline and, if the lawful state is not restored once the Bescheid is final, **publishes** the non-compliance (§46 Abs. 2, a Verfassungsbestimmung). No fine is imposed. Since public administration is an in-scope sector (§2 Z 10) and the command is explicitly offered for it, an Austrian federal body would otherwise have been given a materially wrong penalty exposure. (6) The **§33 Abs. 2 deadline structure was only half-stated** — the general window to evidence implementation is two years from the Aufforderung, but **Essential entities have only two months** for the operative and organisational proof (§33 Abs. 2 second sentence); for Important entities §38 Abs. 2 applies analogously. (7) **§44 Abs. 7's ne bis in idem was missing** — where the Datenschutzbehörde has already fined the same conduct under Art. 58(2)(i) GDPR, no NISG fine may follow, which is directly relevant to the command's DSB cross-reporting step.
+
+- **`/arckit:at-bvergg` shipped stale procurement thresholds and an out-of-date legal frame.** The command used the 2024–2025 EU values (€221k/€443k/€5,538k); it now uses the 22 October 2025 threshold regulations, all in force 1 Jan 2026 for 2026–2027 (€140k central / €216k sub-central / €432k utilities / €5,404k works). These span three instruments and the command now cites each tier's own: **(EU) 2025/2152** for the classical sectors (Directive 2014/24/EU — central, sub-central, works), **(EU) 2025/2150** for **Sektorenauftraggeber / utilities** (Directive 2014/25/EU — the €432k figure, which is *not* from 2025/2152), and **(EU) 2025/2151** for concessions (Directive 2014/23/EU). It is also aligned to the **Vergaberechtsgesetz 2026** (BGBl. I Nr. 8/2026) — the largest procurement reform since the BVergG 2018, a Novelle in force **1 March 2026** (eForms from 1 October 2026, including below-threshold): permanent Direktvergabe limits (supplies/services **€143k**, works **€200k**; central/Bund authorities effectively capped at the €140k EU Oberschwelle), the "document ≥3 Vergleichsangebote/Preisauskünfte from €50k" rule, harmonised Ausschlussgründe/Selbstreinigung, binding Rahmenvereinbarungs-Höchstwerte, and a tiered Nachprüfungs-Pauschalgebühren system. The BVergG 2018 keeps its name and numbering; the BVERGG doc-type label is updated to "BVergG 2018 idF VergabeRG 2026". (Closes #708.)
+
+- **`/arckit:at-dsgvo` overstated Austrian data-protection specifics.** The §§12–13 DSG image-processing regime is now flagged as **contested** — the BVwG held it inapplicable for want of a GDPR opening clause (W256 2214855-1; W211 2210458-1, 2019) while the OGH still applies it (6 Ob 150/19f) — and the assessment is anchored on the GDPR. The **§30 Abs 5 DSG** exemption of Behörden / öffentliche Stellen from GDPR fines (Art. 83(7)) is now recorded in the command and template.
+
+- **`/arckit:at-dsgvo` carried three wrong statutory citations.** `§2d DSG` does not exist — the DSB research/statistics approval is **§7 DSG** and the Art. 89(1) data-subject-rights exemption is **§2d FOG** (Forschungsorganisationsgesetz); the cookie-penalty row cited `§109 TKG 2021 / €37,000` (that is the *TKG 2003* provision) and is corrected to **§188 TKG 2021, up to €75,000** for breach of the §165 Abs 3 information duty (Fernmeldebehörde); and the employee-monitoring trigger conflated §96a with **§96 Abs 1 Z 3 ArbVG** (control measures affecting human dignity), now distinguished from §96a (Personaldatensysteme). The law-enforcement/justice data-protection regime now points to the **DSG 3. Hauptstück (§§36–61, transposing RL (EU) 2016/680)**, with StPO §§134–143b noted as lex specialis, instead of citing only the StPO.
+
+- **CODEOWNERS matched no overlay files.** The `at-*` / `eu-*` / `fr-*` / `ca-*` / `uae-*` patterns pointed at a non-existent `arckit-claude/…` root path, so the domain maintainers (@gtonic, @thomas-jardinet) were never auto-requested for review. Patterns now target the real `plugins/arckit-<x>/…`, the generated `plugins/arckit-claude/plugins/<x>/…` mirror, `.arckit/templates/…` and `docs/guides/…`.
+
+### Security
+
+- **postcss pinned to `>=8.5.18` (GHSA-r28c-9q8g-f849).** postcss `<=8.5.17` carries a regular-expression denial of service, CVSS 7.5. It reaches ArcKit transitively through the `@mermaid-js/mermaid-cli` devDependency chain, so the exposure is the local and CI diagram-rendering toolchain rather than anything shipped to users — the pin is precautionary, not a response to a live incident. Applied as an npm `overrides` entry, which raises the transitive version without adding postcss as a direct dependency of ArcKit. Contributed by @anupamme (#703).
+
+## [6.7.5] — 2026-07-28
+
+### Fixed
+
+- **The Build Provenance block failed markdownlint in every artefact ArcKit stamps.** `.markdownlint-cli2.jsonc` sets MD049 to `asterisk`; both provenance stamping hooks emitted their preamble as `_Stamped automatically by …_`. Because that block is appended to every stamped artefact, the violation shipped into each one — in user repos as much as this one, so this is a product defect rather than repo hygiene. Fixed in both sources: `plugins/arckit-claude/hooks/provenance-stamp.mjs`, which propagates to the generated extensions, and `extensions/arckit-codex/hooks/arckit-codex-hook.mjs`, which is hand-maintained, carries its own stamp string, and could not be reached by the converter. `tests/plugin/provenance-emphasis.test.mjs` now asserts both open and close on `*` in both sources (#701).
+
+- **The release flow's plugin-manifest validation had never validated anything.** Step 7/8 cross-checks every `plugin.json` against its marketplace entry to catch version drift before tagging. The `/release` skill discovered manifests with `find . -maxdepth 3`, but from the repo root they sit at depth 4 — the glob matched nothing, the loop body never ran, and it exited 0 reporting a clean pass. Every release from v6.0.0 through v6.7.4 "passed" that way. Separately, both the skill and `docs/RELEASING.md` passed the `name` field from `plugin.json` to `claude plugin tag`, which takes a path: `claude plugin tag arckit` fails with `Path not found`. Had the glob ever matched, every iteration would have failed anyway. Both now search from `plugins`, derive the directory path, and assert the glob found something before looping — the count assertion being the actual fix, since a loop whose body may never run is unvalidated until it reports what it covered (#700).
+
+### Changed
+
+- **`books/` and `docs/pitch-decks/` are no longer linted.** Both are gitignored with zero tracked files, so CI never saw them while every local run did — `books/` alone produced 1,259 errors. That volume of noise in `bump-version.sh` output is what let the provenance defect above sit unnoticed. Now excluded, matching the existing treatment of `docs/articles/`, `docs/plans/` and `research/`. `projects/**` stays in scope deliberately despite also being gitignored here: those artefacts are ArcKit's own output, and linting them is exactly what surfaced the defect. A repo-wide sweep is now clean at 3,502 files.
+
+## [6.7.4] — 2026-07-28
+
+Repository and site maintenance. No changes to the plugin, commands, agents,
+hooks, templates or any generated extension — the version moves only because
+all distribution formats ship in lockstep.
+
+### Fixed
+
+- **Three contributors credited in the CHANGELOGs were missing from `docs/contributors.html`.** @Yumstezy (authored `docs/guides/custom-commands.md`, #111/#357), @jhonurrego-tekton (reported #688, v6.7.2) and @chrismckelt (reported #693, v6.7.3) all had release-note credits and no card on the site. All three are now listed, and the two counts the page carries — the hero stat and the Community Impact paragraph — are consistent with the 19 cards on it.
+
+### Added
+
+- **`scripts/check-contributor-credits.py`, a CI guard against contributor-credit drift.** The page is hand-maintained and nothing derives it from the CHANGELOGs, so crediting someone at release time and listing them on the site are independent acts — and only one of them is part of the release flow. The failure was silent and one-directional (the CHANGELOG right, the site quietly incomplete), which is why it accumulated across three releases before anyone looked. The guard fails CI when a handle credited in either CHANGELOG has no profile link on the page.
+
+  Checked in one direction only. The reverse would be wrong: a card may legitimately predate the credit convention, or record a contribution such as a proposed overlay or an adopted external spec that never produced a release note.
+
+  Code spans and fenced blocks are stripped before scanning, because a credit is always prose and `@`-prefixed tokens are everywhere in a technical changelog — without it, PlantUML's `@startuml`/`@enduml` register as contributors, as would npm scopes and decorators. Bare version specifiers such as `mermaid@11.15.0` are excluded by a word-boundary guard rather than by the code stripping, so they stay excluded outside backticks too.
+
+  Wiring `docs/contributors.html` into the `lint-markdown.yml` path filters also closes a related gap: a PR touching only that file previously triggered no CI at all. Confirmed working: the next contributors-only PR ran the lint job, where the one before it had run no checks whatsoever.
+
+### Changed
+
+- **The Community Impact summary on `docs/contributors.html` now states its counting rule and the real domain-maintainer total.** The figures themselves were correct and are unchanged — they are a disjoint partition, every person counted once under their primary role, summing to the 19 cards on the page. But three of the code contributors also maintain a jurisdictional overlay (Austria, Australia, EU / France), which the sentence hid: it read as though ArcKit has one domain maintainer when it has four. Naming the partition rule matters as much as the figure, since without it the next reader mistakes those numbers for a badge tally and "corrects" a correct number into a wrong one.
+
+## [6.7.3] — 2026-07-28
+
+### Fixed
+
+- **`evolve` lines carrying a trailing `label` were silently dropped from the generated Mermaid block — a side-effect of the #508 fix.** PR #511 anchored the evolve target at end-of-line to stop `003` being taken as the target in `evolve "Foo (Project 003)" 0.74`. That fix was correct, but the anchor also meant no evolve line with *any* trailing text could match, and `owm-to-mermaid.mjs` skips unmatched lines silently. The label suffix is now an optional non-capturing group, so the #508 anchor holds while labels are tolerated and stripped as they were before #511. Reported by @chrismckelt against 6.7.2 (#693).
+
+  Wider than reported in two ways. First, this is the **documented** syntax, not an edge case: `commands/wardley.md` gives the output template as `evolve {Component Name} {target_evolution} label {label text}`, repeats it in the syntax summary, and uses it in worked examples, and both `wardley-map-template.md` copies follow suit — so a `/arckit:wardley` run that followed ArcKit's own instructions lost *every* evolve line from the Mermaid block while the OWM block above it showed them all. Second, the canonical OWM offset form `evolve X 0.8 label [10, -5]` was dropped too, not just free-text labels.
+
+- **`validate-wardley-math.mjs` was blind to the same lines, so nothing caught the inconsistency at write time.** The hook carried the same end-anchored evolve pattern in two places. A labelled evolve line therefore never landed in the reference list, and an evolve pointing at an undeclared or misspelled component passed validation silently. Both patterns now take the same optional label suffix; the dangling-reference check fires on labelled lines as it always should have (#693).
+
+  No documentation change was needed: `commands/wardley.md` describes the converter as handling "`evolve`-label stripping", which was true before #511 and is true again now. The code was wrong, not the doc.
+
+## [6.7.2] — 2026-07-27
+
+### Fixed
+
+- **Overlay artefacts silently lost their Build Provenance block — a regression introduced in v6.7.1.** The publish-time namespacing rewrite (#685, #686) rewrites every published `.md`, template footers included, so an artefact generated from a published overlay template carries `/arckit-repo:repo-audit`. The footer pattern in `provenance-stamp.mjs` required `:` or `.` immediately after `arckit`, so `arckit-repo:` matched nothing: the command went undetected, its `effort:` was never read, and with no build context the block was skipped entirely. Source-tree runs were unaffected because sources keep the portable `/arckit:X` form, which is exactly why no test caught it. The pattern now accepts an optional `-<namespace>` (#689).
+
+- **An overlay command's `effort:` could never resolve — pre-existing, all 105 overlay commands.** `readCommandFrontmatter` only ever looked at `<plugin-root>/commands/<name>.md`. Core lives there; overlays do not — in the published layout they nest under the core root, and in the dev tree they are siblings. Command lookup now falls back to a bounded search of both layouts. Bounded deliberately: an unbounded walk inside a PostToolUse hook with a 5s timeout is a bad trade (#689).
+
+- **`docs/manifest.json` no longer indexes artefacts that git actively ignores.** The manifest is a *published* index — ArcKit serves its own at `arckit.org/manifest.json` — so indexing a gitignored artefact writes a reference to a one-machine-only file into a file everyone fetches, producing a permanent 404. `update-manifest.mjs` now skips ignored paths. Ignored, **not** merely untracked: a brand-new artefact in a repo that tracks `projects/` is untracked until committed and must still be indexed. Fails open when git is absent or the directory is not a repository, since neither can prove a path is ignored (#690).
+
+- **`CLAUDE.md` recommended the wrong Claude Code marketplace.** It told users to add `tractorjuice/arc-kit` while three other places recommend `tractorjuice/arckit-claude`. Both publish all 16 plugins under identical names, so a user following both instructions registers `arckit`, `arckit-repo` and the rest twice. Reported by @jhonurrego-tekton, who found duplicate entries in `installed_plugins.json` alongside a "Plugin 'arckit' not cached" warning (#688).
+
+### Removed
+
+- **`scripts/generate-docs-manifest.py`, added in v6.7.1, has been reverted** along with its 13 tests and its CI step (#691). It was a duplicate, inferior implementation of something the product already does: `sync-guides.mjs`, driven by `/arckit:pages`, is the real generator and builds a far richer schema (`guides`, `roleGuides`, `guideSectionOrder`, `typeCategories`, `dependencyGraph`, `projectHealth` and more). The generator wrote four of those keys and modelled guides as pseudo-projects rather than the arrays the dashboard consumes, so running `/arckit:pages` would have overwritten it, CI would then have failed on `--check`, and the obvious fix — running `--write` — would have destroyed the real manifest.
+
+  **This supersedes the v6.7.1 entries** that listed the generator under *Added* and stated that `docs/manifest.json` "is now generated, never hand-edited". There is no `generate-docs-manifest.py` step to run after adding a guide, template, or article.
+
+  The enriched `docs/manifest.json` **content** is kept. Reverting it would restore four entries pointing at deleted files; 463 entries with zero dangling references is a better frozen snapshot than 107 with four 404s. Nothing maintains it in this repository, and `sync-guides.mjs` owns it wherever `/arckit:pages` is actually run.
+
+## [6.7.1] — 2026-07-27
+
+### Fixed
+
+- **Overlay slash commands now resolve in Claude Code.** Claude Code namespaces plugin commands by the `name` in `plugin.json`. The core plugin is named `arckit`, so `/arckit:adr` works, but every overlay is named `arckit-<x>` — so none of the 105 overlay commands resolved under the documented `/arckit:` prefix. Confirmed live: `arckit:repo-audit` returns "Unknown skill" while `arckit-repo:repo-docs` runs. The published Claude plugins now carry the namespaced form (`/arckit-uae:uae-ai-charter`, `/arckit-togaf-adm:adm-preliminary`, `/arckit-repo:repo-audit`), applied at publish time by `scripts/claude_command_namespacing.py` from both `sync-claude-plugin-layout.py` and `push-extensions.sh` (#685, #686).
+
+  The command **sources** deliberately keep the portable `/arckit:X` form, because `converter.py` already rewrites it per target: Copilot gets `/arckit-X`, Codex and Kimi get their own skill prefixes, and Gemini and OpenCode keep `/arckit:X` because the converter merges every overlay into one flat `arckit` namespace. Rewriting the 2,698 source references would have broken seven working formats to fix one. Claude Code was simply the only target with no rewrite step.
+
+- **`/arckit:repo-audit` no longer scores a codebase against an unrelated project.** Mode inference assumed any project in the repository described the audited code. Auditing this repo, whose only project is a UK consulting *market study*, would have produced a full page of confident Met/Not-met verdicts against 28 irrelevant requirements. The command now confirms the project actually describes the repository, asks when the evidence is ambiguous, and falls back to cold mode when correspondence is unconfirmed. `--check` reports the judgement (#684).
+
+- **`create-project.sh` failed silently on a fresh repository.** With no `projects/000-global/`, `find` exited non-zero, `2>/dev/null` hid the reason, and `set -euo pipefail` killed the script at the assignment — three lines before the error that would have said `Run: /arckit:principles`. It exited 1 with zero bytes on both streams, in exactly the case that most needs the guidance. Fixed in both copies (#684).
+
+- **Three dangling command references** that nothing validated: `/arckit:hld` and `/arckit:dld` (uk-nhs-dtac) and `/arckit:app-inventory` (togaf application-rationalization). No commands by those names have ever existed. `check_references.py` checks plugin-root paths and handoffs, not whether a referenced command exists (#685).
+
+- **The `/arckit:repo-audit` guide was unreachable from the published site.** It shipped in v6.7.0 and reached both guide trees, but nothing linked to it, so it could only be found by guessing its `guide-viewer.html` URL. Added to `docs/guides.html` and `docs/manifest.json`, with reciprocal cross-references between `repo-docs` and `repo-audit`, which had only ever pointed one way (#681).
+
+### Added
+
+- **`scripts/check-guide-site-links.py`**, wired into `lint-markdown.yml`. `docs/guides.html` and `docs/roles.html` are hand-maintained and nothing derived them from `docs/guides/`, so a guide could pass `check-guide-parity.py`, ship to all seven extensions, and still be invisible on the site. Checks both directions — unlinked guides and dead links — and treats a guide as reachable from any site page, so role guides on `roles.html` are covered without a blanket exemption that would hide one going missing (#682).
+
+- **`scripts/generate-docs-manifest.py`**, wired into `lint-markdown.yml`. `docs/manifest.json` is published at `arckit.org/manifest.json` as a programmatic document index, and nothing in the site HTML reads it, so its drift went unnoticed: six months stale and roughly a quarter complete (54 of 238 guides, 45 of 166 templates, 2 of 62 articles), with one entry pointing at a deleted file. Now generated from disk — 463 documents across 33 groups — indexing **git-tracked files only**, so gitignored working-tree files are never advertised as published (#683).
+
+### Changed
+
+- `docs/manifest.json` is now generated, never hand-edited. Run `python3 scripts/generate-docs-manifest.py --write` after adding a guide, template, or article. `--check` ignores the `generated` timestamp so a rebuild on a quiet day is not reported as drift.
+
+## [6.7.0] — 2026-07-27
+
+### Added
+
+- **`/arckit:repo-audit`** in the optional `arckit-repo` plugin (#616). Audits a codebase against architecture principles and requirements. Accepts the current repository, a local path, or a public GitHub/GitLab URL; remote targets are shallow-cloned (`--depth 100`, no submodules) to a temporary directory after confirmation, and deleted afterwards. Two modes are inferred, never flagged: **conformance** scores the codebase against the project's `PRIN`/`REQ` artefacts, giving each principle and requirement a Met / Partial / Not met / Not evidenced verdict with the source path that justifies it; **cold** runs a standalone as-built audit and emits a seed capability list. Unlike `/arckit:conformance` it degrades rather than hard-erroring when prerequisites are thin, because auditing an inherited codebase is usually the first thing a user does. Findings carry a severity *and* a confidence (Verified / Inferred / Absent), and the Blocking Decisions section emits every implied-but-unrecorded decision as a ready-to-file ADR stub. Three rules are absolute: never execute code from the audited repository (static reading only, because the code is untrusted at the point it is read), never write a discovered secret's value into the report, and never write into the audited repo. Private repositories are out of scope; clone locally and audit the path. Claude Code only, like `/arckit:repo-docs`.
+- **`CDAU` doc-type** (Codebase Audit, Governance, multi-instance) writing to a new `projects/{PID}-{name}/audits/` subdirectory, so one project can audit several repositories and a re-audit does not overwrite its predecessor.
+- **`scripts/check-multi-instance-parity.py`**, wired into `lint-markdown.yml`. `MULTI_INSTANCE_TYPES` is duplicated across `doc-types.mjs` and *two* copies of `generate-document-id.sh`, and nothing enforced agreement.
+
+### Fixed
+
+- **`GRNT` was missing from both bash `MULTI_INSTANCE_TYPES` lists**, so `/arckit:grants` generated IDs with no `-NNN-` sequence and every run overwrote the previous artefact. This is the second occurrence of this exact bug (`TNDR`/`CMPT`, fixed v5.9.2 in PR #566); the CI guard proposed at the time was never built, and now is. The header comment in `doc-types.mjs` claiming the bash list held "10 entries" was long stale and is rewritten.
+- **`arckit-repo` declared `"dependencies": []`** while its README and marketplace description both stated "Requires arckit core". Every other community plugin declares `{"name": "arckit", "version": "=6.6.0"}`. Beyond the marketplace install chain, the missing declaration meant `check_references.py` could not resolve `${user_config.*}` keys from core.
+
+### Changed
+
+- **`arckit-repo` is no longer exempt from the shared-asset sync.** `SYNC_EXEMPT_PLUGINS` listed it as a tooling plugin with no governance commands, which was true of `/arckit:repo-docs` and is not true of `/arckit:repo-audit`: a `CDAU` artefact carries a Document Control header that resolves `${CLAUDE_PLUGIN_ROOT}/templates/_partials/` against the plugin's own root, so it must carry its own copy.
+- `tests/plugin/test_template_consistency.py` now includes `arckit-repo` in its plugin scan, for the same reason.
+
+## [6.6.0] — 2026-07-27
+
+### Changed
+
+- **Minimum Claude Code version raised to v2.1.219** (from v2.1.200) for **Claude Opus 5** support. v2.1.219 added `claude-opus-5` as the default Opus model, with 1M context and fast mode; earlier clients cannot select it. The floor carries forward every prior driver (project-scoped plugin loading from git worktrees and `claude agents --plugin-dir` visibility from v2.1.200, background-subagent reliability from v2.1.198-v2.1.199, the wildcard-domain `WebFetch` fix from v2.1.172, and older MCP/hook/telemetry unlocks). Updated across `version-check.mjs` (constant, per-feature warning bullet, header threshold list), both READMEs, `CLAUDE.md`, 13 guides, the enterprise-scale managed-settings examples and changelog table, the repo dogfood `.claude/settings.json`, and the test-repo scaffold template.
+
+### Added
+
+- **Guide-tree parity check** (`scripts/check-guide-parity.py`, wired into `lint-markdown.yml`). ArcKit keeps user guides in two trees — `docs/guides/` (the published site and CLI package data) and `plugins/arckit-claude/docs/guides/` (what the converter pushes into all seven extensions) — and nothing kept them in step. `sync-shared-assets.py` covers `templates/_partials/` and `references/` but has never touched `docs/guides`. The check enforces byte-identical parity for every guide present in both trees, allows root-only guides (community-overlay and maintainer docs deliberately don't ship to extensions), and rejects plugin-only guides, which can never reach the site or the CLI package. `--sync` copies root to plugin and only ever writes to the plugin tree.
+- **Recipe wave-width and cycle checks** (`scripts/check_recipes.py`). The validator now computes the topological wave plan for every recipe and fails when a wave exceeds Claude Code's concurrent-subagent cap (20), warns within 4 of it, and detects dependency cycles that previously surfaced only at runtime as an empty wave. Baseline: widest shipped wave is 16 of 20.
+- **`/arckit:build` wave splitting.** The orchestrator now splits any wave wider than 20 at dispatch time rather than assuming the recipe is well-formed — user-authored recipes under `.arckit/recipes/` never pass through CI. A split wave still produces one commit.
+
+### Fixed
+
+- **Plugin-tree guide drift.** `plugins/arckit-claude/docs/guides/mcp-servers.md` was missing the "Optional: MCP per-request timeout" section that four `*-research.md` guides in the same tree link to, leaving a dead anchor; `security-hooks.md` was missing "Restricting web access for research agents" entirely, so the plugin tree shipped no domain-restriction guidance. Both sections backfilled; the two trees now share a heading structure.
+- **Cross-reference linter false positive on guide code blocks.** `check_references.py` resolved `${CLAUDE_PLUGIN_ROOT}` references found inside fenced code blocks in `docs/guides/**`. A guide that teaches users to write their own command necessarily *displays* command source, and that sample source references files the reader has not created yet — `custom-commands.md` walks through building an `/arckit:sla` command and tells the reader to create `sla-template.md` as a later step. The linter now blanks fenced blocks (handling nested and variable-length fences, preserving line numbers) for guides only; command, agent, and skill bodies keep full checking including code blocks, because a reference there is real wherever it appears. Surfaced by the new guide-parity sync, which propagated the root copy into the plugin tree where the linter runs.
+- **Guide-tree drift resolved across 10 files.** Drift ran in *both* directions, so this was a merge rather than a one-way copy:
+  - Root was correct and the plugin copy stale in 7: `autoresearch.md` (missing the entire Stopping Conditions and Self-Harness sections), `mcp-servers.md` (hardcoded "75 slash commands" and "Skills: 1"), `security-hooks.md` / `c4-layout-science.md` / `custom-commands.md` (pre-v6 `arckit-claude/` paths that no longer exist, since plugins moved under `plugins/`), `roles/README.md` and `roles/enterprise-architect.md` (hardcoded "70 commands").
+  - The plugin copy was correct and root stale in 3: `pages.md` and `template-builder.md` (both still pointed at a category map in `hooks/sync-guides.mjs`; the real source is `config/guide-groups.mjs`, which `sync-guides.mjs` imports from), and `roles/service-owner.md`, where root documented the service-assessment artefact as `ARC-{PID}-SASS-v*.md` — the registered doc-type code is `SVCASS`, so readers were told to look for a file the command never writes.
+- **`CLAUDE.md` step 3 for adding a command pointed at `plugins/arckit-claude/guides/`, a directory that does not exist** (the real path is `plugins/arckit-claude/docs/guides/`). This was the root cause of the drift: the documented workflow sent guide authors somewhere invalid, so the plugin copy was routinely skipped. Step 3 now names the sync command, and a new "Guide Trees" section documents the canonical direction.
+- `mcp-servers.md` troubleshooting told users to run `echo $GOOGLE_API_KEY`, printing a live credential to the terminal in a guide that elsewhere highlights key redaction for OFFICIAL-SENSITIVE deployments. Replaced with a presence check that does not echo the value.
+
+### Documentation
+
+- **Claude Code v2.1.201–v2.1.220 adoption** (#580). Refreshed guidance against the current platform:
+  - `agents/READER-PATTERN.md` asserted that "subagents cannot spawn other subagents" — true when written, false since nested `Agent` dispatch returned. Rewrote the rationale: the orchestrators stay on the main thread by **choice**, not platform limitation, because the nesting default moved three times in three months (depth 5 in v2.1.172, disabled in v2.1.217, depth 3 in v2.1.219) and any user can disable it with `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH=1`, which would break a re-homed orchestrator outright rather than degrade it.
+  - `CLAUDE.md` model guidance: Opus 5 is the default Opus model; effort support now covers Opus 5 / Sonnet 5 / Fable 5; fast mode applies to Opus 5 and Opus 4.8 only, with Opus 4.7 fast mode removed on 2026-07-24 (Claude Code still treats 4.7 as fast-mode-capable while the API rejects the requests, so it fails silently rather than degrading). Rates corrected to the documented $10/$50 per MTok. Verified against the official model-config and fast-mode docs.
+  - `mcp-servers.md`: MCP calls auto-background after 2 minutes (`CLAUDE_CODE_MCP_AUTO_BACKGROUND_MS`, v2.1.212) and how that interacts with a raised `MCP_TOOL_TIMEOUT`; per-server `request_timeout_ms` is honoured again (v2.1.206); failed servers now report HTTP status and error text (v2.1.218).
+  - `enterprise-scale.md`: `sandbox.network.strictAllowlist` (v2.1.219) and `sandbox.filesystem.disabled` (v2.1.216) in the security baseline; plugin option values must be set at user or managed scope, since v2.1.207 stopped reading `pluginConfigs` from a repository's `.claude/settings.json`.
+  - `security-hooks.md`: sandboxed commands reach the network independently of `WebFetch` rules, and `strictAllowlist` closes that gap.
+  - `research.md` / `autoresearch.md`: the session-wide 200-call WebSearch budget and 200/20 subagent budgets (v2.1.212, v2.1.217), which a search-heavy run or a long optimisation loop can exhaust.
+- **`build.md` session limits** (#580). Documents the concurrent-subagent (20), per-session subagent (200), and per-session WebSearch (200) caps, and — the point the spike settled — that **all three deny rather than queue**. Verified against the Claude Code v2.1.220 binary: an over-cap spawn throws "Concurrent subagent limit reached ... Do not retry" per excess call. Because the harness is halt-on-fail, an over-wide wave fails rather than running slower. Records the current margin (widest shipped wave 16 of 20, largest total spawn 49 of 200) and notes the ultracode bypass exists but must not be relied on.
+
+## [6.5.0] — 2026-07-27
+
+### Added
+
+- **Kimi Code CLI hooks.** The `arckit-kimi` plugin manifest now wires 16 governance and security hooks (session context injection, prompt and file secret detection, file protection, ARC filename validation, score and Wardley-math validation, provenance stamping, manifest updates, stale-artifact notices, session learner, post-compact rehydrate, and telemetry) through a new `hooks/kimi-hook-adapter.mjs`. The adapter runs each unmodified Claude hook as a child and re-expresses its Claude-shaped output in Kimi's contract (context to stdout on exit 0, blocks to exit 2), so the battle-tested Claude hooks stay byte-for-byte unchanged. Path-scoped hooks carry an adapter-level guard that stands in for Claude's `if:` conditions, which Kimi's flat hook schema cannot express. The translation logic is unit-tested in isolation; the end-to-end wiring is not yet smoke-tested against a live Kimi runtime.
+- **Kimi manifest metadata.** `kimi.plugin.json` now carries `author`, `homepage`, `repository`, `license`, `keywords`, and a fuller `interface` block (`longDescription`, `developerName`, `websiteURL`) for the `/plugins` browser.
+
+### Fixed
+
+- **Build Provenance model-id parsing** (#664). `extractModelFromContent` rejected model ids containing a provider prefix or a bracketed context-window suffix (e.g. `claude-opus-4-8[1m]`, bedrock-style `us.anthropic.claude-*`), silently dropping the model from the stamp. Widened the id character class and extracted the pure model/effort helpers into a testable `provenance-model.mjs`.
+- Softened the converter's `generate_kimi_plugin_json` note that asserted Kimi supports `headers` on remote MCP servers. Kimi's published schema documents only `url`, so the two keyed servers (`google-developer-knowledge`, `datacommons-mcp`) may not authenticate under Kimi until confirmed on a live instance.
+- **Build Provenance effort matrix corrected** (#669). The effort helper ranked `xhigh` above `max`, inverting the official Claude Code ordering (`max` is the deepest tier), and used a single per-model cap that could not represent Opus 4.6 / Sonnet 4.6, which support `max` but not `xhigh`. The stamp therefore recorded the wrong "Effective Effort" for those models: `xhigh` was reported as downgraded to `max`, where the harness actually falls back to `high`. Replaced the single cap with per-model supported sets, fixed the level ordering, and dropped the incorrect Haiku 4.5 entry (Haiku does not support effort). Verified against the official model-config docs (`code.claude.com/docs`).
+- Corrected a non-existent `moonshotai/kimi-v3` example id to `kimi-k3` in the provenance model helper (#670).
+
+## [6.4.0] — 2026-07-25
+
+### Added
+
+- **Kimi Code CLI extension** (`arckit-kimi`) — ninth distribution format. Every ArcKit command ships as a Kimi Agent Skill invoked with `/skill:arckit-<command>`, with the six bundled MCP servers declared in `kimi.plugin.json` and `architecture-workflow` auto-loaded at session start. Install by starting `kimi` and running `/plugins install https://github.com/tractorjuice/arckit-kimi.git` at the prompt; scaffold a project with `arckit init --ai kimi`.
+
+### Fixed
+
+- The converter now strips Claude-only `paths:` frontmatter from reference skills it copies into the Mistral Vibe and Kimi Code CLI extensions, matching the stripping already applied elsewhere; the field is meaningless (and previously left dangling) in both non-Claude formats.
+- A command reference at the end of a sentence, e.g. `/arckit:stakeholders.`, no longer has the sentence-final full stop swallowed into the command name (which previously rendered `$arckit-stakeholders-` in the Codex extension, and the equivalent in Kimi). The converter's command-name capture now stops at a word boundary; internal dots and hyphens (`wardley.climate`, `security-assessment`) are preserved (#666).
+
+## [6.3.0] — 2026-07-16
+
+### Added
+
+- **arckit-uk-nhs**: DUAA 2025 coverage, hazard-archetype checklist, re-review triggers, and statutory-anchor correction (#646).
+
+### Changed
+
+- Corrected two false claims about the bundled MCP servers in the documentation (#653).
+
+## [6.2.0] — 2026-07-13
+
+### Added
+
+- **Repository plugin.** Added the optional `arckit-repo` plugin, starting with
+  `/arckit:repo-docs` to generate and maintain source-grounded, agent-readable
+  repository documentation under `docs/repository/`, adapting OpenWiki-style
+  targeted discovery and incremental update prompts for ArcKit. It is a
+  Claude Code only tooling plugin with no core dependency, following the
+  `arckit-fde` shape: it ships via the marketplace but is not converted into
+  the non-Claude extensions (#651).
+
+### Changed
+
+- **Reactive external-document context (#580, #644).** Added Claude Code
+  `FileChanged` hook coverage for `projects/*/external/` directories so newly
+  added or changed evidence is injected into session context without waiting
+  for a restart, `/compact`, or another `/arckit:` command.
+- **Claude Code minimum-version floor raised to v2.1.200 (#642).** Updated the
+  runtime version check, repo/test-repo settings, and docs to require the
+  latest v2.1.200 floor for project-scoped plugin loading from git worktrees,
+  `claude agents --plugin-dir` agent/skill visibility, and the recent
+  background-subagent reliability and hook diagnostics fixes tracked in #580.
+- **Claude Code v2.1.200 documentation backlog (#580, #643, #645).** Added
+  managed model governance, OTEL assistant-response, MCP auth, safe-mode
+  troubleshooting, plugin branch-testing, and ArcKit skill-layout guidance,
+  plus a Claude enterprise deployment guide; refreshed stale Claude model
+  examples for Sonnet 5-era defaults.
+- **DeepBook guide marked proprietary (#651).** `arckit-deepbook` is
+  proprietary software in a private repository and is not part of the
+  open-source ArcKit distribution. Its guide now carries a Licence and
+  Availability section stating that it is not installable from the public
+  marketplace and that no rights are granted without written consent.
+  Generated books remain the property of whoever generated them.
+
+### Fixed
+
+- **User-config title validation guard (#639).** Added a test asserting every
+  plugin `userConfig` entry declares a `title`, so a missing field fails in CI
+  instead of breaking `claude plugin validate` and marketplace installs.
+- **Removed DeepBook generated content from the public repository (#650).**
+  Book drafts, run checkpoints, and a symlink to an absolute path outside the
+  repository had been committed. They are untracked and ignored. The ignore
+  rule for the symlink had a trailing slash, which does not match a symlink —
+  corrected, so the path can no longer be re-added. This also restored a
+  green `Lint Markdown` build, which the generated book content had been
+  failing.
+
+## [6.1.7] — 2026-07-03
+
+### Fixed
+
+- **Generated extension publishing guard (#638).** Added release preflight
+  checks so standalone extension publishing fails before touching remote repos
+  when required generated distribution files are missing.
+
+### Changed
+
+- **NHS DCB0129 numbering caveat (#641).** Corrected the clinical-safety
+  severity/likelihood caveat so it attributes the `1 = worst` ordinals to
+  ArcKit's storage encoding rather than to DCB0129/0160 or the Orange Book.
+
+## [6.1.6] — 2026-07-03
+
+### Fixed
+
+- **Pages overlay guide ordering (#636).** Ordered overlay packs as
+  global/framework packs first, followed by country and regional packs in a
+  consistent sequence so generated Pages guide indexes are easier to scan.
+
+## [6.1.5] — 2026-07-03
+
+### Fixed
+
+- **Claude plugin manifest validation.** Added the required `title` field to
+  the TOGAF ADM and Agent Architecture `default_classification` user-config
+  entries so `claude plugin validate` and marketplace installs succeed.
+
+## [6.1.4] — 2026-07-03
+
+### Fixed
+
+- **Pages guide grouping (#633).** Centralized guide section/category metadata
+  so plugin operations, overlay packs, community guides, and uncategorised
+  items render in predictable Pages guide sections instead of collapsing into
+  the generic `Other` bucket.
+- **Standalone overlay reference validation.** Updated reference checks and
+  shared plugin assets so nested Claude overlay docs resolve bundled and core
+  plugin references correctly.
+
+## [6.1.3] — 2026-07-02
+
+### Fixed
+
+- **Codex Pages namespaced invocation (#631).** Updated the Codex pages hooks
+  so `$arckit-codex:arckit-pages` receives the same sync-guides statistics as
+  `$arckit-pages`, allowing the command to complete without reading generated
+  files directly.
+
+## [6.1.2] — 2026-07-02
+
+### Fixed
+
+- **Codex Pages fresh-repo handling (#629).** Updated the generated Codex
+  pages command, prompt, and skill to rely on the `sync-guides` hook for
+  template and version resolution so `$arckit-pages` no longer requires a
+  preinstalled `.arckit` scaffold in a fresh repository.
+
+### Changed
+
+- **Documentation site coverage.** Completed command guide coverage across the
+  ArcKit docs and published the TOGAF ADM and agent architecture guide pages.
+
+## [6.1.0] — 2026-06-30
+
+### Added
+
+- **TOGAF ADM and agent architecture overlays.** Added the community
+  `arckit-togaf-adm` and `arckit-agent-architecture` plugins, plus the
+  supporting doc types, templates, recipes, release wiring, and contributors
+  page coverage.
+
+## [6.0.0] — 2026-06-30
+
+### Added
+
+- **Single Claude Code marketplace repo.** Added release tooling and metadata
+  so `tractorjuice/arckit-claude` publishes the core plugin plus regional,
+  sector, tooling, and supplier overlays from one structured repo.
+
+### Changed
+
+- **Claude marketplace install path.** Updated user-facing documentation,
+  test-repo templates, and release guidance to prefer
+  `tractorjuice/arckit-claude` for Claude Code installs.
+
+## [5.15.2] — 2026-06-30
+
+### Fixed
+
+- **Discord invite links (#623).** Updated Discord invite links across the
+  documentation site.
+
+### Changed
+
+- **Health output documentation (#620).** Clarified that `/arckit:health`
+  writes `docs/health.json` as part of its normal reporting flow.
+- **Documentation site updates.** Added the ArcKit usage thank-you article and
+  GA4 site tag.
+
+## [5.15.1] — 2026-06-29
+
+### Added
+
+- **OpenCode extension metadata.** Added a description to the standalone
+  `arckit-opencode` extension manifest.
+
+### Fixed
+
+- **Codex hook runner resolution (#619).** Codex lifecycle hooks now resolve the
+  hook runner from `CODEX_PLUGIN_ROOT` or the installed plugin cache instead of
+  assuming Codex was started from the extension directory. The converter and
+  Codex tests now guard both bundled plugin hooks and generated standalone
+  config hooks against cwd-dependent runner paths.
+- **Self-Harness utility hardening (#617).** Hardened the Self-Harness support
+  utilities added in v5.15.0.
+- **Standalone extension release tags (#607).** Fixed extension release
+  publishing so standalone extension repos receive release tags consistently.
+- **Documentation site rendering.** Corrected SVG font-family syntax in the new
+  ArcKit Architects hero image.
+
+### Changed
+
+- **Documentation and article index updates.** Added the ArcKit Architects, OKF,
+  and Self-Harness articles, moved ArcKit Architects to the first article slot,
+  refreshed article indexes, `llms.txt`, sitemap metadata, getting-started
+  assistant coverage, and community footer links.
+- **Extension validation coverage (#608).** Added full extension suites to keep
+  generated targets aligned with the converter.
+
 ## [5.15.0] — 2026-06-19
 
 ### Added

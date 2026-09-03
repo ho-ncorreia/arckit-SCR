@@ -1,5 +1,6 @@
 ---
 description: Generate the Service Definition Document for Lot 3 (Cloud Support)
+doc-type: SDD
 effort: max
 handoffs:
   - command: /arckit:pricing
@@ -151,7 +152,7 @@ unsure.
 with the ArcKit helper (no `--next-num` — SDD is not multi-instance):
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/bash/generate-document-id.sh" \
+node "${CLAUDE_PLUGIN_ROOT}/scripts/generate-document-id.mjs" \
      {PROJECT_ID} SDD --filename
 ```
 
@@ -182,6 +183,8 @@ History, and append the standard ArcKit Document Control footer:
 ```
 
 ### 8. Write the SDD
+
+Before writing, read `${CLAUDE_PLUGIN_ROOT}/references/quality-checklist.md` and verify all **Common Checks** plus the **SDD** per-type checks pass. Fix any failures before proceeding.
 
 Use the **Write tool** to save the completed document to:
 

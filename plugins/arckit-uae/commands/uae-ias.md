@@ -1,5 +1,6 @@
 ---
 description: "[COMMUNITY] Generate a UAE IAS Statement of Applicability against the 188 controls (60 management M1–M6 + 128 technical T1–T9), priority-tiered P1–P4. Anchored on the UAE Cybersecurity Council Information Assurance Standard v2."
+doc-type: IAS
 argument-hint: "<project ID or system description>"
 effort: high
 handoffs:
@@ -29,7 +30,7 @@ You are an enterprise architect generating a UAE IAS Statement of Applicability 
    - **First**, check `.arckit/templates-custom/uae-ias-template.md` (user override)
    - **Then**, `.arckit/templates/uae-ias-template.md`
    - **Fallback**, `${CLAUDE_PLUGIN_ROOT}/templates/uae-ias-template.md`
-3. Use `scripts/bash/generate-document-id.sh IAS --filename` for the artefact filename.
+3. Use `node scripts/generate-document-id.mjs <PROJECT_ID> IAS --filename` for the artefact filename.
 4. Resolve the `<!-- DOC-CONTROL-HEADER -->` marker per `RENDERING.md`.
 5. Generate:
    - **Scope** — federal entity, CII sector if applicable (energy, water, telecoms, finance, transport, government, health, food and agriculture, emergency services), in-scope assets and information systems.
@@ -37,8 +38,9 @@ You are an enterprise architect generating a UAE IAS Statement of Applicability 
    - **Risk Treatment Plan** — gaps surfaced from the SoA, target-state plan, owners, deadlines.
    - **CII Registration** (if applicable) — registration status with the UAE Cybersecurity Council, sector designation, sector regulator interactions.
 6. Populate the External References section per `${CLAUDE_PLUGIN_ROOT}/references/citation-instructions.md`. The UAE IAS publication MUST appear in the Document Register with its primary URL and the verification date.
-7. Write the artefact via the Write tool to `projects/<project-id>/<filename>`.
-8. Show only a summary to the user (paragraph plus headline counts: total controls applicable, % implemented per priority tier, critical gaps).
+7. Before writing the file, read `${CLAUDE_PLUGIN_ROOT}/references/quality-checklist.md` and verify all **Common Checks** plus the **IAS** per-type checks pass. Fix any failures before proceeding.
+8. Write the artefact via the Write tool to `projects/<project-id>/<filename>`.
+9. Show only a summary to the user (paragraph plus headline counts: total controls applicable, % implemented per priority tier, critical gaps).
 
 ## Authoritative anchor
 

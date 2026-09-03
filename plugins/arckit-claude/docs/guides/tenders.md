@@ -4,7 +4,7 @@
 
 `/arckit:tenders` discovers procurement market intelligence — award-value benchmarks, top suppliers, incumbency patterns, and concentration — from live UK procurement notices via the UK Tenders MCP.
 
-> **Agent Architecture**: This command uses a three-tier reader/writer subagent split. The **`arckit-tenders-reader`** subagent fetches evidence from the UK Tenders MCP (keeping that I/O isolated from your main context window). The orchestrator tier (the slash command) validates the reader's JSON payload against the `tenders-handoff.schema.json` schema and computes deterministic derived fields. The **`arckit-tenders-writer`** subagent then renders the final artefact. The slash command launches and coordinates both agents.
+> **Agent Architecture**: This command uses a three-tier reader/writer subagent split. The **`arckit-tenders-reader`** subagent fetches evidence from the UK Tenders MCP (keeping that I/O isolated from your main context window). The orchestrator tier (the slash command) validates the reader's JSON payload against the `tenders-handoff.schema.json` schema and computes deterministic derived fields. The **`arckit-tenders-writer`** subagent then renders the final artefact. The slash command launches and coordinates both agents. On runtimes without subagent dispatch (Codex, Gemini, OpenCode, Copilot, Paperclip, Vibe, Kimi), the command ships as the equivalent single-agent `arckit-tenders` prompt instead, which does the same discovery, derivation and rendering in one role.
 
 ---
 
@@ -91,6 +91,20 @@ You can combine flags: `/arckit:tenders cloud hosting --cpv 72200000 --buyer 'DV
 Outputs: `projects/<id>/research/ARC-<id>-TNDR-<NNN>-v1.0.md`
 
 > **Multi-instance type**: `TNDR` artefacts are sequenced within the project's `research/` directory. Re-running produces a new numbered artefact (`TNDR-001`, `TNDR-002`, …) rather than overwriting the previous run.
+
+---
+
+## Long runs: Remote Control + push notifications
+
+`/arckit:tenders` can take several minutes when the UK Tenders MCP needs to page through large result sets. To avoid babysitting the terminal, pair it with [Claude Code Remote Control](https://code.claude.com/docs/en/remote-control):
+
+```bash
+claude remote-control
+```
+
+Drive the session from claude.ai/code or the mobile app, then enable `/config → Push when Claude decides` so your phone gets a notification on completion. ArcKit's minimum Claude Code floor (v2.1.251) already covers the v2.1.110 RC requirement.
+
+Caveats: Pro/Max plans only (no API keys, no Bedrock/Vertex/Foundry), push is a single on/off so chatty agents can over-notify, and the local `claude` process must keep running.
 
 ---
 

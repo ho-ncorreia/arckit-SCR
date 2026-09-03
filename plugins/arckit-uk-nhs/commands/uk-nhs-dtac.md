@@ -1,5 +1,6 @@
 ---
 description: "[COMMUNITY] Generate an NHS Digital Technology Assessment Criteria (DTAC v3) assessment for a digital health product being procured or assured by an NHS organisation."
+doc-type: NHSDTAC
 argument-hint: "<project ID or product, e.g. '001', 'paediatric growth tool'>"
 effort: high
 keep-coding-instructions: true
@@ -46,7 +47,7 @@ DTAC was introduced by NHSX (now part of NHS England's Transformation Directorat
 |---|---|---|---|
 | 1 | Clinical Safety | DCB0129 (manufacturer) + DCB0160 (deployer) compliance | `/arckit:uk-nhs-dcb0129`, `/arckit:uk-nhs-dcb0160` |
 | 2 | Data Protection | UK GDPR, DPA 2018, DSPT, DPIA | `/arckit:dpia` |
-| 3 | Technical Assurance | Security, cloud, software lifecycle, business continuity | `/arckit:secure`, `/arckit:hld`, `/arckit:dld` |
+| 3 | Technical Assurance | Security, cloud, software lifecycle, business continuity | `/arckit:secure`, `/arckit:hld-review`, `/arckit:dld-review` |
 | 4 | Interoperability | FHIR UK Core, SNOMED CT, NHS Number, NHS APIs (PDS, e-RS, GP Connect) | `/arckit:data-model`, `/arckit:adr` |
 | 5 | Usability and Accessibility | NHS Service Standard, WCAG 2.2 AA | `/arckit:service-assessment` |
 | AI annex | AI / ML components | Model governance, ATRS, training-data provenance, fairness, drift monitoring | `/arckit:atrs` |
@@ -66,9 +67,9 @@ DTAC was introduced by NHSX (now part of NHS England's Transformation Directorat
 2. **Read the template**:
    - `templates-custom/uk-nhs-dtac-template.md` → `.arckit/templates/uk-nhs-dtac-template.md` → `${CLAUDE_PLUGIN_ROOT}/templates/uk-nhs-dtac-template.md`
 
-3. **Resolve the project** via `scripts/bash/create-project.sh --json`.
+3. **Resolve the project**: locate the target `projects/{NNN}-<slug>/` from the ArcKit Project Context; only if no project exists, create one with `scripts/bash/create-project.sh --json --name "<project-name>"`. `create-project.sh` is create-only — invoked with no `--name` it exits 1 without returning a path.
 
-4. **Generate the filename** via `scripts/bash/generate-document-id.sh <PROJECT_ID> NHSDTAC --filename` (this is a single-instance artefact; no `--next-num`).
+4. **Generate the filename** via `node scripts/generate-document-id.mjs <PROJECT_ID> NHSDTAC --filename` (this is a single-instance artefact; no `--next-num`).
 
 5. **Resolve the `<!-- DOC-CONTROL-HEADER -->` marker** per `RENDERING.md`. The DTAC artefact is a conventional ArcKit `ARC-{NNN}-NHSDTAC-v1.0.md` file.
 
@@ -128,9 +129,10 @@ DTAC was introduced by NHSX (now part of NHS England's Transformation Directorat
 
 7. **Populate the External References section** per `${CLAUDE_PLUGIN_ROOT}/references/citation-instructions.md`. DTAC v3, NHS DCB0129, NHS DCB0160, UK GDPR, DSPT, WCAG 2.2, and ATRS (if AI) MUST appear in the Document Register.
 
-8. **Write the artefact via the Write tool** to `projects/{NNN}-<slug>/ARC-{NNN}-NHSDTAC-v1.0.md`.
+8. **Before writing the file**, read `${CLAUDE_PLUGIN_ROOT}/references/quality-checklist.md` and verify all **Common Checks** plus the **NHSDTAC** per-type checks pass. Fix any failures before proceeding.
+9. **Write the artefact via the Write tool** to `projects/{NNN}-<slug>/ARC-{NNN}-NHSDTAC-v1.0.md`.
 
-9. **Show only a summary to the user**: pass / partial / fail counts per section, list of `[PENDING]` items requiring human input, recommended next commands.
+10. **Show only a summary to the user**: pass / partial / fail counts per section, list of `[PENDING]` items requiring human input, recommended next commands.
 
 ## Important Notes
 

@@ -1,5 +1,6 @@
 ---
 description: "[COMMUNITY] Assess sovereign cloud residency under the UAE National Cloud Security Policy v2. Validates per-classification residency, names approved CSP options (Core42 / G42 sovereign / Microsoft UAE North + Central, TDRA FedNet, e& Sovereign Launchpad on AWS), and captures shared-responsibility matrix and exit/portability plan."
+doc-type: CRES
 argument-hint: "<project ID or service name>"
 effort: high
 handoffs:
@@ -31,7 +32,7 @@ You are an enterprise architect assessing UAE sovereign cloud residency under th
    - **First**, check `.arckit/templates-custom/uae-cloud-residency-template.md` (user override)
    - **Then**, `.arckit/templates/uae-cloud-residency-template.md`
    - **Fallback**, `${CLAUDE_PLUGIN_ROOT}/templates/uae-cloud-residency-template.md`
-3. Use `scripts/bash/generate-document-id.sh CRES --filename` for the artefact filename.
+3. Use `node scripts/generate-document-id.mjs <PROJECT_ID> CRES --filename` for the artefact filename.
 4. Resolve the `<!-- DOC-CONTROL-HEADER -->` marker per `RENDERING.md`.
 5. Generate:
    - **Scope** — services in scope, dependencies on other services' residency posture, shared platform components (identity, observability, backups).
@@ -40,8 +41,9 @@ You are an enterprise architect assessing UAE sovereign cloud residency under th
    - **Shared-Responsibility Matrix** — per chosen CSP, division of security responsibilities across infrastructure, platform, application, data, identity, and operational layers.
    - **Exit and Portability Plan** — data egress strategy, format portability, identity migration, key custody on exit, contingency residency on regulatory change.
 6. Populate the External References section per `${CLAUDE_PLUGIN_ROOT}/references/citation-instructions.md`. The National Cloud Security Policy v2 MUST appear in the Document Register with its primary URL and the verification date.
-7. Write the artefact via the Write tool to `projects/<project-id>/<filename>`.
-8. Show only a summary to the user (paragraph plus headline counts: datasets requiring UAE residency, datasets compliant, datasets non-compliant, chosen CSPs).
+7. Before writing the file, read `${CLAUDE_PLUGIN_ROOT}/references/quality-checklist.md` and verify all **Common Checks** plus the **CRES** per-type checks pass. Fix any failures before proceeding.
+8. Write the artefact via the Write tool to `projects/<project-id>/<filename>`.
+9. Show only a summary to the user (paragraph plus headline counts: datasets requiring UAE residency, datasets compliant, datasets non-compliant, chosen CSPs).
 
 ## Authoritative anchor
 

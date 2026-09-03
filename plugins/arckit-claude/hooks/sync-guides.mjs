@@ -24,6 +24,15 @@ import { join, dirname, resolve, relative, basename, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DOC_TYPES, SUBDIR_MAP } from '../config/doc-types.mjs';
 import {
+  GUIDE_CATEGORY_ORDER,
+  GUIDE_SECTION_ORDER,
+  GUIDE_SECTIONS,
+  ROLE_COMMAND_COUNTS,
+  ROLE_FAMILIES,
+  guideMetadataForStem,
+} from '../config/guide-groups.mjs';
+import { spawnSync } from 'node:child_process';
+import {
   isDir, isFile, mtimeMs, readText, listDir,
   findRepoRoot, parseHookInput,
 } from './hook-utils.mjs';
@@ -122,93 +131,6 @@ function hasArcExt(filename) {
   return false;
 }
 
-const GUIDE_CATEGORIES = {
-  // Getting Started
-  'init': 'Getting Started', 'start': 'Getting Started', 'upgrading': 'Getting Started',
-  'customize': 'Getting Started', 'template-builder': 'Getting Started',
-  'remote-control': 'Getting Started',
-  'productivity': 'Getting Started',
-  // Discovery
-  'requirements': 'Discovery', 'stakeholders': 'Discovery', 'stakeholder-analysis': 'Discovery',
-  'research': 'Discovery', 'datascout': 'Discovery',
-  // Planning
-  'sobc': 'Planning', 'business-case': 'Planning', 'plan': 'Planning', 'roadmap': 'Planning',
-  'backlog': 'Planning', 'strategy': 'Planning', 'migration': 'Planning',
-  // Architecture
-  'principles': 'Architecture', 'adr': 'Architecture', 'diagram': 'Architecture',
-  'wardley': 'Architecture', 'data-model': 'Architecture', 'hld-review': 'Architecture',
-  'dld-review': 'Architecture', 'design-review': 'Architecture', 'platform-design': 'Architecture',
-  'data-mesh-contract': 'Architecture', 'c4-layout-science': 'Architecture',
-  'dfd': 'Architecture', 'framework': 'Architecture',
-  // Governance
-  'risk': 'Governance', 'risk-management': 'Governance', 'traceability': 'Governance',
-  'principles-compliance': 'Governance', 'analyze': 'Governance', 'artifact-health': 'Governance',
-  'data-quality-framework': 'Governance', 'knowledge-compounding': 'Governance',
-  'search': 'Governance', 'impact': 'Governance',
-  'conformance': 'Governance', 'health': 'Governance', 'maturity-model': 'Governance',
-  // Compliance
-  'tcop': 'Compliance', 'secure': 'Compliance', 'mod-secure': 'Compliance', 'dpia': 'Compliance',
-  'ai-playbook': 'Compliance', 'atrs': 'Compliance', 'jsp-936': 'Compliance',
-  'service-assessment': 'Compliance', 'govs-007-security': 'Compliance',
-  'national-data-strategy': 'Compliance', 'codes-of-practice': 'Compliance',
-  'security-hooks': 'Compliance',
-  // Operations
-  'devops': 'Operations', 'mlops': 'Operations', 'finops': 'Operations',
-  'operationalize': 'Operations',
-  // Procurement
-  'sow': 'Procurement', 'evaluate': 'Procurement', 'dos': 'Procurement',
-  'gcloud-search': 'Procurement', 'gcloud-clarify': 'Procurement', 'procurement': 'Procurement',
-  'score': 'Procurement',
-  // Integrations
-  'aws-research': 'Integrations', 'azure-research': 'Integrations', 'gcp-research': 'Integrations',
-  'mcp-servers': 'Integrations', 'pinecone-mcp': 'Integrations',
-  'trello': 'Integrations', 'servicenow': 'Integrations',
-  // Reporting
-  'pages': 'Reporting', 'story': 'Reporting', 'presentation': 'Reporting',
-  'glossary': 'Reporting',
-  // Community — EU regulatory (all Compliance)
-  'eu-ai-act': 'Compliance', 'eu-cra': 'Compliance', 'eu-data-act': 'Compliance',
-  'eu-dora': 'Compliance', 'eu-dsa': 'Compliance', 'eu-nis2': 'Compliance',
-  'eu-rgpd': 'Compliance',
-  // Community — French public sector (majority Compliance, some Architecture/Governance/Procurement)
-  'fr-algorithme-public': 'Compliance', 'fr-anssi': 'Compliance',
-  'fr-dinum': 'Compliance', 'fr-pssi': 'Compliance',
-  'fr-rgpd': 'Compliance', 'fr-secnumcloud': 'Compliance',
-  'fr-anssi-carto': 'Architecture', 'fr-code-reuse': 'Architecture',
-  'fr-dr': 'Governance', 'fr-ebios': 'Governance',
-  'fr-marche-public': 'Procurement',
-};
-
-const GUIDE_STATUS = {};
-for (const name of ['plan','principles','stakeholders','stakeholder-analysis','risk','sobc','requirements','data-model','diagram','traceability','principles-compliance','story','sow','evaluate','customize','risk-management','business-case']) GUIDE_STATUS[name] = 'live';
-for (const name of ['dpia','research','strategy','roadmap','adr','hld-review','dld-review','backlog','servicenow','analyze','service-assessment','tcop','secure','presentation','artifact-health','design-review','procurement','knowledge-compounding','c4-layout-science','security-hooks','codes-of-practice','data-quality-framework','govs-007-security','national-data-strategy','upgrading','start','conformance','productivity','remote-control','mcp-servers','search','score','impact']) GUIDE_STATUS[name] = 'beta';
-for (const name of ['data-mesh-contract','ai-playbook','atrs','pages','template-builder']) GUIDE_STATUS[name] = 'alpha';
-for (const name of ['platform-design','wardley','azure-research','aws-research','gcp-research','datascout','dos','gcloud-search','gcloud-clarify','trello','devops','mlops','finops','operationalize','mod-secure','jsp-936','migration','pinecone-mcp','dfd','framework','health','maturity-model','glossary','init']) GUIDE_STATUS[name] = 'experimental';
-for (const name of ['eu-ai-act','eu-cra','eu-data-act','eu-dora','eu-dsa','eu-nis2','eu-rgpd','fr-algorithme-public','fr-anssi','fr-anssi-carto','fr-code-reuse','fr-dinum','fr-dr','fr-ebios','fr-marche-public','fr-pssi','fr-rgpd','fr-secnumcloud']) GUIDE_STATUS[name] = 'community';
-
-const ROLE_FAMILIES = {
-  'enterprise-architect': 'Architecture', 'solution-architect': 'Architecture',
-  'data-architect': 'Architecture', 'security-architect': 'Architecture',
-  'business-architect': 'Architecture', 'technical-architect': 'Architecture',
-  'network-architect': 'Architecture',
-  'cto-cdio': 'Chief Digital and Data', 'cdo': 'Chief Digital and Data',
-  'ciso': 'Chief Digital and Data',
-  'product-manager': 'Product and Delivery', 'delivery-manager': 'Product and Delivery',
-  'business-analyst': 'Product and Delivery', 'service-owner': 'Product and Delivery',
-  'data-governance-manager': 'Data', 'performance-analyst': 'Data',
-  'it-service-manager': 'IT Operations',
-  'devops-engineer': 'Software Development',
-};
-
-const ROLE_COMMAND_COUNTS = {
-  'enterprise-architect': 12, 'solution-architect': 10, 'data-architect': 4,
-  'security-architect': 5, 'business-architect': 5, 'technical-architect': 5,
-  'network-architect': 3, 'cto-cdio': 5, 'cdo': 4, 'ciso': 5,
-  'product-manager': 5, 'delivery-manager': 6, 'business-analyst': 4,
-  'service-owner': 3, 'data-governance-manager': 4, 'performance-analyst': 4,
-  'it-service-manager': 3, 'devops-engineer': 3,
-};
-
 // ── Doc type extraction from filename ──
 
 // Match compound types first (SECD-MOD, PRIN-COMP), then simple types.
@@ -264,6 +186,8 @@ function buildGuides(guideTitles) {
         title,
         category: 'Community',
         status: 'community',
+        section: GUIDE_SECTIONS.COMMUNITY,
+        pack: 'Community',
       });
       continue;
     }
@@ -283,12 +207,16 @@ function buildGuides(guideTitles) {
     } else if (!rel.includes('/')) {
       // Top-level guide only (exclude uk-government/, uk-mod/ subdirs)
       const stem = basename(rel, '.md');
-      guides.push({
+      const meta = guideMetadataForStem(stem);
+      const guide = {
         path,
         title,
-        category: GUIDE_CATEGORIES[stem] || 'Other',
-        status: GUIDE_STATUS[stem] || 'beta',
-      });
+        category: meta.category,
+        status: meta.status,
+        section: meta.section,
+      };
+      if (meta.pack) guide.pack = meta.pack;
+      guides.push(guide);
     }
   }
 
@@ -380,6 +308,95 @@ function scanGlobalDocs(repoRoot) {
   return { global, globalExternal, globalPolicies };
 }
 
+// ── Guard: never publish an index entry for a file git will not publish ─────
+//
+// update-manifest.mjs gained this rule in #690 ("a published index must not
+// reference a file that will never be published"). This hook, which rewrites
+// the WHOLE manifest rather than appending one entry, never got it -- so
+// running /arckit:pages in a repo that gitignores its projects/ published a
+// local, unpublishable scan. ArcKit gitignores its own projects/, so that is
+// exactly what happened here (#727).
+//
+// Which project directories git will never publish.
+//
+// Filtering at the SOURCE rather than pruning the finished manifest, because
+// the manifest is not one shape: projects[] and global[] are arrays of
+// {path}, but dependencyGraph.nodes is an object keyed by document ID and
+// comes from a SEPARATE scanAllArtifacts() call. A generic post-hoc walk
+// missed the graph entirely and published 7 gitignored paths plus 20 edges
+// referencing them -- the exact leak this guard exists to close. Deciding once,
+// where directories are discovered, makes every derived structure correct by
+// construction.
+//
+// Directory granularity is deliberate. The real case is a whole projects/ tree
+// being gitignored, which is ArcKit's own situation; a single artefact ignored
+// inside an otherwise tracked project is not something we have ever seen, and
+// failing to catch it costs one stale link rather than a wholesale leak.
+//
+// Fails OPEN on any error -- no git, not a repo, git unavailable all mean
+// "cannot prove it is ignored", so nothing is skipped. Note this asks about
+// IGNORED, not merely untracked: an artefact written moments ago in a repo that
+// tracks projects/ is untracked and must still be published.
+function ignoredProjectDirs(repoRoot, projectsDir, entries) {
+  const empty = new Set();
+  const candidates = ['projects', ...entries.map((e) => `projects/${e}`)];
+  try {
+    const r = spawnSync('git', ['check-ignore', '--stdin'], {
+      cwd: repoRoot,
+      input: candidates.join('\n') + '\n',
+      encoding: 'utf8',
+      timeout: 5000,
+    });
+    // 0 = some ignored, 1 = none ignored, anything else = error.
+    if (r.error || (r.status !== 0 && r.status !== 1)) return empty;
+    const ignored = new Set(
+      (r.stdout || '').split('\n').map((l) => l.trim()).filter(Boolean)
+    );
+    // The whole tree ignored implies every project under it.
+    if (ignored.has('projects') || ignored.has('projects/')) {
+      return new Set(['*', ...entries]);
+    }
+    return new Set(
+      [...ignored].map((p) => p.replace(/^projects\//, '').replace(/\/$/, ''))
+    );
+  } catch {
+    return empty;
+  }
+}
+
+// ── Preserved regions in docs/index.html ───────────────────────────────────
+//
+// The generated page is overwritten wholesale on every run, so any hand-added
+// <head> content is silently destroyed. arckit.org lost its analytics tag that
+// way (#727), and the tag cannot simply live in the template: the template
+// ships to every user, and baking one site's measurement ID into it would
+// inject that ID into everybody's generated page.
+//
+// Anything between these markers in the EXISTING docs/index.html is carried
+// across into the regenerated one.
+const PRESERVE_RE = /<!--\s*ARCKIT:PRESERVE\s*-->([\s\S]*?)<!--\s*\/ARCKIT:PRESERVE\s*-->/;
+
+function preservedRegion(existingHtml) {
+  const m = existingHtml && existingHtml.match(PRESERVE_RE);
+  return m ? m[1] : null;
+}
+
+function applyPreservedRegion(html, existingHtml) {
+  const kept = preservedRegion(existingHtml);
+  if (kept === null || !PRESERVE_RE.test(html)) return html;
+  return html.replace(
+    PRESERVE_RE,
+    () => `<!-- ARCKIT:PRESERVE -->${kept}<!-- /ARCKIT:PRESERVE -->`
+  );
+}
+
+// Manifest JSON key for a SUBDIR_MAP directory: 'wardley-maps' -> 'wardleyMaps'.
+// Used both to initialise the project's buckets and to route files into them;
+// they must agree, so they share this.
+function subdirKey(dir) {
+  return dir.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+}
+
 function scanProject(repoRoot, projectName) {
   const projectDir = join(repoRoot, 'projects', projectName);
   const projectPath = `projects/${projectName}`;
@@ -395,18 +412,24 @@ function scanProject(repoRoot, projectName) {
     id: projectName,
     name: displayName,
     documents: [],
-    diagrams: [],
-    decisions: [],
-    wardleyMaps: [],
-    dataContracts: [],
     reviews: [],
-    research: [],
     vendors: [],
     vendorProfiles: [],
     techNotes: [],
     dataSourceProfiles: [],
     external: [],
   };
+
+  // One bucket per SUBDIR_MAP destination, DERIVED rather than hand-listed.
+  // The loop below keys subdirMap the same way, so a hand-maintained list here
+  // silently goes stale the moment a doc-type registers a new subdirectory --
+  // and then scanProject pushes into `undefined` and /arckit:pages dies before
+  // it can rebuild the dashboard. That shipped twice: `audits` with CDAU in
+  // v6.7.0 and `framework` with FWRK in #714. Neither was reported, because
+  // the crash only fires in a repo that actually has one of those directories.
+  for (const dir of new Set(Object.values(SUBDIR_MAP))) {
+    project[subdirKey(dir)] = [];
+  }
 
   // Core documents in project root — accepts any extension registered in DOC_TYPES
   for (const f of listDir(projectDir)) {
@@ -428,7 +451,7 @@ function scanProject(repoRoot, projectName) {
   // Maps directory name → manifest JSON key (camelCase)
   const subdirMap = {};
   for (const dir of new Set(Object.values(SUBDIR_MAP))) {
-    subdirMap[dir] = dir.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+    subdirMap[dir] = subdirKey(dir);
   }
   subdirMap['reviews'] = 'reviews';
 
@@ -746,24 +769,36 @@ function buildLlmsTxt(manifest, repoInfo, version) {
     }
   }
 
-  // Guides — grouped by category, only top-level (skip roles)
+  // Guides — grouped by section and category, only top-level (skip roles)
   if (manifest.guides && manifest.guides.length > 0) {
     lines.push('## ArcKit guides');
     lines.push('');
-    const byCategory = {};
+    const bySection = {};
     for (const g of manifest.guides) {
+      const section = g.section || GUIDE_SECTIONS.OTHER;
       const cat = g.category || 'Other';
-      (byCategory[cat] = byCategory[cat] || []).push(g);
+      bySection[section] = bySection[section] || {};
+      (bySection[section][cat] = bySection[section][cat] || []).push(g);
     }
-    const categoryOrder = ['Getting Started', 'Discovery', 'Planning', 'Architecture', 'Governance', 'Compliance', 'Operations', 'Procurement', 'Integrations', 'Reporting', 'Community', 'Other'];
-    for (const cat of categoryOrder) {
-      const entries = byCategory[cat];
-      if (!entries) continue;
-      for (const g of entries) {
-        lines.push(`- [${g.title}](${guideUrl(g.path)}): ${cat}.`);
+
+    const ordered = (keys, preferred) => [...keys].sort((a, b) => {
+      const aIdx = preferred.indexOf(a);
+      const bIdx = preferred.indexOf(b);
+      if (aIdx === -1 && bIdx === -1) return a.localeCompare(b);
+      return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
+    });
+
+    for (const section of ordered(Object.keys(bySection), GUIDE_SECTION_ORDER)) {
+      lines.push(`### ${section}`);
+      lines.push('');
+      for (const cat of ordered(Object.keys(bySection[section]), GUIDE_CATEGORY_ORDER)) {
+        for (const g of bySection[section][cat]) {
+          const pack = g.pack && g.pack !== cat ? ` / ${g.pack}` : '';
+          lines.push(`- [${g.title}](${guideUrl(g.path)}): ${cat}${pack}.`);
+        }
       }
+      lines.push('');
     }
-    lines.push('');
   }
 
   // DDaT role guides
@@ -803,7 +838,16 @@ function buildLlmsTxt(manifest, repoInfo, version) {
 
 function buildManifest(repoRoot, repoInfo, guideTitles) {
   const { guides, roleGuides } = buildGuides(guideTitles);
-  const { global: globalDocs, globalExternal, globalPolicies } = scanGlobalDocs(repoRoot);
+
+  const projectsDir = join(repoRoot, 'projects');
+  const allEntries = listDir(projectsDir).filter((e) => isDir(join(projectsDir, e)));
+  const ignoredDirs = ignoredProjectDirs(repoRoot, projectsDir, allEntries);
+
+  // projects/000-global obeys the same rule as any other project directory.
+  let { global: globalDocs, globalExternal, globalPolicies } =
+    ignoredDirs.has('000-global')
+      ? { global: [], globalExternal: [], globalPolicies: [] }
+      : scanGlobalDocs(repoRoot);
 
   // Find default document (principles if exists)
   const defaultDoc = globalDocs.find(d => d.documentId && d.documentId.includes('PRIN'));
@@ -811,11 +855,10 @@ function buildManifest(repoRoot, repoInfo, guideTitles) {
 
   // Scan numbered projects (skip 000-global)
   const projects = [];
-  const projectsDir = join(repoRoot, 'projects');
-  for (const entry of listDir(projectsDir)) {
+  for (const entry of allEntries) {
     if (entry === '000-global') continue;
-    if (!isDir(join(projectsDir, entry))) continue;
     if (!/^\d{3}-/.test(entry)) continue;
+    if (ignoredDirs.has(entry)) { skippedProjectDirs++; continue; }
     projects.push(scanProject(repoRoot, entry));
   }
 
@@ -825,6 +868,8 @@ function buildManifest(repoRoot, repoInfo, guideTitles) {
     defaultDocument: defaultDoc ? defaultDoc.path : '',
     guides,
     roleGuides,
+    guideSectionOrder: GUIDE_SECTION_ORDER,
+    guideCategoryOrder: GUIDE_CATEGORY_ORDER,
     global: globalDocs,
   };
 
@@ -847,6 +892,18 @@ function buildManifest(repoRoot, repoInfo, guideTitles) {
     const graph = scanAllArtifacts(projectsDir, {
       withNodeMetadata: true,
     });
+    // scanAllArtifacts walks projects/ independently of the loop above, so it
+    // needs the same rule applied or the graph republishes what the manifest
+    // just dropped. Nodes carry their project directory name; edges are dropped
+    // when either endpoint goes, leaving no dangling references.
+    if (ignoredDirs.size) {
+      for (const [id, node] of Object.entries(graph.nodes)) {
+        if (ignoredDirs.has(node.project)) delete graph.nodes[id];
+      }
+      graph.edges = graph.edges.filter(
+        (e) => graph.nodes[e.from] && graph.nodes[e.to]
+      );
+    }
     if (Object.keys(graph.nodes).length > 0) {
       const baseline = new Date();
       tagNodeHealth(graph, baseline);
@@ -960,6 +1017,7 @@ const version = (readText(join(pluginRoot, 'VERSION')) || '').trim();
 
 // ── 3. Template → index.html ──
 
+let skippedProjectDirs = 0;
 let templateProcessed = false;
 let templateSource = '';
 
@@ -989,7 +1047,9 @@ if (templatePath) {
 
   const docsDir = join(repoRoot, 'docs');
   if (!isDir(docsDir)) mkdirSync(docsDir, { recursive: true });
-  writeFileSync(join(repoRoot, 'docs', 'index.html'), html, 'utf8');
+  const indexPath = join(repoRoot, 'docs', 'index.html');
+  html = applyPreservedRegion(html, readText(indexPath) || '');
+  writeFileSync(indexPath, html, 'utf8');
   templateProcessed = true;
 }
 
@@ -1058,6 +1118,9 @@ const message = [
   `### Files Written`,
   `- \`docs/index.html\` — ${templateProcessed ? `from ${templateSource}` : 'NOT written (template not found)'}`,
   `- \`docs/manifest.json\` — ${manifest.projects.length} project(s), ${guideCount} guides, ${roleCount} role guides`,
+  skippedProjectDirs > 0
+    ? `  - **${skippedProjectDirs}** gitignored project director(ies) omitted — a published index must not reference unpublishable files`
+    : '',
   `- \`docs/llms.txt\` — ${llmsTxtAction}`,
   ``,
   `### Guide Sync`,

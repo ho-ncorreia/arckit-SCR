@@ -1,5 +1,6 @@
 ---
 description: Design a new cloud service offering for the G-Cloud marketplace
+doc-type: SVCD
 effort: high
 handoffs:
   - command: /arckit:sdd-lot2
@@ -177,7 +178,7 @@ present, defaulting the Classification field to `${user_config.default_classific
 the ArcKit helper:
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/bash/generate-document-id.sh" \
+node "${CLAUDE_PLUGIN_ROOT}/scripts/generate-document-id.mjs" \
      {PROJECT_ID} SVCD --filename
 ```
 
@@ -206,6 +207,8 @@ footer at the end of the document:
 ```
 
 ### 10. Write the service-design document
+
+Before writing, read `${CLAUDE_PLUGIN_ROOT}/references/quality-checklist.md` and verify all **Common Checks** plus the **SVCD** per-type checks pass. Fix any failures before proceeding.
 
 Use the **Write tool** to save the completed document to:
 

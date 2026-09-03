@@ -2,13 +2,13 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
         <loc>https://arckit.org/</loc>
-        <lastmod>2026-06-15</lastmod>
+        <lastmod>2026-07-01</lastmod>
         <changefreq>weekly</changefreq>
         <priority>1.0</priority>
     </url>
     <url>
         <loc>https://arckit.org/commands.html</loc>
-        <lastmod>2026-06-15</lastmod>
+        <lastmod>2026-07-01</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.9</priority>
     </url>
@@ -20,13 +20,13 @@
     </url>
     <url>
         <loc>https://arckit.org/guides.html</loc>
-        <lastmod>2026-06-15</lastmod>
+        <lastmod>2026-07-01</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.8</priority>
     </url>
     <url>
         <loc>https://arckit.org/articles.html</loc>
-        <lastmod>2026-06-19</lastmod>
+        <lastmod>2026-07-01</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.8</priority>
     </url>
@@ -325,6 +325,24 @@
         <priority>0.6</priority>
     </url>
     <url>
+        <loc>https://arckit.org/article-viewer.html?a=2026-06-29-arckit-usage-signals</loc>
+        <lastmod>2026-06-29</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
+    </url>
+    <url>
+        <loc>https://arckit.org/article-viewer.html?a=2026-06-30-arckit-agent-architecture</loc>
+        <lastmod>2026-06-30</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
+    </url>
+    <url>
+        <loc>https://arckit.org/article-viewer.html?a=2026-07-01-arckit-togaf-adm</loc>
+        <lastmod>2026-07-01</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
+    </url>
+    <url>
         <loc>https://arckit.org/guide-viewer.html</loc>
         <lastmod>2026-05-16</lastmod>
         <changefreq>monthly</changefreq>
@@ -332,7 +350,7 @@
     </url>
     <url>
         <loc>https://arckit.org/llms.txt</loc>
-        <lastmod>2026-06-19</lastmod>
+        <lastmod>2026-07-01</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.5</priority>
     </url>

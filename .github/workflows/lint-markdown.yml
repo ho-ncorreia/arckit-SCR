@@ -7,12 +7,47 @@ on:
       - "**/*.md"
       - ".markdownlint-cli2.jsonc"
       - ".github/workflows/lint-markdown.yml"
+      - "scripts/tests/**"
       - "scripts/check_references.py"
       - "scripts/check_recipes.py"
       - "scripts/check_doctype_collisions.py"
+      - "scripts/check-guide-parity.py"
+      - "scripts/check-customize-table.py"
+      - "scripts/check-doc-type-registry.py"
+      - "scripts/check_oaa_axioms.py"
+      - "scripts/check-agent-frontmatter.py"
+      - "scripts/check-orchestrator-leaks.py"
+      - "scripts/check-action-pins.py"
+      - ".github/workflows/*.yml"
+      - "scripts/sync-shared-assets.py"
+      - "scripts/standardise-colon.py"
+      - "package.json"
+      - "package-lock.json"
+      - "scripts/check-guide-site-links.py"
+      - "scripts/check-contributor-credits.py"
+      - "scripts/check-llms-txt.py"
+      - "docs/llms.txt"
+      - "scripts/check-quality-checklist-refs.py"
+      - "scripts/check-citation-section-refs.py"
+      - "scripts/check-quality-checklist-ladders.py"
+      - "scripts/check-doc-control-resolution.py"
+      - "scripts/check-common-parity.py"
+      - "scripts/check-create-project-invocations.py"
+      - "scripts/bash/common.sh"
+      - "scripts/python/common.py"
+      - "plugins/arckit-claude/scripts/bash/common.sh"
+      - "plugins/arckit-claude/scripts/python/common.py"
+      - "docs/contributors.html"
+      - "docs/guides.html"
+      - "docs/roles.html"
       - "plugins/arckit-*/recipes/**"
       - "plugins/arckit-claude/skills/arckit-build/recipes/**"
       - "plugins/arckit-claude/config/doc-types.mjs"
+      - "plugins/arckit-claude/scripts/generate-document-id.mjs"
+      - "scripts/bash/generate-document-id.sh"
+      - "plugins/arckit-claude/scripts/bash/generate-document-id.sh"
+      - "plugins/arckit-claude/scripts/csf-score.mjs"
+      - "plugins/arckit-eu/data/**"
       - "plugins/arckit-claude/.claude-plugin/plugin.json"
       - "plugins/arckit-claude/hooks/**"
       - "plugins/arckit-claude/schemas/tenders-handoff.schema.json"
@@ -22,12 +57,47 @@ on:
       - "**/*.md"
       - ".markdownlint-cli2.jsonc"
       - ".github/workflows/lint-markdown.yml"
+      - "scripts/tests/**"
       - "scripts/check_references.py"
       - "scripts/check_recipes.py"
       - "scripts/check_doctype_collisions.py"
+      - "scripts/check-guide-parity.py"
+      - "scripts/check-customize-table.py"
+      - "scripts/check-doc-type-registry.py"
+      - "scripts/check_oaa_axioms.py"
+      - "scripts/check-agent-frontmatter.py"
+      - "scripts/check-orchestrator-leaks.py"
+      - "scripts/check-action-pins.py"
+      - ".github/workflows/*.yml"
+      - "scripts/sync-shared-assets.py"
+      - "scripts/standardise-colon.py"
+      - "package.json"
+      - "package-lock.json"
+      - "scripts/check-guide-site-links.py"
+      - "scripts/check-contributor-credits.py"
+      - "scripts/check-llms-txt.py"
+      - "docs/llms.txt"
+      - "scripts/check-quality-checklist-refs.py"
+      - "scripts/check-citation-section-refs.py"
+      - "scripts/check-quality-checklist-ladders.py"
+      - "scripts/check-doc-control-resolution.py"
+      - "scripts/check-common-parity.py"
+      - "scripts/check-create-project-invocations.py"
+      - "scripts/bash/common.sh"
+      - "scripts/python/common.py"
+      - "plugins/arckit-claude/scripts/bash/common.sh"
+      - "plugins/arckit-claude/scripts/python/common.py"
+      - "docs/contributors.html"
+      - "docs/guides.html"
+      - "docs/roles.html"
       - "plugins/arckit-*/recipes/**"
       - "plugins/arckit-claude/skills/arckit-build/recipes/**"
       - "plugins/arckit-claude/config/doc-types.mjs"
+      - "plugins/arckit-claude/scripts/generate-document-id.mjs"
+      - "scripts/bash/generate-document-id.sh"
+      - "plugins/arckit-claude/scripts/bash/generate-document-id.sh"
+      - "plugins/arckit-claude/scripts/csf-score.mjs"
+      - "plugins/arckit-eu/data/**"
       - "plugins/arckit-claude/.claude-plugin/plugin.json"
       - "plugins/arckit-claude/hooks/**"
       - "plugins/arckit-claude/schemas/tenders-handoff.schema.json"
@@ -37,13 +107,13 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
-      - uses: DavidAnson/markdownlint-cli2-action@v19
+      - uses: DavidAnson/markdownlint-cli2-action@992badcdf24e3b8eb7e87ff9287fe931bcb00c6e # v20
         with:
           globs: "**/*.md"
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: "3.11"
 
@@ -61,8 +131,56 @@ jobs:
 
       - name: Shared-asset drift check (closes #520)
         run: python3 scripts/sync-shared-assets.py --check
-        
-      - uses: actions/setup-node@v4
+
+      - name: Guide-tree parity check (docs/guides vs plugin copy)
+        run: python3 scripts/check-guide-parity.py --check
+
+      - name: Customize template-table check (table vs templates on disk)
+        run: python3 scripts/check-customize-table.py --check
+
+      - name: Doc-type registry references (recipes, commands, pages.md)
+        run: python3 scripts/check-doc-type-registry.py
+
+      - name: O-AA C208 axiom/chapter integrity guard (PR #825 content review)
+        run: python3 scripts/check_oaa_axioms.py
+
+      - name: Guide site-link check (every guide reachable, no dead links)
+        run: python3 scripts/check-guide-site-links.py
+
+      - name: Contributor credit check (CHANGELOG credits vs contributors page)
+        run: python3 scripts/check-contributor-credits.py
+
+      - name: llms.txt sync check (every command indexed, no dead links)
+        run: python3 scripts/check-llms-txt.py
+
+      - name: Quality-checklist references resolve (closes #749)
+        run: python3 scripts/check-quality-checklist-refs.py
+
+      - name: Citation instructions resolve to real tables (closes #783)
+        run: python3 scripts/check-citation-section-refs.py
+
+      - name: Quality-checklist checks match the artefact's own regime ladder (#790)
+        run: python3 scripts/check-quality-checklist-ladders.py
+
+      - name: DOC-CONTROL-HEADER markers have a command that resolves them (#760)
+        run: python3 scripts/check-doc-control-resolution.py
+
+      - name: common.sh / common.py parity (root vs plugin copies, #766)
+        run: python3 scripts/check-common-parity.py --check
+
+      - name: create-project.sh invocations are ones the script accepts (#775, #777)
+        run: python3 scripts/check-create-project-invocations.py --check
+
+      - name: Agent frontmatter (tools allowlist present, no stray files in agents/) (#466)
+        run: python3 scripts/check-agent-frontmatter.py
+
+      - name: Claude-only orchestrator prose never reaches a non-Claude target (#447)
+        run: python3 scripts/check-orchestrator-leaks.py
+
+      - name: GitHub Actions are pinned to commit SHAs (#466 item 17)
+        run: python3 scripts/check-action-pins.py
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: "20"
 
@@ -74,6 +192,12 @@ jobs:
 
       - name: ArcKit FDE template consistency
         run: node scripts/tests/test-fde-templates.mjs
+
+      - name: EU Cloud Sovereignty Framework weight guard
+        run: node scripts/tests/test-csf-weights.mjs
+
+      - name: EU Cloud Sovereignty Score/Max.Score invariants (#782)
+        run: node scripts/tests/test-csf-score.mjs
 
       - name: Command-reference notation (colon namespace)
         run: python3 scripts/standardise-colon.py --check
@@ -93,9 +217,23 @@ jobs:
       - name: Handoff schema validator tests (tenders)
         run: node tests/plugin/test_validate_tenders_handoff.mjs
 
+      - name: Handoff schema validator tests (research)
+        run: node tests/plugin/test_validate_research_handoff.mjs
+
+      - name: Handoff schema validator tests (gov-repo)
+        run: node tests/plugin/test_validate_gov_repo_handoff.mjs
+
+      - name: Handoff schema validator tests (cloud-research)
+        run: node tests/plugin/test_validate_cloud_research_handoff.mjs
+
       - name: Plugin hook test suites
-        # Shell-expand every *.test.mjs so new suites are picked up automatically
-        # (avoids the per-file enumeration drift that left suites unrun). The
-        # test_hook_utils.mjs file uses a test_ prefix, so list it explicitly.
+        # Two naming conventions are in use, `*.test.mjs` and `test_*.mjs`, and
+        # globbing only the first left EIGHT suites unrun -- 64 tests including
+        # test_update_manifest.mjs, the docs/manifest.json coverage. That is the
+        # same enumeration drift this step's previous comment claimed to have
+        # solved, and the same class of gap as #719 (pytest running 52 of 1,445).
+        # Glob both patterns rather than enumerating exceptions: the four handoff
+        # validators are re-run here as well as in their own steps above, which
+        # costs a second and cannot go stale.
         shell: bash
-        run: node --test tests/plugin/*.test.mjs tests/plugin/test_hook_utils.mjs
+        run: node --test tests/plugin/*.test.mjs tests/plugin/test_*.mjs

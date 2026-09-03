@@ -10,7 +10,7 @@ This guide covers installing the ArcKit plugin, configuring MCP servers, and com
 
 ### Prerequisites
 
-- **Claude Code** v2.1.121 or later (or **Claude Cowork** desktop app)
+- **Claude Code** v2.1.251 or later (or **Claude Cowork** desktop app)
 - **Bash** shell (for helper scripts)
 
 ### Step 0: Make sure Claude Code is up to date
@@ -20,7 +20,7 @@ claude install latest
 claude --version
 ```
 
-`claude install` accepts `stable`, `latest`, or a specific version (e.g. `claude install 2.1.121`). If you don't have the `claude` CLI yet, follow the [official Claude Code install guide](https://docs.claude.com/en/docs/claude-code/quickstart) first.
+`claude install` accepts `stable`, `latest`, or a specific version (e.g. `claude install 2.1.251`). If you don't have the `claude` CLI yet, follow the [official Claude Code install guide](https://docs.claude.com/en/docs/claude-code/quickstart) first.
 
 ### Optional: Long-session prompt cache (Claude Code v2.1.108+)
 
@@ -51,12 +51,16 @@ The value is milliseconds. Recommended for: corporate networks with TLS-inspecti
 
 > **Don't set a sub-second timeout.** As of Claude Code v2.1.162, a per-server `timeout` below `1000` ms is ignored (it falls back to `MCP_TOOL_TIMEOUT` or the default) rather than being floored to a 1-second watchdog that aborted every call. ArcKit ships no sub-1000 ms timeouts, so this is reassurance only — but if you hand-edit a server's `timeout`, keep it ≥ `1000`.
 
+**Slow calls now background themselves (Claude Code v2.1.212+).** An MCP tool call still running after 2 minutes moves to the background automatically, so the session stays usable instead of blocking. Tune the threshold — or turn the behaviour off — with `CLAUDE_CODE_MCP_AUTO_BACKGROUND_MS`. This works *with* a raised `MCP_TOOL_TIMEOUT` rather than against it: the timeout still bounds how long the call may take, while auto-backgrounding removes the cost of waiting for it. On v2.1.212+ a generous `MCP_TOOL_TIMEOUT` is cheaper than it used to be.
+
+**Per-server timeouts are honoured again (Claude Code v2.1.206+).** A per-server `request_timeout_ms` set in `.mcp.json` or passed via `--mcp-config` was previously ignored, so long-running calls timed out at the 60-second default no matter what the server config said. If you hand-tuned a per-server value before v2.1.206 and concluded it did nothing, retest it — it now applies.
+
 ### Step 1: Add the marketplace
 
 In Claude Code, run:
 
 ```text
-/plugin marketplace add tractorjuice/arc-kit
+/plugin marketplace add tractorjuice/arckit-claude
 ```
 
 ### Step 2: Install the plugin
@@ -68,7 +72,7 @@ In Claude Code, run:
 Go to the **Discover** tab, find **arckit**, and install it. Or via CLI:
 
 ```bash
-claude plugin install arckit@arc-kit
+claude plugin install arckit@arckit-claude
 ```
 
 ### Step 3: Restart Claude Code
@@ -95,15 +99,15 @@ To have the plugin auto-enable for anyone who opens your repo, add `.claude/sett
 ```json
 {
   "extraKnownMarketplaces": {
-    "arc-kit": {
+    "arckit-claude": {
       "source": {
         "source": "github",
-        "repo": "tractorjuice/arc-kit"
+        "repo": "tractorjuice/arckit-claude"
       }
     }
   },
   "enabledPlugins": {
-    "arckit@arc-kit": true
+    "arckit@arckit-claude": true
   }
 }
 ```
@@ -195,6 +199,27 @@ export DATA_COMMONS_API_KEY="your-api-key-here"
 
 > **Your keys stay hidden in `claude mcp` output.** Both keyed servers carry their key in an HTTP header (`X-Goog-Api-Key`, `X-API-Key`) via `${GOOGLE_API_KEY}` / `${DATA_COMMONS_API_KEY}`. As of Claude Code v2.1.161, `claude mcp list` / `get` / `add` no longer expand `${VAR}` references and redact credential headers and URL secrets — so inspecting your MCP config (or screen-sharing it) won't leak the keys. Relevant for OFFICIAL-SENSITIVE / regulated deployments. The other four bundled servers are keyless, so there's nothing to redact.
 
+### Managing MCP authentication
+
+For OAuth-backed or interactive MCP servers, use Claude Code's MCP auth
+commands instead of editing token files by hand:
+
+```bash
+claude mcp login <server-name>
+claude mcp logout <server-name>
+```
+
+ArcKit's bundled keyed servers still use environment variables, but the same
+`claude mcp` workflow is useful when you add third-party MCP servers alongside
+ArcKit. Recent Claude Code releases improved OAuth retries and headless login
+flows, so stale browser hand-offs are less likely to leave a server half
+configured.
+
+Servers that use a `headersHelper` can also refresh credentials after 401/403
+responses. If a helper-backed server works once and then starts failing after a
+token expiry, run `claude mcp login <server-name>` again before changing the
+ArcKit configuration.
+
 ---
 
 ## Troubleshooting
@@ -212,9 +237,11 @@ Invalid MCP server config for 'datacommons-mcp': Missing environment variables: 
 
 ### MCP server not responding after setup
 
-1. Verify the environment variable is set: `echo $GOOGLE_API_KEY`
+1. Verify the environment variable is set without printing it: `[ -n "$GOOGLE_API_KEY" ] && echo set || echo unset`
 2. Restart Claude Code (MCP servers load at startup)
 3. Check the plugin UI — errors should disappear once the key is valid
+4. Run `claude mcp list` or `/mcp`. As of Claude Code v2.1.218 a failed server reports its **HTTP status and error text**, so an invalid key shows as a real `401` rather than a bare "failed to connect". The same release warns about config values carrying hidden leading or trailing whitespace — a common cause of a key that looks correct but is rejected.
+5. On Amazon Bedrock, Google Vertex AI and Microsoft Foundry — and in any session with telemetry disabled — Claude Code v2.1.246+ tells the model when a configured server failed to connect. Before that the model concluded the server's tools did not exist, so a keyless session on those providers made `/arckit:gcp-research` and Data Commons lookups fail with a confusing "no such tool" instead of a connection error. If you see that symptom, update the client and re-check `/mcp`.
 
 ### API key works but commands fail
 

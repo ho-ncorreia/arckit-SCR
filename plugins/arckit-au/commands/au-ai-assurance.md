@@ -1,5 +1,6 @@
 ---
 description: "[COMMUNITY] Generate an AI assurance assessment for Australian Government / regulated-sector AI systems covering DTA AI Policy v2.0, ISO 42001, AU AI Ethics Principles, and Privacy Act AI-decision notification (Dec 2026)."
+doc-type: AUAIA
 argument-hint: "<project ID or system, e.g. '001'>"
 effort: high
 handoffs:
@@ -70,11 +71,11 @@ Australia's AI assurance landscape combines several frameworks that together gov
    - Then: `.arckit/templates/au-ai-assurance-template.md`
    - Fallback: `${CLAUDE_PLUGIN_ROOT}/templates/au-ai-assurance-template.md`
 
-3. Use `scripts/bash/create-project.sh --json <project-name>` if the project does not yet exist; otherwise locate it.
+3. Use `scripts/bash/create-project.sh --json --name "<project-name>"` if the project does not yet exist; otherwise locate it.
 
-4. Use `scripts/bash/generate-document-id.sh <PROJECT_ID> AUAIA --filename` for the artefact filename.
+4. Use `node scripts/generate-document-id.mjs <PROJECT_ID> AUAIA --filename` for the artefact filename.
 
-5. Resolve the `<!-- DOC-CONTROL-HEADER -->` marker per `RENDERING.md`. Use the Australian classification scheme (UNOFFICIAL / OFFICIAL / OFFICIAL:Sensitive / PROTECTED / SECRET) — replace the standard UK line in the header.
+5. Resolve the `<!-- DOC-CONTROL-HEADER -->` marker per `RENDERING.md` before writing the artefact. `RENDERING.md` hard-routes the AU regime to `_partials/document-control-au.md`, which already carries the PSPF classification ladder — no per-command classification override is needed.
 
 6. Generate the following sections:
 
@@ -128,9 +129,10 @@ Australia's AI assurance landscape combines several frameworks that together gov
 
 7. Populate the External References section per `${CLAUDE_PLUGIN_ROOT}/references/citation-instructions.md`. DTA AI Policy v2.0, AU AI Ethics Principles, AU Essential AI Practices (AI6) — Foundations + Implementation Guidance, ISO 42001 (Australian Standard), and Privacy Act 1988 MUST appear in the Document Register.
 
-8. Write the artefact via the Write tool to `projects/<project-id>/<filename>`.
+8. Before writing the file, read `${CLAUDE_PLUGIN_ROOT}/references/quality-checklist.md` and verify all **Common Checks** plus the **AUAIA** per-type checks pass. Fix any failures before proceeding.
+9. Write the artefact via the Write tool to `projects/<project-id>/<filename>`.
 
-9. Show only a summary to the user (one paragraph plus the DTA + Ethics Principles compliance summary table).
+10. Show only a summary to the user (one paragraph plus the DTA + Ethics Principles compliance summary table).
 
 ## Important Notes
 

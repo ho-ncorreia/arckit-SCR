@@ -1,5 +1,6 @@
 ---
 description: "[COMMUNITY] Assess EU Digital Services Act (DSA, Regulation 2022/2065) compliance obligations for online intermediary services, platforms, and very large online platforms"
+doc-type: DSA
 argument-hint: "<project ID or service description, e.g. '001', 'online marketplace with 50M EU users'>"
 effort: high
 handoffs:
@@ -77,6 +78,7 @@ Read all documents from Step 0. Identify:
 - **First**, check if `.arckit/templates/eu-dsa-template.md` exists in the project root
 - **If found**: Read the user's customized template
 - **If not found**: Read `${CLAUDE_PLUGIN_ROOT}/templates/eu-dsa-template.md`
+- **Then read** `${CLAUDE_PLUGIN_ROOT}/templates/_partials/RENDERING.md` and resolve the `<!-- DOC-CONTROL-HEADER -->` marker in the template before writing. Do not hand-write the Document Control table: the partial `RENDERING.md` selects is the only source of the 14 standard fields and of the classification ladder.
 
 ### Step 4: Provider Classification
 

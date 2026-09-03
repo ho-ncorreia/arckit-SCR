@@ -1,5 +1,6 @@
 ---
 description: Prepare for GDS Service Standard assessment - analyze evidence against 14 points, identify gaps, generate readiness report
+doc-type: SVCASS
 argument-hint: "<project ID and stage, e.g. '001 Alpha', '001 Beta'>"
 alwaysShow: true
 effort: max
@@ -64,6 +65,7 @@ Generate a comprehensive GDS Service Standard assessment preparation report that
 - **First**, check if `.arckit/templates/service-assessment-prep-template.md` exists in the project root
 - **If found**: Read the user's customized template (user override takes precedence)
 - **If not found**: Read `${CLAUDE_PLUGIN_ROOT}/templates/service-assessment-prep-template.md` (default)
+- **Then read** `${CLAUDE_PLUGIN_ROOT}/templates/_partials/RENDERING.md` and resolve the `<!-- DOC-CONTROL-HEADER -->` marker in the template before writing. Do not hand-write the Document Control table: the partial `RENDERING.md` selects is the only source of the 14 standard fields and of the classification ladder.
 
 > **Tip**: Users can customize templates with `/arckit:customize service-assessment`
 

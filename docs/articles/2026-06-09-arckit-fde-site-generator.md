@@ -24,7 +24,7 @@ The output is a static site: `index.html`, `styles.css`, a logo and hero, a samp
 
 The original FDE model was about compressing months of governance work into a focused sprint. This is the same idea pointed at the shop window. The pitch that used to take a designer and a week now takes a command and a few minutes.
 
-Install it with `/plugin marketplace add tractorjuice/arc-kit` then `/plugin install arckit-fde`, and run `/arckit-fde:create`.
+Install it with `/plugin marketplace add tractorjuice/arckit-claude` then `/plugin install arckit-fde`, and run `/arckit-fde:create`.
 
 ## About ArcKit
 
@@ -33,6 +33,6 @@ Install it with `/plugin marketplace add tractorjuice/arc-kit` then `/plugin ins
 <!-- arckit:community-block -->
 ## Join the ArcKit Community
 
-- **Discord** — real-time conversation, help with commands, and what people are building: [discord.gg/UsfzrZmr](https://discord.gg/UsfzrZmr)
+- **Discord** — real-time conversation, help with commands, and what people are building: [discord.gg/HsA4Y3hQ4](https://discord.gg/HsA4Y3hQ4)
 - **LinkedIn Group** — announcements, case studies, and longer-form discussion: [linkedin.com/groups/17641034](https://www.linkedin.com/groups/17641034/)
 - **GitHub** — code, issues, and contributions: [github.com/tractorjuice/arc-kit](https://github.com/tractorjuice/arc-kit)

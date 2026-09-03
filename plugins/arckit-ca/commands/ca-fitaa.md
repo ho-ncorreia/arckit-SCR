@@ -1,5 +1,6 @@
 ---
 description: "[COMMUNITY] Generate a Canada FITAA (Foreign Influence Transparency and Accountability Act, Bill C-70 2024) compliance assessment — activity scoping, arrangement register design, public vs protected views, Commissioner liaison protocol, Charter §2 risk register."
+doc-type: FITAA
 argument-hint: "<project ID or service name>"
 effort: high
 keep-coding-instructions: true
@@ -42,8 +43,8 @@ You are an enterprise architect generating a Canada FITAA Compliance Assessment 
    - **First**, check `.arckit/templates-custom/ca-fitaa-template.md` (user override)
    - **Then**, `.arckit/templates/ca-fitaa-template.md`
    - **Fallback**, `${CLAUDE_PLUGIN_ROOT}/templates/ca-fitaa-template.md`
-3. Use `scripts/bash/generate-document-id.sh <PROJECT_ID> FITAA --filename` for the artefact filename.
-4. Resolve the `<!-- DOC-CONTROL-HEADER -->` marker per `RENDERING.md`. Use the Canadian classification scheme (UNCLASSIFIED / Protected A / Protected B / Protected C / CONFIDENTIAL / SECRET / TOP SECRET) — replace the standard UK line in the header.
+3. Use `node scripts/generate-document-id.mjs <PROJECT_ID> FITAA --filename` for the artefact filename.
+4. Resolve the `<!-- DOC-CONTROL-HEADER -->` marker per `RENDERING.md` before writing the artefact. `RENDERING.md` hard-routes the CA regime to `_partials/document-control-ca.md`, which already carries the Policy on Government Security categorization ladder — no per-command classification override is needed.
 5. Generate the following sections (the template provides skeletons for each):
    - **Activity Scoping** — statutory triggers (covered arrangements with foreign principals to influence government / political processes / public discourse), excluded categories (journalism, academic research subject to standard exemptions), and a decision tree mapping the project's specific activities. Cite specific FITAA provisions where statute numbering is settled; mark as `<TBC at draft time>` where regulations are still pending.
    - **Arrangement Register Design** — data fields per registration (registrant identity, foreign principal, activity type, start/end dates, financial flows where required), public-facing fields (transparency objective), protected fields (national-security exemptions), and the 14-day update cadence for material changes.
@@ -54,8 +55,9 @@ You are an enterprise architect generating a Canada FITAA Compliance Assessment 
    - **Compliance Schedule (registrant-side)** — arrangement triggers, the 14-day clock, penalty exposures (cite specific FITAA offence sections where settled; otherwise `<TBC>`).
    - **Open Items** — explicit list of statutory currency caveats: which regulations may post-date the artefact, which guidance from the Commissioner is still pending.
 6. Populate the External References section per `${CLAUDE_PLUGIN_ROOT}/references/citation-instructions.md`. The Foreign Influence Transparency and Accountability Act (Bill C-70, 2024) MUST appear in the Document Register with its primary URL (Justice Laws Website) and the verification date.
-7. Write the artefact via the Write tool to `projects/<project-id>/<filename>`.
-8. Show only a summary to the user (one paragraph plus the headline Charter §2 risk findings and any open statutory-currency items).
+7. Before writing the file, read `${CLAUDE_PLUGIN_ROOT}/references/quality-checklist.md` and verify all **Common Checks** plus the **FITAA** per-type checks pass. Fix any failures before proceeding.
+8. Write the artefact via the Write tool to `projects/<project-id>/<filename>`.
+9. Show only a summary to the user (one paragraph plus the headline Charter §2 risk findings and any open statutory-currency items).
 
 ## Authoritative anchor
 

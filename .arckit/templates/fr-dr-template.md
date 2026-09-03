@@ -7,7 +7,7 @@
 ## Document Control
 
 <!-- DOC-CONTROL-HEADER -->
-<!-- Resolved at command-execution time to _partials/document-control-uk.md or _partials/document-control-uae.md based on plugin userConfig classification_scheme + governance_framework. See _partials/RENDERING.md (when present). -->
+<!-- Resolved at command-execution time per _partials/RENDERING.md. -->
 
 ## Revision History
 
@@ -17,7 +17,7 @@
 
 ## Scope Statement
 
-> **Important distinction**: This assessment covers the **Diffusion Restreinte (DR)** mention only. DR is an administrative protection mention governed by II 901/SGDSN/ANSSI for electronic systems. It is **not** a classification level under IGI 1300 (which covers Confidentiel Défense and above). Systems handling IGI 1300 classified information require a separate defence security framework beyond the scope of this assessment.
+> **Important distinction**: This assessment covers the **Diffusion Restreinte (DR)** mention only. DR is an administrative protection mention governed by II 901/SGDSN/ANSSI for electronic systems. It is **not** a classification level under IGI 1300 (which covers Secret and Très Secret). Systems handling IGI 1300 classified information require a separate defence security framework beyond the scope of this assessment.
 
 | Element | Value |
 |---------|-------|

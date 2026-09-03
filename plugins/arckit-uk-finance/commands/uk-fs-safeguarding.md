@@ -1,5 +1,6 @@
 ---
 description: "[COMMUNITY] Generate an EMI / PI safeguarding assessment — method statement (segregation vs insurance vs guarantee), designated safeguarding bank/insurance arrangements, reconciliation cadence + sign-off chain, end-to-end client-funds flow, audit plan aligned to FCA REP-CRIM expectations."
+doc-type: FSSAFE
 argument-hint: "<project ID or product context, e.g. '002', 'B2B virtual-account product'>"
 effort: high
 keep-coding-instructions: true
@@ -61,7 +62,7 @@ instead of recreating it. Extract `project_dir` and `project_number` from the JS
 Run:
 
 ```bash
-${CLAUDE_PLUGIN_ROOT}/scripts/bash/generate-document-id.sh <PROJECT_NUMBER> FSSAFE --filename
+${CLAUDE_PLUGIN_ROOT}/scripts/generate-document-id.mjs <PROJECT_NUMBER> FSSAFE --filename
 ```
 
 This produces a filename of the form `ARC-NNN-FSSAFE-v1.0.md`. FSSAFE is the doc-type code for this
@@ -176,6 +177,8 @@ Populate the **Failure scenarios and recovery** section (§8) with at least thre
 
 Create the output directory if it does not already exist:
 `<project_dir>/payments-compliance/`
+
+Before writing, read `${CLAUDE_PLUGIN_ROOT}/references/quality-checklist.md` and verify all **Common Checks** plus the **FSSAFE** per-type checks pass. Fix any failures before proceeding.
 
 Use the **Write tool** to save the completed document to:
 `projects/<NNN>-<slug>/payments-compliance/ARC-<NNN>-FSSAFE-v1.0.md`

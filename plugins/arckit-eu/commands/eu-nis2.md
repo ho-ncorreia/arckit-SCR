@@ -1,5 +1,6 @@
 ---
 description: "[COMMUNITY] Assess NIS2 Directive compliance obligations for EU member state operators of essential services and important entities"
+doc-type: NIS2
 argument-hint: "<project ID or organisation, e.g. '001', 'French regional energy DSO with OIV designation'>"
 effort: high
 handoffs:
@@ -81,6 +82,7 @@ Read all documents from Step 0. Identify:
 - **First**, check if `.arckit/templates/eu-nis2-template.md` exists in the project root
 - **If found**: Read the user's customized template
 - **If not found**: Read `${CLAUDE_PLUGIN_ROOT}/templates/eu-nis2-template.md`
+- **Then read** `${CLAUDE_PLUGIN_ROOT}/templates/_partials/RENDERING.md` and resolve the `<!-- DOC-CONTROL-HEADER -->` marker in the template before writing. Do not hand-write the Document Control table: the partial `RENDERING.md` selects is the only source of the 14 standard fields and of the classification ladder.
 
 ### Step 4: Entity Classification (Article 3)
 

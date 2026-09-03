@@ -1,5 +1,6 @@
 ---
 description: "[COMMUNITY] Generate an ITSG-33 Statement of Applicability with TBS Standard on Security Categorization — Protected A/B/C, Secret, Top Secret tailoring, control profile selection (PBMM / PBMM-Cloud / Secret-High), CMVP / FIPS 140-3 module validation, supply chain security, and continuous monitoring plan."
+doc-type: ITSG
 argument-hint: "<project ID or service name>"
 effort: high
 keep-coding-instructions: true
@@ -38,8 +39,8 @@ You are an enterprise architect generating an ITSG-33 Statement of Applicability
    - **First**, check `.arckit/templates-custom/ca-itsg-33-template.md` (user override)
    - **Then**, `.arckit/templates/ca-itsg-33-template.md`
    - **Fallback**, `${CLAUDE_PLUGIN_ROOT}/templates/ca-itsg-33-template.md`
-3. Use `scripts/bash/generate-document-id.sh <PROJECT_ID> ITSG --filename` for the artefact filename.
-4. Resolve the `<!-- DOC-CONTROL-HEADER -->` marker per `RENDERING.md`. Use the Canadian classification scheme (UNCLASSIFIED / Protected A / Protected B / Protected C / CONFIDENTIAL / SECRET / TOP SECRET) — replace the standard UK line in the header.
+3. Use `node scripts/generate-document-id.mjs <PROJECT_ID> ITSG --filename` for the artefact filename.
+4. Resolve the `<!-- DOC-CONTROL-HEADER -->` marker per `RENDERING.md` before writing the artefact. `RENDERING.md` hard-routes the CA regime to `_partials/document-control-ca.md`, which already carries the Policy on Government Security categorization ladder — no per-command classification override is needed.
 5. Generate the following sections (the template provides skeletons for each):
    - **Information Asset Categorisation** — for each information asset, score Confidentiality (C), Integrity (I), and Availability (A) as Low / Medium / High using the TBS *Standard on Security Categorization* injury-based scoring matrix. Aggregate per-asset scores to a system-level categorisation (the high-water mark across the inventory) and map to one of UNCLASSIFIED / Protected A / Protected B / Protected C / CONFIDENTIAL / SECRET / TOP SECRET. Show the working — categorisation drives the rest of the artefact and audit trails on the C/I/A reasoning are mandatory.
    - **Control Profile Selection** — pick the CSE-published profile matching the categorisation: PBMM (Protected B Medium-Medium) for the typical federal Protected B baseline; PBMM-Cloud where the system is cloud-hosted; Secret-High where the categorisation crosses to Secret; Top-Secret-High for Top Secret. State the rationale for the chosen profile and any tailoring (additions, removals, or parameter values) and identify the approver. Tailoring deviations from the published profile must be justified, not preferred.
@@ -50,8 +51,9 @@ You are an enterprise architect generating an ITSG-33 Statement of Applicability
    - **Authorisation Chain** — System Owner → Security Authority → Authorising Official, identified by role; specify the authorisation cycle, the conditions attaching to the authorisation, and the re-authorisation triggers.
    - **Open Items** — outstanding tailoring decisions, unfinished CMVP checks, unresolved supplier flags, and any condition the authorising official has placed on go-live.
 6. Populate the External References section per `${CLAUDE_PLUGIN_ROOT}/references/citation-instructions.md`. ITSG-33, the TBS *Standard on Security Categorization*, the *Direction on Vulnerable Suppliers*, and the CMVP active modules list MUST appear in the Document Register with their primary URLs and verification dates.
-7. Write the artefact via the Write tool to `projects/<project-id>/<filename>`.
-8. Show only a summary to the user (one paragraph plus the system-level categorisation, the chosen profile, the count of Compensating Controls, and any open lawful-authority or supplier-flag items).
+7. Before writing the file, read `${CLAUDE_PLUGIN_ROOT}/references/quality-checklist.md` and verify all **Common Checks** plus the **ITSG** per-type checks pass. Fix any failures before proceeding.
+8. Write the artefact via the Write tool to `projects/<project-id>/<filename>`.
+9. Show only a summary to the user (one paragraph plus the system-level categorisation, the chosen profile, the count of Compensating Controls, and any open lawful-authority or supplier-flag items).
 
 ## Authoritative anchor
 

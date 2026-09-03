@@ -53,7 +53,7 @@ If you are a consultant or architect writing for clients, you can commit a plain
 
 ## Getting started
 
-If you already have ArcKit installed as a Claude Code plugin, update the marketplace and the new version picks up automatically. If you are using the Codex, Gemini, OpenCode, or Copilot extension, pull the latest from the respective repository. If you are new, "pip install arckit-cli" or install the plugin via "/plugin marketplace add tractorjuice/arc-kit" inside Claude Code.
+If you already have ArcKit installed as a Claude Code plugin, update the marketplace and the new version picks up automatically. If you are using the Codex, Gemini, OpenCode, or Copilot extension, pull the latest from the respective repository. If you are new, "pip install arckit-cli" or install the plugin via "/plugin marketplace add tractorjuice/arckit-claude" inside Claude Code.
 
 Then run /arckit.wardley on any project and check your generated docs/index.html. The map will be there, rendered, linkable, and version-controlled.
 
@@ -77,6 +77,6 @@ Then run /arckit.wardley on any project and check your generated docs/index.html
 <!-- arckit:community-block -->
 ## Join the ArcKit Community
 
-- **Discord** — real-time conversation, help with commands, and what people are building: [discord.gg/UsfzrZmr](https://discord.gg/UsfzrZmr)
+- **Discord** — real-time conversation, help with commands, and what people are building: [discord.gg/HsA4Y3hQ4](https://discord.gg/HsA4Y3hQ4)
 - **LinkedIn Group** — announcements, case studies, and longer-form discussion: [linkedin.com/groups/17641034](https://www.linkedin.com/groups/17641034/)
 - **GitHub** — code, issues, and contributions: [github.com/tractorjuice/arc-kit](https://github.com/tractorjuice/arc-kit)

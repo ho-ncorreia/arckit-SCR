@@ -1,5 +1,6 @@
 ---
 description: "[COMMUNITY] Generate a SOCI Act Critical Infrastructure Risk Management Program (CIRMP) governance and evidence pack for Australian critical infrastructure assets."
+doc-type: AUSOCI
 argument-hint: "<project ID or system, e.g. '001', 'Critical Data Platform'>"
 effort: high
 handoffs:
@@ -80,11 +81,11 @@ SOCI is a cross-sector Australian critical-infrastructure regime, not an energy-
    - Then: `.arckit/templates/au-soci-cirmp-template.md`
    - Fallback: `${CLAUDE_PLUGIN_ROOT}/templates/au-soci-cirmp-template.md`
 
-3. Use `scripts/bash/create-project.sh --json <project-name>` if the project does not yet exist.
+3. Use `scripts/bash/create-project.sh --json --name "<project-name>"` if the project does not yet exist.
 
-4. Use `scripts/bash/generate-document-id.sh <PROJECT_ID> AUSOCI --filename` for the artefact filename.
+4. Use `node scripts/generate-document-id.mjs <PROJECT_ID> AUSOCI --filename` for the artefact filename.
 
-5. Resolve the `<!-- DOC-CONTROL-HEADER -->` marker per `RENDERING.md`. Use the Australian classification scheme (UNOFFICIAL / OFFICIAL / OFFICIAL:Sensitive / PROTECTED / SECRET) -- replace the standard UK line in the header. Note that SOCI protected information is not the same as PSPF PROTECTED classification; document both where relevant.
+5. Resolve the `<!-- DOC-CONTROL-HEADER -->` marker per `RENDERING.md` before writing the artefact. `RENDERING.md` hard-routes the AU regime to `_partials/document-control-au.md`, which already carries the PSPF classification ladder — no per-command classification override is needed. Note that SOCI protected information is not the same as PSPF PROTECTED classification; document both where relevant.
 
 6. Generate the following sections:
 
@@ -114,9 +115,10 @@ SOCI is a cross-sector Australian critical-infrastructure regime, not an energy-
 
 7. Populate the External References section per `${CLAUDE_PLUGIN_ROOT}/references/citation-instructions.md`. The SOCI Act, current CIRMP Rules / regulator guidance, and verification date MUST appear in the Document Register.
 
-8. Write the artefact via the Write tool to `projects/<project-id>/<filename>`.
+8. Before writing the file, read `${CLAUDE_PLUGIN_ROOT}/references/quality-checklist.md` and verify all **Common Checks** plus the **AUSOCI** per-type checks pass. Fix any failures before proceeding.
+9. Write the artefact via the Write tool to `projects/<project-id>/<filename>`.
 
-9. Show only a summary to the user: likely SOCI applicability position, CIRMP readiness, top material risks, and immediate evidence gaps.
+10. Show only a summary to the user: likely SOCI applicability position, CIRMP readiness, top material risks, and immediate evidence gaps.
 
 ## Important Notes
 

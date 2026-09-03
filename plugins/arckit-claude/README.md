@@ -6,7 +6,7 @@ The Enterprise Architecture Governance Harness — a Claude Code plugin providin
 
 ### Step 0: Make sure Claude Code is up to date
 
-ArcKit v4.14.0 needs Claude Code **v2.1.121 or later** (see Prerequisites below). The simplest way to land on a supported version — even if you've never installed Claude Code before — is:
+ArcKit needs Claude Code **v2.1.251 or later** (see Prerequisites below). The simplest way to land on a supported version — even if you've never installed Claude Code before — is:
 
 ```bash
 claude install latest
@@ -23,7 +23,7 @@ claude --version
 In Claude Code, run:
 
 ```text
-/plugin marketplace add tractorjuice/arc-kit
+/plugin marketplace add tractorjuice/arckit-claude
 ```
 
 ### Step 2: Install the plugin
@@ -35,24 +35,38 @@ In Claude Code, run:
 Go to the **Discover** tab, find **arckit**, and install it. Or via CLI:
 
 ```bash
-claude plugin install arckit@arc-kit
+claude plugin install arckit@arckit-claude
 ```
+
+### Installing with ArcKit overlay plugins
+
+The same marketplace hosts the core plugin plus regional, sector, and tooling overlays.
+Install only the plugins you need:
+
+```bash
+claude plugin install arckit arckit-uae
+claude plugin install arckit arckit-au arckit-au-energy
+claude plugin install arckit arckit-uk-finance
+```
+
+The `arckit-uk-gcloud` overlay is public for installation and inspection, but remains
+proprietary and is not MIT licensed.
 
 ### Alternative: Load for a single session
 
 ```bash
-claude --plugin-dir /path/to/arc-kit/arckit-claude
+claude --plugin-dir /path/to/arckit-claude
 ```
 
 ## Prerequisites
 
-- **Claude Code** v2.1.121 or later (recommended minimum)
+- **Claude Code** v2.1.251 or later (recommended minimum)
 - **Bash** shell (for helper scripts)
 - For `/arckit:aws-research`: AWS Knowledge MCP server (included)
 - For `/arckit:azure-research`: Microsoft Learn MCP server (included)
 - For `/arckit:gcp-research`: Google Developer Knowledge MCP (requires `GOOGLE_API_KEY` — see [MCP Servers](#mcp-servers))
 
-> **Why v2.1.121?** ArcKit now uses MCP `alwaysLoad` to eager-load AWS Knowledge and Microsoft Learn tools at session start (skips a discovery round-trip on `/arckit:aws-research` and `/arckit:azure-research`), and PostToolUse `hookSpecificOutput.updatedToolOutput` so provenance-stamp and manifest hooks surface their effects to the model in-band — both v2.1.121 features. The release flow uses `claude plugin tag --dry-run` (v2.1.118) to validate plugin/marketplace version agreement, and the session-telemetry hook records `duration_ms` on every tool call (v2.1.119). Carries forward the v2.1.117 unlocks: Opus 4.7 `/context` correctly sized to 1M instead of 200K (long research sessions no longer autocompact early) and agent frontmatter `mcpServers` loading for `--agent` sessions; the v2.1.111+ unlocks: Opus 4.7 `xhigh` effort tier, Auto mode without `--enable-auto-mode`, read-only bash glob patterns without permission prompts; and the v2.1.97 fixes: `claude plugin update` correctly detects new commits for git-based plugins (critical for ArcKit distribution), MCP HTTP/SSE memory leak fix (~50 MB/hr, affects ArcKit's 5 bundled servers), proper 429 exponential backoff (benefits 10 research agents), Stop/SubagentStop hooks no longer fail on long sessions (affects session-learner), and subagent working directory leak fix.
+> **Why v2.1.251?** v2.1.251 stops the file tools following a symlink swapped inside the working directory after the permission check, and makes Grep and Glob honour `Read()` deny rules through symlinked paths — the class of bypass ArcKit's `file-protection` and `secret-file-scanner` gates sit in front of. It also sends Opus 5 `effort: xhigh`/`max` as `high` when thinking is off instead of failing, so ArcKit's `effort: max` commands complete on thinking-off sessions. v2.1.246 fixed four plugin-loading bugs that hit ArcKit's exact layout: `/reload-plugins` counted 0 skills for `skills/*/SKILL.md` plugins, hook errors showed a literal `${CLAUDE_PLUGIN_ROOT}`, the plugin cache created duplicate SHA-named directories, and `claude plugin update <bare-name>` failed. The floor carries forward v2.1.234, which stops Claude Code's MCP diagnostics printing **resolved secrets** — ArcKit bundles two keyed MCP servers whose `${user_config.*}` API keys sit in request headers, and on a keyless session those connections fail by design, so ArcKit routinely produces exactly the diagnostics this fixed. v2.1.221 fixed `WebSearch` returning a 400 at `effort: xhigh`/`max` with thinking disabled, which silently broke ArcKit's `effort: max` commands and research agents for anyone running with thinking off. v2.1.222-v2.1.224 close PreToolUse auto-allow bypasses in background agent tasks (load-bearing since v2.1.232 made spawns background by default), Bash permission-check bypasses, and a sandbox deny-path bypass. It also carries v2.1.219's **Claude Opus 5** (`claude-opus-5`), the current default Opus model with 1M context and fast mode; v2.1.200's project-scoped plugin loading from git worktrees and `claude agents --plugin-dir <dir>` visibility; the v2.1.198-v2.1.199 background-subagent reliability, parent error-propagation, and hook stderr-visibility fixes; v2.1.197's Claude Sonnet 5 default with native 1M context; and v2.1.172's wildcard-domain `WebFetch` fix. It also carries the older MCP `alwaysLoad`, provenance hook, release validation, telemetry, `/context`, Auto mode, plugin update, MCP leak, retry, and subagent working-directory fixes ArcKit relies on.
 
 ## Quick Start
 
@@ -90,7 +104,7 @@ After installing the plugin:
 
 ## Hooks
 
-Automation hooks run automatically to provide context and enforce standards. See the [Hooks Guide](docs/guides/hooks.md) for full details.
+Automation hooks run automatically to provide context and enforce standards. See the [Hooks Guide](docs/guides/hooks.md) for full details. [`docs/ENFORCEMENT.md`](docs/ENFORCEMENT.md) states which rules the hooks enforce in code, which are only asked of the model, and what your organisation supplies.
 
 | Event | Hooks | Purpose |
 |-------|-------|---------|
@@ -287,9 +301,9 @@ This plugin is for Claude Code. For other AI assistants:
 
 ## Links
 
-- [Repository](https://github.com/tractorjuice/arc-kit)
+- [Repository](https://github.com/tractorjuice/arckit-claude)
 - [Documentation](https://tractorjuice.github.io/arc-kit)
-- [Changelog](https://github.com/tractorjuice/arc-kit/blob/main/CHANGELOG.md)
+- [Changelog](https://github.com/tractorjuice/arckit-claude/blob/main/CHANGELOG.md)
 
 ## License
 

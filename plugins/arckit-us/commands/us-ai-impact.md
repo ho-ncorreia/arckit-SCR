@@ -1,5 +1,6 @@
 ---
 description: "[COMMUNITY] Determine whether an AI system is rights-impacting or safety-impacting under OMB M-24-10 and document the minimum risk-management practices, M-25-21 acquisition controls, and public disclosure obligations."
+doc-type: AIIA
 argument-hint: "<project ID or AI system, e.g. '001', 'Benefits Eligibility ML Model'>"
 effort: high
 handoffs:
@@ -63,11 +64,13 @@ Appendix I of M-24-10 lists **presumed-impacting** use cases (those agencies mus
    - **Then**, `.arckit/templates/us-ai-impact-template.md`
    - **Fallback**, `${CLAUDE_PLUGIN_ROOT}/templates/us-ai-impact-template.md`
 
-3. Use `scripts/bash/create-project.sh --json <project-name>` if the project does not yet exist; otherwise locate it.
+3. Use `scripts/bash/create-project.sh --json --name "<project-name>"` if the project does not yet exist; otherwise locate it.
 
-4. Use `scripts/bash/generate-document-id.sh <PROJECT_ID> AIIA --filename` for the artefact filename. The type code for this command is `AIIA`.
+4. Use `node scripts/generate-document-id.mjs <PROJECT_ID> AIIA --filename` for the artefact filename. The type code for this command is `AIIA`.
 
-5. Generate the following sections:
+5. Resolve the `<!-- DOC-CONTROL-HEADER -->` marker per `RENDERING.md` before writing the artefact. `RENDERING.md` hard-routes the US regime to `_partials/document-control-us.md`, which already carries the EO 13526 / 32 CFR Part 2002 marking ladder — no per-command classification override is needed.
+
+6. Generate the following sections:
 
    - **AI System Summary** — system name, agency owner, mission served, model type, intended decisions or actions supported, scale (users / decisions per day).
    - **Appendix I Presumed-Impacting Check** — match the use case against M-24-10 Appendix I's presumed-impacting lists (rights and safety). Record the matched item(s) verbatim with the M-24-10 §X.Y reference, or note "no Appendix I match" if none.
@@ -79,9 +82,10 @@ Appendix I of M-24-10 lists **presumed-impacting** use cases (those agencies mus
    - **Public Disclosure Obligations** — confirm the entry has been (or will be) submitted to the agency AI Use Case Inventory (federal.ai.gov); note any redactions required for sensitive law-enforcement or national-security carve-outs.
    - **CAIO Sign-Off Block** — agency Chief AI Officer review and approval section: reviewer, date, scope of approval, conditions, next review.
 
-6. Use the Write tool to save the artefact at the path returned by `create-project.sh` + `generate-document-id.sh`.
+7. Before writing the file, read `${CLAUDE_PLUGIN_ROOT}/references/quality-checklist.md` and verify all **Common Checks** plus the **AIIA** per-type checks pass. Fix any failures before proceeding.
+8. Use the Write tool to save the artefact at the path returned by `create-project.sh` + `generate-document-id.mjs`.
 
-7. Emit a short summary to the user — impact verdict (rights-impacting / safety-impacting / both / neither), Appendix I match (Y/N), minimum-practice satisfaction percentage, waiver count, AI Use Case Inventory ID (or "pending"), and CAIO review status. Do not echo the full artefact.
+9. Emit a short summary to the user — impact verdict (rights-impacting / safety-impacting / both / neither), Appendix I match (Y/N), minimum-practice satisfaction percentage, waiver count, AI Use Case Inventory ID (or "pending"), and CAIO review status. Do not echo the full artefact.
 
 ## Handoffs
 

@@ -1,10 +1,11 @@
 ---
 name: mermaid-syntax
-description: "This skill should be used when the user asks about Mermaid diagram syntax, how to write flowchart, sequence, class, state, ER, Gantt, C4, mindmap, timeline, or other diagram types, node shapes, styling, theming, or rendering errors."
+description: "Mermaid syntax reference for writing or fixing a diagram in an artefact: flowchart, sequence, class, state, ER, Gantt, C4, mindmap, timeline and the other diagram types, node shapes, styling, theming, and why a diagram fails to render. Not needed for PlantUML (plantuml-syntax), or when the request is for a governed diagram artefact with document control, which /arckit:diagram produces."
 paths:
   - "**/*.mmd"
   - "**/*.mermaid"
   - "**/ARC-*-DIAG-*.md"
+  - "**/ARC-*-DATA-*.md"
 ---
 
 # Mermaid Syntax Reference
@@ -73,7 +74,9 @@ These are the most common Mermaid syntax errors encountered when generating diag
 | Gantt task status | Invalid task status keywords | Valid: `done`, `active`, `crit`, `milestone` |
 | Parentheses in labels | Unescaped `()` breaks node parsing | Wrap in quotes: `Node["Label (with parens)"]` |
 | Special chars in IDs | Hyphens, dots, spaces in node IDs | Use camelCase or underscores: `apiGateway`, `api_gateway` |
-| Missing semicolons in ER | ER diagram attributes need specific syntax | Follow `entity { type name }` pattern |
+| ER combined keys | `FK UK` (space-separated) and `PK_FK` are parse errors, and the whole block silently fails to render | Comma-separate them: `uuid tenant_id FK, UK` |
+| ER attribute comments | An unclosed `"`, or a `"` inside the comment, breaks the block | One pair of double quotes, last on the line, no `"` inside |
+| ER cardinality tokens | Invented tokens (e.g. `\|\|--x{`) fail to parse | Left: `\|\|` `\|o` `}o` `}\|` — right: `\|\|` `o\|` `o{` `\|{` |
 | Subgraph naming | Subgraph IDs with spaces need quotes | `subgraph "My Group"` |
 
 ## ArcKit Integration

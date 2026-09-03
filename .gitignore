@@ -49,6 +49,14 @@ htmlcov/
 .arckit-debug/
 research/
 data/
+# plugins/arckit-eu/data/ is tracked SOURCE (arc-kit#782), not the generated
+# extensions/*/data/ output the blanket rule above is for — scripts/converter.py
+# writes extensions/*/data/ from this directory, it does not go the other way.
+# Its mirror under plugins/arckit-claude/plugins/eu/data/ (written by
+# scripts/sync-claude-plugin-layout.py for the standalone arckit-claude repo)
+# needs the same exception, or the standalone publish silently loses the file.
+!plugins/arckit-eu/data/
+!plugins/arckit-claude/plugins/eu/data/
 
 # Plugin runtime caches — ephemeral, project-scoped, regenerated each session
 # (see #494 close: these belong in .gitignore, not ${CLAUDE_PLUGIN_DATA})
@@ -163,6 +171,17 @@ extensions/arckit-vibe/references/
 extensions/arckit-vibe/scripts/
 extensions/arckit-vibe/hooks/
 
+# -- extensions/arckit-kimi (generated) --
+extensions/arckit-kimi/skills/
+extensions/arckit-kimi/templates/
+extensions/arckit-kimi/docs/guides/
+extensions/arckit-kimi/config/
+extensions/arckit-kimi/schemas/
+extensions/arckit-kimi/references/
+extensions/arckit-kimi/scripts/
+extensions/arckit-kimi/hooks/
+extensions/arckit-kimi/kimi.plugin.json
+
 # Draft articles (not for version control)
 docs/articles/
 .tmp*
@@ -211,3 +230,15 @@ docs/*LinkedInDataExport*
 # arckit-consulting/ is a clone of the separate tractorjuice/arckit-fde repo.
 # Per project memory, FDE-site changes belong in that repo, not here.
 arckit-consulting/
+
+books/
+output/
+
+# DeepBook: the plugin lives in the separate (private) tractorjuice/arckit-deepbook
+# repo and is symlinked in for local dev. Generated book content and run
+# checkpoints must never be committed to this public repo.
+# No trailing slash on the symlink rule — a "dir/" pattern does not match a symlink.
+plugins/arckit-deepbook
+deepbook-test-output/
+.arckit/deepbook-checkpoints/
+.arckit/deepbook-tools/

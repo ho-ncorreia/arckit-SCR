@@ -53,9 +53,35 @@ Recipes ship at `${CLAUDE_PLUGIN_ROOT}/skills/arckit-build/recipes/{name}.yaml`.
 7. **Halt-on-fail** — if any subagent fails or validation fails, write state, do *not* commit, surface a per-target error report. Resume with `--resume`
 8. **Post-build hooks** — `arckit:health` and `arckit:pages` run in parallel after the final target wave
 
+## Session limits (subagents and searches)
+
+Claude Code limits subagent activity per session. These limits do **not** behave alike, and the difference decides whether an over-budget build fails loudly or quietly degrades. Verified against the Claude Code v2.1.235 binary.
+
+| Limit | Default | Override | Behaviour at the limit |
+|---|---|---|---|
+| Concurrently-running subagents | 20 | `CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS` | **Denies.** Throws a tool error; nothing waits for a slot |
+| Subagent nesting depth | 3 | `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` | **Denies.** *"Subagent nesting limit reached"* |
+| WebSearch calls per session | 200 | `CLAUDE_CODE_MAX_WEB_SEARCHES_PER_SESSION` | **Soft-degrades.** Returns a normal result telling the model to carry on |
+
+**Why this matters here specifically.** The harness dispatches one subagent per target per wave and is halt-on-fail. A wave wider than the concurrency cap therefore does not run slower — the 21st and later `Agent` calls fail immediately with *"Concurrent subagent limit reached … Do not retry"*, which the harness treats as wave failure and halts on.
+
+**The WebSearch limit is the dangerous one, precisely because it does not fail.** Over budget, `WebSearch` returns a successful-looking result with `searchCount: 0` and the text *"Web search was not performed: this session has used its web search budget … Continue with the information already gathered instead of issuing more searches."* Nothing halts. A research-heavy build that crosses 200 searches keeps producing artefacts, just on thinner evidence — which for a governance document is a worse failure than stopping. If you are building a large recipe with several research targets in one session, either `/clear` between builds or raise `CLAUDE_CODE_MAX_WEB_SEARCHES_PER_SESSION` up front.
+
+**There is no per-session spawn cap.** Claude Code v2.1.224 removed the 200-subagent-per-session ceiling. `CLAUDE_CODE_MAX_SUBAGENTS_PER_SESSION` is still accepted as a setting but is never read — setting it produces no error and no effect, so do not rely on it to bound a build.
+
+**No shipped recipe currently exceeds the concurrency cap.** The widest wave across all bundled recipes is **16 of 20**, in `uk-saas` and `uk-nhs-clinical-safety` with every optional target enabled. `scripts/check_recipes.py` enforces this in CI: a recipe wave above 20 is an error, and above 16 warns, so the margin cannot quietly erode as recipes grow.
+
+That margin is only four agents, so it matters when you **write your own recipe**. If you add parallel targets to an existing wave, either keep the wave at 20 or fewer, or add a `deps:` edge to split it. Run `python3 scripts/check_recipes.py` to see the widest wave in your recipe.
+
+**The search budget is per session, not per build.** Back-to-back builds, a `--refresh` pass, or research commands run in the same session all draw on the same 200-search allowance; `/clear` starts a fresh one. `--max-budget-usd`, if set, halts running background subagents once reached — that limit *does* deny, with *"Budget limit reached"*.
+
+The concurrency cap is lifted in ultracode mode (which runs at `xhigh` effort and orchestrates dynamic workflows). Don't rely on that to make an over-wide wave work — the default path is what has to hold.
+
+**Subagents run in the background by default** as of Claude Code v2.1.232, which means an `Agent` call can return a launch acknowledgement rather than the worker's report. The harness dispatches with `run_in_background: false` so each wave still forms a barrier before validation and commit. You may see the workers appear in `/tasks` regardless; what matters is that the build does not advance to the next wave until every worker in the current one has reported.
+
 ## Path allocation — trust the hook
 
-Workers don't construct filenames or call `generate-document-id.sh` themselves. The plugin's `validate-arc-filename.mjs` PreToolUse hook normalizes paths at write time: allocates the next sequence number for ADR/DIAG, applies `decisions/` and `diagrams/` subfolders, pads project IDs. Workers read the corrected `ACTUAL_PATH` from the Skill tool result and report it back.
+Workers don't construct filenames or call `generate-document-id.mjs` themselves. The plugin's `validate-arc-filename.mjs` PreToolUse hook normalizes paths at write time: allocates the next sequence number for ADR/DIAG, applies `decisions/` and `diagrams/` subfolders, pads project IDs. Workers read the corrected `ACTUAL_PATH` from the Skill tool result and report it back.
 
 ## Customizing recipes
 

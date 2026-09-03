@@ -1,5 +1,6 @@
 ---
 description: "[COMMUNITY] Generate a Privacy Impact Assessment (PIA) for Australian Government entities under Privacy Act 1988 s33D, assessing compliance with all 13 Australian Privacy Principles (APPs)."
+doc-type: AUPIA
 argument-hint: "<project ID or system, e.g. '001', 'Citizen Identity Verification'>"
 effort: high
 handoffs:
@@ -65,11 +66,11 @@ Australian Government agencies covered by the Privacy Act 1988 must conduct PIAs
    - **Then**, `.arckit/templates/au-pia-template.md`
    - **Fallback**, `${CLAUDE_PLUGIN_ROOT}/templates/au-pia-template.md`
 
-3. Use `scripts/bash/create-project.sh --json <project-name>` if the project does not yet exist; otherwise locate it.
+3. Use `scripts/bash/create-project.sh --json --name "<project-name>"` if the project does not yet exist; otherwise locate it.
 
-4. Use `scripts/bash/generate-document-id.sh <PROJECT_ID> AUPIA --filename` for the artefact filename.
+4. Use `node scripts/generate-document-id.mjs <PROJECT_ID> AUPIA --filename` for the artefact filename.
 
-5. Resolve the `<!-- DOC-CONTROL-HEADER -->` marker per `RENDERING.md`. Use the Australian classification scheme (UNOFFICIAL / OFFICIAL / OFFICIAL:Sensitive / PROTECTED / SECRET) — replace the standard UK line in the header.
+5. Resolve the `<!-- DOC-CONTROL-HEADER -->` marker per `RENDERING.md` before writing the artefact. `RENDERING.md` hard-routes the AU regime to `_partials/document-control-au.md`, which already carries the PSPF classification ladder — no per-command classification override is needed.
 
 6. Generate the following sections:
 
@@ -111,9 +112,10 @@ Australian Government agencies covered by the Privacy Act 1988 must conduct PIAs
 
 7. Populate the External References section per `${CLAUDE_PLUGIN_ROOT}/references/citation-instructions.md`. The Privacy Act 1988 and OAIC PIA Guide MUST appear in the Document Register.
 
-8. Write the artefact via the Write tool to `projects/<project-id>/<filename>`.
+8. Before writing the file, read `${CLAUDE_PLUGIN_ROOT}/references/quality-checklist.md` and verify all **Common Checks** plus the **AUPIA** per-type checks pass. Fix any failures before proceeding.
+9. Write the artefact via the Write tool to `projects/<project-id>/<filename>`.
 
-9. Show only a summary to the user (one paragraph plus the APP compliance summary table).
+10. Show only a summary to the user (one paragraph plus the APP compliance summary table).
 
 ## Important Notes
 

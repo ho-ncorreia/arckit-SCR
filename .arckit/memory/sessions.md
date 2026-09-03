@@ -10,284 +10,292 @@ Automated session summaries captured by the ArcKit session-learner hook.
   - chore: bump version to 4.6.1
   - fix: trim skill descriptions to fit 250-char context cap (#215) (#266)
 
-### 2026-06-15 17:48 — failure (oauth_org_not_allowed)
+### 2026-09-01 10:33 — general
 
-- **Status:** session interrupted by API error
-- **Effort:** high
-- **Commits:** 0 | **Files changed:** 0
-- **Artifacts:** none detected
-
-### 2026-06-15 17:46 — failure (oauth_org_not_allowed)
-
-- **Status:** session interrupted by API error
-- **Effort:** high
-- **Commits:** 0 | **Files changed:** 0
-- **Artifacts:** none detected
-- **Telemetry:** 18 tool calls (p50=1617ms, p95=5404ms)
-
-### 2026-06-11 10:52 — general
-
-- **Effort:** high
-- **Commits:** 2 | **Files changed:** 46
-- **Artifacts:** none detected
-- **Summary:**
-  - chore(release): v5.13.1
-  - chore(version): bump Claude Code min-version floor v2.1.156 → v2.1.172 (#593)
-- **Telemetry:** 26 tool calls (p50=2537ms, p95=28881ms)
-
-### 2026-06-11 08:53 — general
-
-- **Effort:** high
-- **Commits:** 1 | **Files changed:** 7
-- **Artifacts:** none detected
-- **Summary:**
-  - chore(version): bump Claude Code min-version floor v2.1.156 → v2.1.172
-- **Telemetry:** 15 tool calls (p50=33ms, p95=4703ms)
-
-### 2026-06-11 08:49 — general
-
-- **Effort:** high
-- **Commits:** 1 | **Files changed:** 7
-- **Artifacts:** none detected
-- **Summary:**
-  - chore(version): bump Claude Code min-version floor v2.1.156 → v2.1.170
-- **Telemetry:** 41 tool calls (p50=50ms, p95=9529ms)
-
-### 2026-06-10 16:05 — general
-
-- **Effort:** high
-- **Commits:** 2 | **Files changed:** 84
-- **Artifacts:** none detected
-- **Summary:**
-  - chore(release): v5.13.0
-  - feat: arckit-uk-gcloud supplier bid-authoring overlay (13th plugin) (#592)
-- **Telemetry:** 43 tool calls (p50=2792ms, p95=43544ms)
-
-### 2026-06-10 15:42 — general
-
-- **Effort:** high
-- **Commits:** 1 | **Files changed:** 2
-- **Artifacts:** none detected
-- **Summary:**
-  - docs(uk-gcloud): fit buyer/supplier callout text inside its box
-- **Telemetry:** 4 tool calls (p50=2013ms, p95=5554ms)
-
-### 2026-06-10 15:41 — general
-
-- **Effort:** high
-- **Commits:** 1 | **Files changed:** 2
-- **Artifacts:** none detected
-- **Summary:**
-  - docs(uk-gcloud): enlarge hero text for legibility
-- **Telemetry:** 4 tool calls (p50=2485ms, p95=5156ms)
-
-### 2026-06-10 15:37 — general
-
-- **Effort:** high
-- **Commits:** 2 | **Files changed:** 4
-- **Artifacts:** none detected
-- **Summary:**
-  - docs(uk-gcloud): force-add launch article + hero (docs/articles gitignored)
-  - docs(uk-gcloud): launch article + hero for the supplier overlay
-- **Telemetry:** 23 tool calls (p50=1587ms, p95=5186ms)
-
-### 2026-06-10 15:15 — general
-
-- **Effort:** high
-- **Commits:** 17 | **Files changed:** 53
-- **Artifacts:** none detected
-- **Summary:**
-  - docs(uk-gcloud): list submission-pack in pages.md Procurement row
-  - chore(uk-gcloud): remove redundant .gitkeep placeholders
-  - docs(uk-gcloud): document 13th plugin across README, index, matrix, changelogs
-  - docs(plan): avoid dot-form literal that tripped colon guard
-  - feat(uk-gcloud): keep overlay Claude-only (exclude from converter + CLI templates)
-  - feat(uk-gcloud): proprietary licence + repo-root MIT carve-out
-  - feat(uk-gcloud): add uk-gcloud-submission build recipe
-  - fix(uk-gcloud): rebrand stale 'gcloud-kit commands' prose to ArcKit in ported skills
-- **Telemetry:** 233 tool calls (p50=1540ms, p95=5690ms) | by agent: general-purpose(162 calls, p95=2161ms), main(71 calls, p95=159415ms)
-
-### 2026-06-10 12:50 — general
-
-- **Effort:** high
-- **Commits:** 4 | **Files changed:** 25
-- **Artifacts:** none detected
-- **Summary:**
-  - feat(uk-gcloud): port 8 bid-authoring templates with ArcKit Document Control headers
-  - feat(uk-gcloud): add marketplace.json entry
-  - feat(uk-gcloud): register 8 G-Cloud supplier doc-types (SUPP/SVCD/SDD/DECL/PRIC/SECA/GCMP/GCRV)
-  - feat(uk-gcloud): scaffold plugin skeleton + manifest
-- **Telemetry:** 59 tool calls (p50=1421ms, p95=63917ms) | by agent: general-purpose(39 calls, p95=1975ms), main(20 calls, p95=170203ms)
-
-### 2026-06-10 11:35 — general
-
-- **Effort:** high
+- **Effort:** max
 - **Commits:** 1 | **Files changed:** 1
 - **Artifacts:** none detected
 - **Summary:**
-  - docs(plan): arckit-uk-gcloud overlay implementation plan
-- **Telemetry:** 8 tool calls (p50=1926ms, p95=2074ms)
+  - chore: monthly traction report 2026-09 (#833)
+- **Telemetry:** 4 tool calls (p50=2133ms, p95=4353ms)
 
-### 2026-06-10 11:19 — general
+### 2026-09-01 07:20 — general
 
-- **Effort:** high
-- **Commits:** 1 | **Files changed:** 1
+- **Effort:** max
+- **Commits:** 1 | **Files changed:** 4
 - **Artifacts:** none detected
 - **Summary:**
-  - docs(spec): add dedicated /arckit:gcloud-competitors command
-- **Telemetry:** 16 tool calls (p50=35ms, p95=1981ms)
+  - docs: no tables in articles; make the release article a documented release step (#832)
+- **Telemetry:** 8 tool calls (p50=29ms, p95=7565ms)
 
-### 2026-06-10 10:48 — general
+### 2026-08-31 23:45 — general
 
-- **Effort:** high
-- **Commits:** 1 | **Files changed:** 1
-- **Artifacts:** none detected
-- **Summary:**
-  - docs(spec): set arckit-uk-gcloud licence to Proprietary
-- **Telemetry:** 9 tool calls (p50=75ms, p95=2039ms)
-
-### 2026-06-10 10:43 — general
-
-- **Effort:** high
-- **Commits:** 1 | **Files changed:** 1
-- **Artifacts:** none detected
-- **Summary:**
-  - docs(spec): arckit-uk-gcloud bid-authoring overlay design
-- **Telemetry:** 24 tool calls (p50=1524ms, p95=3499ms)
-
-### 2026-06-10 10:15 — general
-
-- **Effort:** high
-- **Commits:** 1 | **Files changed:** 38
-- **Artifacts:** none detected
-- **Summary:**
-  - chore(release): v5.12.1
-- **Telemetry:** 22 tool calls (p50=2114ms, p95=27574ms)
-
-### 2026-06-10 08:42 — general
-
-- **Effort:** high
-- **Commits:** 1 | **Files changed:** 7
-- **Artifacts:** none detected
-- **Summary:**
-  - fix(hooks): guard secret scanner against code/IaC references (#590) (#591)
-- **Telemetry:** 5 tool calls (p50=4178ms, p95=6395ms)
-
-### 2026-06-10 08:33 — general
-
-- **Effort:** high
-- **Commits:** 1 | **Files changed:** 1
-- **Artifacts:** none detected
-- **Summary:**
-  - docs(contributors): credit @jonathan-moulds-sb for the #590 secret-scanner fix
-- **Telemetry:** 11 tool calls (p50=1812ms, p95=5523ms)
-
-### 2026-06-10 08:29 — general
-
-- **Effort:** high
-- **Commits:** 1 | **Files changed:** 1
-- **Artifacts:** none detected
-- **Summary:**
-  - ci: run all tests/plugin/*.test.mjs and trigger on hook/test changes (#590)
-- **Telemetry:** 10 tool calls (p50=1868ms, p95=6164ms)
-
-### 2026-06-10 08:26 — general
-
-- **Effort:** high
+- **Effort:** max
 - **Commits:** 1 | **Files changed:** 5
 - **Artifacts:** none detected
 - **Summary:**
-  - fix(hooks): guard secret scanner against code/IaC references (#590)
-- **Telemetry:** 21 tool calls (p50=1933ms, p95=5299ms)
+  - docs: add the arckit-oaa standalone plugin article (#831)
+- **Telemetry:** 25 tool calls (p50=21ms, p95=2928ms)
 
-### 2026-06-10 08:09 — general
+### 2026-08-31 16:59 — general
 
-- **Effort:** high
-- **Commits:** 2 | **Files changed:** 62
+- **Effort:** max
+- **Commits:** 1 | **Files changed:** 7
 - **Artifacts:** none detected
 - **Summary:**
-  - chore(release): v5.12.0
-  - feat(arckit-fde): white-label FDE consulting site generator plugin (#589)
-- **Telemetry:** 23 tool calls (p50=1966ms, p95=5079ms)
+  - fix: make bump-version.sh work on macOS (BSD sed, bash 3.2) (#830)
+- **Telemetry:** 22 tool calls (p50=17ms, p95=9975ms)
 
-### 2026-06-08 08:58 — general
+### 2026-08-31 10:04 — general
 
-- **Effort:** high
-- **Commits:** 1 | **Files changed:** 36
+- **Effort:** max
+- **Commits:** 1 | **Files changed:** 91
 - **Artifacts:** none detected
 - **Summary:**
-  - chore(release): v5.11.2
-- **Telemetry:** 16 tool calls (p50=2017ms, p95=51462ms)
+  - chore: bump version to 6.13.0 (#829)
+- **Telemetry:** 100 tool calls (p50=58ms, p95=6905ms)
 
-### 2026-06-08 08:46 — general
+### 2026-08-31 08:58 — general
+
+- **Effort:** max
+- **Commits:** 1 | **Files changed:** 150
+- **Artifacts:** none detected
+- **Summary:**
+  - feat: split Open Agile Architecture into standalone arckit-oaa plugin (#828)
+- **Telemetry:** 42 tool calls (p50=430ms, p95=5404ms)
+
+### 2026-08-31 08:17 — general
+
+- **Effort:** max
+- **Commits:** 1 | **Files changed:** 15
+- **Artifacts:** none detected
+- **Summary:**
+  - fix: ship single-agent monoliths for tenders/competitors on non-Claude targets (#447) (#824)
+- **Telemetry:** 59 tool calls (p50=60ms, p95=6351ms)
+
+### 2026-08-07 20:00 — general
 
 - **Effort:** high
 - **Commits:** 1 | **Files changed:** 65
 - **Artifacts:** none detected
 - **Summary:**
-  - refactor: move generated extension dirs under extensions/ (#588)
-- **Telemetry:** 50 tool calls (p50=1510ms, p95=8317ms)
+  - fix(fr): add FR classification ladder, correct stale IGI 1300 citation
+- **Telemetry:** 52 tool calls (p50=59ms, p95=1756ms)
 
-### 2026-06-08 06:47 — general
+### 2026-08-07 19:45 — general
 
 - **Effort:** high
-- **Commits:** 1 | **Files changed:** 2
+- **Commits:** 4 | **Files changed:** 168
 - **Artifacts:** none detected
 - **Summary:**
-  - docs: note Claude Code v2.1.166 fallbackModel + managed-settings hardening (#587)
-- **Telemetry:** 4 tool calls (p50=4570ms, p95=5408ms)
+  - feat(ci): guard that every per-type quality-checklist reference resolves (#751)
+  - fix(quality-checklist): add the 15 missing per-type sections for togaf-adm and agent-architecture (#750)
+  - feat(doc-control): route the classification ladder by regime, not user config (#744)
+  - docs(contributing): name all four doc files a new command must update (#743)
+- **Telemetry:** 12 tool calls (p50=235ms, p95=958ms)
 
-### 2026-06-08 06:45 — general
+### 2026-07-29 16:02 — general
 
-- **Effort:** high
-- **Commits:** 1 | **Files changed:** 2
+- **Effort:** xhigh
+- **Commits:** 1 | **Files changed:** 28
 - **Artifacts:** none detected
 - **Summary:**
-  - docs: note Claude Code v2.1.166 fallbackModel + managed-settings hardening
-- **Telemetry:** 18 tool calls (p50=2348ms, p95=24644ms)
+  - fix(at): move ATNISG checklist edit into the core shared-asset source
+- **Telemetry:** 10 tool calls (p50=1131ms, p95=51339ms)
 
-### 2026-06-07 10:45 — general
+### 2026-07-29 15:58 — general
 
-- **Effort:** high
+- **Effort:** xhigh
+- **Commits:** 1 | **Files changed:** 24
+- **Artifacts:** none detected
+- **Summary:**
+  - fix(at): correct Austrian overlay legal citations and CODEOWNERS paths
+- **Telemetry:** 124 tool calls (p50=8ms, p95=19291ms)
+
+### 2026-07-27 12:10 — general
+
+- **Effort:** xhigh
+- **Commits:** 1 | **Files changed:** 80
+- **Artifacts:** none detected
+- **Summary:**
+  - chore: bump version to 6.6.0
+- **Telemetry:** 30 tool calls (p50=3879ms, p95=57753ms)
+
+### 2026-07-27 11:52 — general
+
+- **Effort:** xhigh
+- **Commits:** 1 | **Files changed:** 35
+- **Artifacts:** none detected
+- **Summary:**
+  - chore: raise Claude Code floor to v2.1.219 for Claude Opus 5 (#580)
+- **Telemetry:** 24 tool calls (p50=1933ms, p95=27241ms)
+
+### 2026-07-27 11:35 — general
+
+- **Effort:** xhigh
+- **Commits:** 1 | **Files changed:** 6
+- **Artifacts:** none detected
+- **Summary:**
+  - fix: guard arckit-build waves against the subagent concurrency cap (#580)
+- **Telemetry:** 38 tool calls (p50=1759ms, p95=67456ms)
+
+### 2026-07-27 09:49 — failure (server_error)
+
+- **Status:** session interrupted by API error
+- **Effort:** xhigh
+- **Commits:** 0 | **Files changed:** 0
+- **Artifacts:** none detected
+- **Telemetry:** 5 tool calls (p50=4612ms, p95=23570ms)
+
+### 2026-07-27 08:35 — general
+
+- **Effort:** xhigh
+- **Commits:** 2 | **Files changed:** 16
+- **Artifacts:** none detected
+- **Summary:**
+  - fix: don't resolve ${CLAUDE_PLUGIN_ROOT} refs inside guide code blocks
+  - fix: guard docs/guides parity between the two trees (#580)
+- **Telemetry:** 47 tool calls (p50=2110ms, p95=17204ms)
+
+### 2026-07-27 08:09 — general
+
+- **Effort:** xhigh
+- **Commits:** 1 | **Files changed:** 14
+- **Artifacts:** none detected
+- **Summary:**
+  - docs: adopt Claude Code v2.1.201-v2.1.220 guidance (#580)
+- **Telemetry:** 92 tool calls (p50=1815ms, p95=6445ms)
+
+### 2026-07-27 06:40 — general
+
+- **Effort:** xhigh
+- **Commits:** 1 | **Files changed:** 80
+- **Artifacts:** none detected
+- **Summary:**
+  - chore: bump version to 6.5.0
+- **Telemetry:** 42 tool calls (p50=1637ms, p95=39535ms)
+
+### 2026-07-25 13:40 — general
+
+- **Effort:** xhigh
 - **Commits:** 1 | **Files changed:** 5
 - **Artifacts:** none detected
 - **Summary:**
-  - chore(docs): tidy docs/ — untrack confidential plan, relocate stray files (#586)
-- **Telemetry:** 11 tool calls (p50=3240ms, p95=7153ms)
+  - fix(hooks): correct the provenance effort-downgrade matrix (#669)
+- **Telemetry:** 25 tool calls (p50=1621ms, p95=10010ms) | by agent: main(22 calls, p95=6343ms), claude-code-guide(3 calls, p95=10010ms)
 
-### 2026-06-07 10:34 — general
+### 2026-07-25 13:20 — general
 
-- **Effort:** high
-- **Commits:** 1 | **Files changed:** 5
+- **Effort:** xhigh
+- **Commits:** 1 | **Files changed:** 2
 - **Artifacts:** none detected
 - **Summary:**
-  - chore(docs): tidy docs/ — untrack confidential plan, relocate stray files
-- **Telemetry:** 14 tool calls (p50=2406ms, p95=3889ms)
+  - docs(hooks): correct kimi-k3 model name and flag the effort-matrix known issue
+- **Telemetry:** 17 tool calls (p50=2512ms, p95=10395ms)
 
-### 2026-06-07 10:17 — general
+### 2026-07-25 12:41 — general
 
-- **Effort:** high
-- **Commits:** 1 | **Files changed:** 36
+- **Effort:** xhigh
+- **Commits:** 1 | **Files changed:** 6
 - **Artifacts:** none detected
 - **Summary:**
-  - chore(release): v5.11.1
-- **Telemetry:** 20 tool calls (p50=2565ms, p95=67289ms)
+  - feat(kimi): wire governance hooks and enrich the plugin manifest
+- **Telemetry:** 62 tool calls (p50=1604ms, p95=10299ms)
 
-### 2026-06-07 10:07 — general
+### 2026-07-25 09:34 — general
 
-- **Effort:** high
-- **Commits:** 1 | **Files changed:** 777
+- **Effort:** xhigh
+- **Commits:** 1 | **Files changed:** 80
 - **Artifacts:** none detected
 - **Summary:**
-  - refactor: move the 11 Claude Code plugins under plugins/ (#585)
-- **Telemetry:** 3 tool calls (p50=8254ms, p95=8880ms)
+  - chore(release): v6.4.0
+- **Telemetry:** 24 tool calls (p50=3196ms, p95=55278ms)
 
-### 2026-06-07 10:04 — general
+### 2026-07-25 09:18 — general
 
-- **Effort:** high
-- **Commits:** 1 | **Files changed:** 777
+- **Effort:** xhigh
+- **Commits:** 1 | **Files changed:** 1
 - **Artifacts:** none detected
 - **Summary:**
-  - refactor: move the 11 Claude Code plugins under plugins/
-- **Telemetry:** 150 tool calls (p50=1684ms, p95=14008ms) | by agent: main(103 calls, p95=18361ms), Explore(37 calls, p95=5767ms), claude-code-guide(10 calls, p95=3302ms)
+  - fix(lint): exempt tests and plans from the colon-form command linter
+- **Telemetry:** 19 tool calls (p50=4497ms, p95=33791ms)
+
+### 2026-07-25 08:28 — general
+
+- **Effort:** xhigh
+- **Commits:** 1 | **Files changed:** 2
+- **Artifacts:** none detected
+- **Summary:**
+  - fix(converter): stop swallowing trailing punctuation in skill invocations
+- **Telemetry:** 35 tool calls (p50=2312ms, p95=11454ms)
+
+### 2026-07-24 12:09 — general
+
+- **Effort:** xhigh
+- **Commits:** 9 | **Files changed:** 14
+- **Artifacts:** none detected
+- **Summary:**
+  - fix(kimi): address whole-branch review findings
+  - docs(plans): record the legacy-vs-current Kimi docs correction
+  - fix(kimi): correct manifest filename, install command and frontmatter for Kimi Code
+  - chore(lint): exclude generated arckit-kimi output and process scratch
+  - docs: document the Kimi Code CLI distribution format
+  - fix(release): widen the kimi publish guard to catch partial converter runs
+  - fix(release): include kimi in the default push-extensions target set
+  - chore(kimi): register arckit-kimi for publishing and version bumps
+- **Telemetry:** 351 tool calls (p50=1590ms, p95=62303ms) | by agent: general-purpose(307 calls, p95=7315ms), main(44 calls, p95=1042532ms)
+
+### 2026-07-24 08:54 — general
+
+- **Effort:** xhigh
+- **Commits:** 8 | **Files changed:** 10
+- **Artifacts:** none detected
+- **Summary:**
+  - feat(cli): add --ai kimi for Kimi Code CLI project scaffolding
+  - test(kimi): validate generated extension structure and CI wiring
+  - fix(kimi): ship core reference skills so sessionStart resolves
+  - feat(kimi): wire Kimi Code CLI target into the converter
+  - feat(kimi): generate plugin.json manifest with mapped MCP servers
+  - refactor(converter): extract platform-parameterised skill rewrite core
+  - feat(kimi): add skill naming and invocation helpers
+  - chore(kimi): scaffold arckit-kimi extension directory
+- **Telemetry:** 316 tool calls (p50=1503ms, p95=35507ms) | by agent: general-purpose(277 calls, p95=3638ms), main(39 calls, p95=576533ms)
+
+### 2026-07-23 09:45 — general
+
+- **Effort:** xhigh
+- **Commits:** 1 | **Files changed:** 1
+- **Artifacts:** none detected
+- **Summary:**
+  - docs(plans): implementation plan for the Kimi Code CLI extension
+- **Telemetry:** 44 tool calls (p50=1656ms, p95=6896ms)
+
+### 2026-07-23 09:27 — general
+
+- **Effort:** xhigh
+- **Commits:** 3 | **Files changed:** 3
+- **Artifacts:** none detected
+- **Summary:**
+  - chore(hooks): add claude-opus-4-8 to effort matrix; mark matrix Claude-only
+  - fix(hooks): parse provider-prefixed and bracket-suffixed model ids in provenance footer
+  - refactor(hooks): extract testable model/effort helpers into provenance-model.mjs
+- **Telemetry:** 48 tool calls (p50=2287ms, p95=6667ms)
+
+### 2026-07-22 11:24 — general
+
+- **Effort:** xhigh
+- **Commits:** 1 | **Files changed:** 1
+- **Artifacts:** none detected
+- **Summary:**
+  - docs(plans): revise Kimi V3 plan — correct Codex/Vibe misidentification, add TDD tasks
+- **Telemetry:** 24 tool calls (p50=2534ms, p95=6643ms)
+
+### 2026-07-22 10:07 — general
+
+- **Effort:** xhigh
+- **Commits:** 1 | **Files changed:** 3
+- **Artifacts:** none detected
+- **Summary:**
+  - docs(site): list Atomic Task Graph article + add 1200x630 social card (#662)
+- **Telemetry:** 3 tool calls (p50=8592ms, p95=9008ms)
 

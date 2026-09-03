@@ -4,7 +4,7 @@
 
 `/arckit:tenders` discovers procurement market intelligence — award-value benchmarks, top suppliers, incumbency patterns, and concentration — from live UK procurement notices via the UK Tenders MCP.
 
-> **Agent Architecture**: This command uses a three-tier reader/writer subagent split. The **`arckit-tenders-reader`** subagent fetches evidence from the UK Tenders MCP (keeping that I/O isolated from your main context window). The orchestrator tier (the slash command) validates the reader's JSON payload against the `tenders-handoff.schema.json` schema and computes deterministic derived fields. The **`arckit-tenders-writer`** subagent then renders the final artefact. The slash command launches and coordinates both agents.
+> **Agent Architecture**: This command uses a three-tier reader/writer subagent split. The **`arckit-tenders-reader`** subagent fetches evidence from the UK Tenders MCP (keeping that I/O isolated from your main context window). The orchestrator tier (the slash command) validates the reader's JSON payload against the `tenders-handoff.schema.json` schema and computes deterministic derived fields. The **`arckit-tenders-writer`** subagent then renders the final artefact. The slash command launches and coordinates both agents. On runtimes without subagent dispatch (Codex, Gemini, OpenCode, Copilot, Paperclip, Vibe, Kimi), the command ships as the equivalent single-agent `arckit-tenders` prompt instead, which does the same discovery, derivation and rendering in one role.
 
 ---
 
@@ -102,7 +102,7 @@ Outputs: `projects/<id>/research/ARC-<id>-TNDR-<NNN>-v1.0.md`
 claude remote-control
 ```
 
-Drive the session from claude.ai/code or the mobile app, then enable `/config → Push when Claude decides` so your phone gets a notification on completion. ArcKit's minimum Claude Code floor (v2.1.121) already covers the v2.1.110 RC requirement.
+Drive the session from claude.ai/code or the mobile app, then enable `/config → Push when Claude decides` so your phone gets a notification on completion. ArcKit's minimum Claude Code floor (v2.1.251) already covers the v2.1.110 RC requirement.
 
 Caveats: Pro/Max plans only (no API keys, no Bedrock/Vertex/Foundry), push is a single on/off so chatty agents can over-notify, and the local `claude` process must keep running.
 

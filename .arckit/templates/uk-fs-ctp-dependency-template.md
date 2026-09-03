@@ -4,26 +4,13 @@
 
 ## Document Control
 
-<!-- Default: OFFICIAL. Upgrade to OFFICIAL-SENSITIVE if this document reveals specific contractual
-     exit terms, proprietary resilience-test outcomes, or provider-specific vulnerabilities that
-     could be exploited if disclosed. Driven by user_config.default_classification. -->
+<!-- DOC-CONTROL-HEADER -->
+<!-- Resolved at command-execution time per _partials/RENDERING.md. -->
+
+<!-- Domain-specific fields, retained after the resolved header per the Document Control Standard. -->
 
 | Field | Value |
 |-------|-------|
-| **Document ID** | {{DOCUMENT_ID}} |
-| **Document Type** | UK FS CTP Dependency Assessment |
-| **Project** | {{PROJECT_NAME}} |
-| **Classification** | {{CLASSIFICATION}} |
-| **Status** | DRAFT |
-| **Version** | 1.0 |
-| **Created Date** | {{CREATED_DATE}} |
-| **Last Modified** | {{LAST_MODIFIED_DATE}} |
-| **Review Cycle** | Annual (minimum); review immediately on any new HMT designation or material change to provider relationship |
-| **Next Review Date** | {{NEXT_REVIEW_DATE}} |
-| **Owner** | {{DOCUMENT_OWNER_ROLE}} — {{DOCUMENT_OWNER_NAME}} |
-| **Reviewed By** | PENDING |
-| **Approved By** | PENDING |
-| **Distribution** | {{DISTRIBUTION}} |
 | **Firm Authorisation / Registration Type** | {{FIRM_AUTHORISATION_TYPE}} |
 | **FCA Firm Reference Number** | {{FCA_FRN}} |
 | **SMF Holder (Operational Resilience)** | {{SMF_HOLDER_NAME}} — {{SMF_HOLDER_FUNCTION}} |
@@ -311,6 +298,29 @@ regulatory mandate — cite it but do not treat it as a binding regulatory requi
 | FCA 2024/41 | FCA CTP Sourcebook instrument implementing PS24/16 | <https://www.handbook.fca.org.uk/instrument/2024/FCA_2024_41.pdf> |
 | FINOS CCC | FINOS Common Cloud Controls — open cloud control library for financial services | <https://www.finos.org/common-cloud-controls-project> |
 | FCA Op Res | FCA Operational Resilience — firms guidance | <https://www.fca.org.uk/firms/operational-resilience> |
+
+## 11. External References
+
+> This section provides traceability from generated content back to source documents.
+> Follow citation instructions in the project's citation reference guide.
+
+### Document Register
+
+| Doc ID | Filename | Type | Source Location | Description |
+|--------|----------|------|-----------------|-------------|
+| *None provided* | — | — | — | — |
+
+### Citations
+
+| Citation ID | Doc ID | Page/Section | Category | Quoted Passage |
+|-------------|--------|--------------|----------|----------------|
+| — | — | — | — | — |
+
+### Unreferenced Documents
+
+| Filename | Source Location | Reason |
+|----------|-----------------|--------|
+| — | — | — |
 
 ---
 

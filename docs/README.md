@@ -15,8 +15,9 @@ Complete documentation for ArcKit — The Enterprise Architecture Governance Har
 
 ## Articles
 
-- [ArcKit and OKF: knowledge interoperability without giving up governance](article-viewer.html?a=2026-06-19-okf-compatibility-workflows)
-- [ArcKit Self-Harness: when the governance harness starts improving itself](article-viewer.html?a=2026-06-19-self-harness-autoresearch)
+- [ArcKit TOGAF ADM: The Method Becomes a Governed Workflow](article-viewer.html?a=2026-07-01-arckit-togaf-adm)
+- [ArcKit AI Agent Architecture: Governed Design for Autonomous Systems](article-viewer.html?a=2026-06-30-arckit-agent-architecture)
+- [I Built ArcKit for Myself. Thank You for Using It.](article-viewer.html?a=2026-06-29-arckit-usage-signals)
 
 See the [full articles index](articles.html) for all ArcKit release notes, analysis, and essays.
 
@@ -33,7 +34,7 @@ See the [full articles index](articles.html) for all ArcKit release notes, analy
 - [Upgrading ArcKit](guides/upgrading.md) - Version upgrade instructions
 - [Remote Control](guides/remote-control.md) - Remote architecture governance
 - [Productivity](guides/productivity.md) - Workflow optimization tips
-- [ArcKit at Enterprise Scale](guides/enterprise-scale.md) - Multi-repo, multi-application topology and governance
+- [ArcKit at Enterprise Scale](guides/enterprise-scale.md) - Claude enterprise deployment, managed settings, MCP controls, and multi-repo governance
 
 ### Discovery
 
@@ -68,6 +69,27 @@ See the [full articles index](articles.html) for all ArcKit release notes, analy
 - [Climate Assessment](guides/wardley-climate.md) - `/arckit:wardley.climate`
 - [Data Mesh Contract](guides/data-mesh-contract.md) - `/arckit:data-mesh-contract`
 - [C4 Layout Science](guides/c4-layout-science.md) - Research-backed diagram layout
+
+### TOGAF ADM Overlay
+
+- [ADM Preliminary](guides/adm-preliminary.md) - `/arckit:adm-preliminary`
+- [Business Capability Map](guides/business-capability-map.md) - `/arckit:business-capability-map`
+- [Application Inventory](guides/application-inventory.md) - `/arckit:application-inventory`
+- [Application Rationalization](guides/application-rationalization.md) - `/arckit:application-rationalization`
+- [TOGAF Gap Analysis](guides/gap-analysis.md) - `/arckit:gap-analysis`
+- [Transition Architecture](guides/transition-architecture.md) - `/arckit:transition-architecture`
+- [Architecture Board](guides/architecture-board.md) - `/arckit:architecture-board`
+- [Architecture Change Request](guides/architecture-change.md) - `/arckit:architecture-change`
+- [Architecture Repository](guides/architecture-repository.md) - `/arckit:architecture-repository`
+
+### AI Agent Architecture Overlay
+
+- [AI Agent Inventory](guides/agent-inventory.md) - `/arckit:agent-inventory`
+- [AI Agent Design](guides/agent-design.md) - `/arckit:agent-design`
+- [AI Agent Governance](guides/agent-governance.md) - `/arckit:agent-governance`
+- [AI Agent Integration](guides/agent-integration.md) - `/arckit:agent-integration`
+- [AI Agent Security](guides/agent-security.md) - `/arckit:agent-security`
+- [AI Agent Maturity](guides/agent-maturity.md) - `/arckit:agent-maturity`
 
 ### Governance
 
@@ -113,7 +135,27 @@ See the [full articles index](articles.html) for all ArcKit release notes, analy
 - [Statement of Work](guides/procurement.md) - `/arckit:sow`
 - [Vendor Evaluation](guides/evaluate.md) - `/arckit:evaluate`
 - [Vendor Scoring](guides/score.md) - `/arckit:score`
+- [Procurement Market Intelligence](guides/tenders.md) - `/arckit:tenders`
+- [Competitor Landscape Intelligence](guides/competitors.md) - `/arckit:competitors`
 - [Digital Marketplace](guides/uk-government/digital-marketplace.md) - `/arckit:gcloud-search`, `/arckit:gcloud-clarify`, `/arckit:dos`
+
+### UK G-Cloud Supplier Overlay
+
+- [G-Cloud Supplier Profile](guides/supplier-profile.md) - `/arckit:supplier-profile`
+- [G-Cloud Service Design](guides/service-design.md) - `/arckit:service-design`
+- [G-Cloud Lot 1 Service Definition](guides/sdd-lot1.md) - `/arckit:sdd-lot1`
+- [G-Cloud Lot 2 Service Definition](guides/sdd-lot2.md) - `/arckit:sdd-lot2`
+- [G-Cloud Lot 3 Service Definition](guides/sdd-lot3.md) - `/arckit:sdd-lot3`
+- [G-Cloud Supplier Declaration](guides/declaration.md) - `/arckit:declaration`
+- [G-Cloud Pricing](guides/pricing.md) - `/arckit:pricing`
+- [G-Cloud Security Assertions](guides/security.md) - `/arckit:security`
+- [G-Cloud Competitor Benchmark](guides/gcloud-competitors.md) - `/arckit:gcloud-competitors`
+- [G-Cloud Submission Review](guides/review.md) - `/arckit:review`
+- [G-Cloud Submission Pack](guides/submission-pack.md) - `/arckit:submission-pack`
+
+### FDE Site Generator
+
+- [FDE Site Generator](guides/create.md) - `/arckit-fde:create`
 
 ### Integrations
 
@@ -277,4 +319,4 @@ Found a gap or want to improve documentation?
 ---
 
 **Last updated**: 2026-02-25
-**ArcKit Version**: 5.15.0
+**ArcKit Version**: 6.13.0

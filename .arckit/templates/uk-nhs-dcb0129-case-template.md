@@ -39,7 +39,7 @@
 **Risk levels**: `unacceptable` · `high` · `medium` · `low`
 **Hazard status**: `open` · `mitigated` · `accepted` · `closed`
 
-> ⚠️ DCB0129 inverts the usual Orange Book convention where 5 = highest. Read carefully when cross-referencing project risk registers.
+> ⚠️ **Numbering note (ArcKit encoding, not DCB0129).** ArcKit numbers the DCB0129 labels 1 (worst) to 5 (least) purely to store them. DCB0129 itself puts no numbers on the severity/likelihood axes - they are word-labelled. The only numbers in the standard are the Risk Class cells (1-5, where 5 = unacceptable/highest, the conventional direction), so these ordinals run opposite to both the usual risk-register convention and DCB0129's own risk classes. Take care when cross-referencing project risk registers.
 
 ---
 
@@ -179,6 +179,21 @@ Evidence:
 ### Overall residual risk position
 
 [CSO's overall judgment that the product, with controls in place, is acceptably safe for its intended use. One paragraph.]
+
+### Re-review triggers
+
+This safety case must be re-reviewed by the Clinical Safety Officer when a change touches any of the following. Record the change and the re-review outcome in the Revision History.
+
+- Calculation, threshold, score, rounding, unit, or clinical rule
+- Patient identity, record matching, demographics, or clinical context
+- Data model, terminology, coding, validation, migration, or persistence
+- API, integration, interoperability, cache, queue, sync, or source-of-truth behaviour
+- Alerting, notification, escalation, prioritisation, or acknowledgement
+- User workflow, UI copy, warnings, confirmations, or accessibility
+- Authentication, authorisation, legitimate relationship, audit logging, or break-glass
+- Deployment configuration, feature flags, environment, infrastructure, failover, or backups
+- Monitoring, incident response, support, downtime, or decommissioning
+- AI/ML model, prompt, training data, calibration, drift, or human oversight
 
 ---
 

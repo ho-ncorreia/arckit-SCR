@@ -14,6 +14,7 @@ A toolkit for enterprise architects to manage:
 import os
 import subprocess
 import sys
+import sysconfig
 import zipfile
 import tempfile
 import shutil
@@ -58,6 +59,12 @@ AGENT_CONFIG = {
         "folder": ".github/",
         "install_url": "https://github.com/features/copilot",
         "requires_cli": False,
+    },
+    "kimi": {
+        "name": "Kimi Code CLI",
+        "folder": ".arckit/",
+        "install_url": "https://github.com/tractorjuice/arckit-kimi",
+        "requires_cli": True,
     },
 }
 
@@ -144,6 +151,46 @@ def init_git_repo(project_path: Path) -> bool:
         os.chdir(original_cwd)
 
 
+# Assets without which a scaffolded project cannot be used with the chosen
+# assistant. Copies not listed here stay best-effort: a missing Codex hook
+# directory degrades the project, a missing skills directory means the
+# assistant has no ArcKit commands at all. `kimi` copies nothing of its own —
+# its commands arrive via the extension installed from inside the Kimi TUI.
+COMMON_REQUIRED_ASSETS = (
+    "templates",
+    "scripts",
+    "docid_generator",
+    "doctypes_config",
+)
+
+REQUIRED_ASSETS_BY_AI = {
+    "codex": ("codex_skills",),
+    "opencode": ("opencode_commands", "opencode_agents"),
+    "copilot": ("copilot_prompts", "copilot_agents", "copilot_instructions"),
+    "kimi": (),
+}
+
+
+def missing_required_assets(data_paths, ai_assistant, all_ai=False):
+    """Return [(key, path)] for each required asset that is not on disk.
+
+    `--all-ai` installs the Codex and OpenCode trees, so both gate the run.
+    """
+    keys = list(COMMON_REQUIRED_ASSETS)
+    if all_ai:
+        keys += list(REQUIRED_ASSETS_BY_AI["codex"])
+        keys += list(REQUIRED_ASSETS_BY_AI["opencode"])
+    else:
+        keys += list(REQUIRED_ASSETS_BY_AI.get(ai_assistant, ()))
+
+    missing = []
+    for key in keys:
+        path = data_paths.get(key)
+        if path is None or not Path(path).exists():
+            missing.append((key, path))
+    return missing
+
+
 def get_data_paths():
     """Get paths to templates, scripts, and commands from installed package or source."""
 
@@ -166,61 +213,161 @@ def get_data_paths():
             "codex_agents": base_path / "extensions" / "arckit-codex" / "agents",
             "codex_hooks": base_path / "extensions" / "arckit-codex" / "hooks",
             "codex_schemas": base_path / "extensions" / "arckit-codex" / "schemas",
+            # Vendored reference data a command declares as its ONLY source of
+            # truth (e.g. the EUCSF Annex calculator catalogue). Under the plugin
+            # these resolve via ${CLAUDE_PLUGIN_ROOT}/data/; the converter rewrites
+            # that to .arckit/data/ for every CLI-scaffolded target, so the
+            # scaffold has to create it or the command reads a path that does not
+            # exist and invents the values it was told never to invent (#782).
+            "codex_data": base_path / "extensions" / "arckit-codex" / "data",
             "codex_validator": base_path / "extensions" / "arckit-codex" / "scripts" / "validate-handoff.mjs",
+            # The document-ID generator and the doc-type registry it imports.
+            # Sourced from the core plugin (the single copy) rather than from
+            # scripts/, and scaffolded to .arckit/scripts/ and .arckit/config/
+            # so the generator's ../config/doc-types.mjs import resolves.
+            "docid_generator": base_path / "plugins" / "arckit-claude" / "scripts" / "generate-document-id.mjs",
+            "doctypes_config": base_path / "plugins" / "arckit-claude" / "config" / "doc-types.mjs",
             "codex_config": base_path / "extensions" / "arckit-codex" / "config.toml",
             "copilot_prompts": base_path / "extensions" / "arckit-copilot" / "prompts",
             "copilot_agents": base_path / "extensions" / "arckit-copilot" / "agents",
             "copilot_instructions": base_path / "extensions" / "arckit-copilot" / "copilot-instructions.md",
         }
 
-    # First, check if running from source (development mode)
-    # This allows testing local changes without re-installing
-    source_root = Path(__file__).parent.parent.parent
-    if (source_root / ".arckit").exists() and (source_root / "extensions" / "arckit-codex").exists():
-        return build_paths(source_root)
-
-    # Then try to find installed package data
-    try:
-        # Try to find the shared data directory for uv tool installs
-        # uv installs tools in ~/.local/share/uv/tools/{package-name}/share/{package}/
-        uv_tools_path = (
-            Path.home()
-            / ".local"
-            / "share"
-            / "uv"
-            / "tools"
-            / "arckit-cli"
-            / "share"
-            / "arckit"
+    root = find_data_root()
+    if root is None:
+        # Nothing resolved. Report what was searched rather than silently
+        # handing back paths under a directory that cannot contain the data
+        # (#730: a Homebrew install fell back to /opt/homebrew/lib/python3.11).
+        source_root = Path(__file__).resolve().parents[2]
+        console.print(
+            "[yellow]Warning: could not locate the ArcKit data directory "
+            "(share/arckit). Searched:[/yellow]"
         )
-        if uv_tools_path.exists():
-            return build_paths(uv_tools_path)
+        for candidate in data_root_candidates():
+            console.print(f"[dim]  {candidate}[/dim]")
+        console.print(
+            "[yellow]Set ARCKIT_DATA_DIR to the directory containing "
+            ".arckit/templates to override.[/yellow]"
+        )
+        root = source_root
 
-        # Try to find the shared data directory for regular pip installs
+    paths = build_paths(root)
+    paths["data_root"] = root
+    return paths
+
+
+def interpreter_data_prefixes():
+    """Prefixes the interpreter reports as install roots for shared data.
+
+    `share/arckit` is delivered by hatchling's `shared-data`, which installs
+    into the active scheme's `data` path. Every scheme is probed rather than
+    just the default one: Homebrew patches `osx_framework_library` so its
+    `data` is HOMEBREW_PREFIX while `sys.prefix` still points inside the
+    Framework bundle, and that scheme only exists on macOS.
+    """
+    prefixes = []
+
+    for scheme in sysconfig.get_scheme_names():
+        try:
+            prefixes.append(Path(sysconfig.get_path("data", scheme)))
+        except Exception:
+            continue
+
+    prefixes.append(Path(sys.prefix))
+    prefixes.append(Path(sys.base_prefix))
+
+    try:
         import site
 
-        for site_dir in site.getsitepackages() + [site.getusersitepackages()]:
-            if site_dir:
-                # Try site-packages/share/arckit
-                share_path = Path(site_dir) / "share" / "arckit"
-                if share_path.exists():
-                    return build_paths(share_path)
-
-                # Try ../../../share/arckit from site-packages (for system installs)
-                share_path = Path(site_dir).parent.parent.parent / "share" / "arckit"
-                if share_path.exists():
-                    return build_paths(share_path)
-
-        # Try platformdirs approach for other installs
-        data_dir = Path(platformdirs.user_data_dir("arckit"))
-        if data_dir.exists():
-            return build_paths(data_dir)
-
+        site_dirs = list(site.getsitepackages())
+        user_site = site.getusersitepackages()
+        if user_site:
+            site_dirs.append(user_site)
+        for site_dir in site_dirs:
+            site_path = Path(site_dir)
+            # share/ nested inside site-packages, and the enclosing prefix.
+            prefixes.append(site_path)
+            if len(site_path.parents) >= 3:
+                prefixes.append(site_path.parents[2])
     except Exception:
         pass
 
-    # Fallback to source directory if installation check failed
-    return build_paths(source_root)
+    try:
+        prefixes.append(Path(platformdirs.user_data_dir("arckit")).parent)
+    except Exception:
+        pass
+
+    return prefixes
+
+
+def data_root_candidates(module_file=None, prefixes=None):
+    """Every location a `share/arckit` data root could plausibly live.
+
+    Ordered most-specific first. Pure — performs no filesystem access, so the
+    same list can be probed for existence or printed as a diagnostic.
+    """
+    module_path = Path(__file__ if module_file is None else module_file).resolve()
+    candidates = []
+
+    def add(path):
+        if path not in candidates:
+            candidates.append(path)
+
+    # uv tool installs: ~/.local/share/uv/tools/{package}/share/{package}/
+    try:
+        add(Path.home() / ".local" / "share" / "uv" / "tools" / "arckit-cli" / "share" / "arckit")
+    except Exception:
+        pass
+
+    # The installed module's own location is the one thing that is always
+    # true, whatever the interpreter believes its prefix to be. Walk up to
+    # the site-packages/dist-packages ancestor and take the prefix above it.
+    for ancestor in module_path.parents:
+        if ancestor.name in ("site-packages", "dist-packages"):
+            add(ancestor / "share" / "arckit")
+            if len(ancestor.parents) >= 3:
+                add(ancestor.parents[2] / "share" / "arckit")
+            break
+
+    for prefix in (
+        interpreter_data_prefixes() if prefixes is None else prefixes
+    ):
+        add(Path(prefix) / "share" / "arckit")
+
+    return candidates
+
+
+def find_data_root(module_file=None, *, env=None, prefixes=None):
+    """Locate the directory holding ArcKit's templates, scripts and extensions.
+
+    Returns the resolved root, or None when no candidate exists — callers must
+    not fabricate a path from the module location, because on installs where
+    the interpreter prefix and the install tree diverge that path is wrong in a
+    way that only surfaces as "not found" warnings much later (#730).
+    """
+    environ = os.environ if env is None else env
+    module_path = Path(__file__ if module_file is None else module_file).resolve()
+
+    override = environ.get("ARCKIT_DATA_DIR")
+    if override:
+        override_path = Path(override).expanduser()
+        if override_path.is_dir():
+            return override_path
+
+    # Running from a clone (development mode) — use the working tree so local
+    # changes are picked up without re-installing.
+    if len(module_path.parents) >= 3:
+        source_root = module_path.parents[2]
+        if (source_root / ".arckit").is_dir() and (
+            source_root / "extensions" / "arckit-codex"
+        ).is_dir():
+            return source_root
+
+    for candidate in data_root_candidates(module_path, prefixes):
+        if (candidate / ".arckit").is_dir():
+            return candidate
+
+    return None
 
 
 def create_project_structure(
@@ -327,7 +474,7 @@ def init(
         None,
         help="Name for your new project directory (optional, use '.' for current directory)",
     ),
-    ai_assistant: str = typer.Option(None, "--ai", help="AI assistant to use: codex, opencode, copilot"),
+    ai_assistant: str = typer.Option(None, "--ai", help="AI assistant to use: codex, opencode, copilot, kimi"),
     no_git: bool = typer.Option(
         False, "--no-git", help="Skip git repository initialization"
     ),
@@ -416,6 +563,7 @@ def init(
         console.print("1. codex (OpenAI Codex CLI)")
         console.print("2. opencode (OpenCode CLI)")
         console.print("3. copilot (GitHub Copilot in VS Code)")
+        console.print("4. kimi (Kimi Code CLI)")
         console.print()
         console.print("[dim]For Claude Code, use the ArcKit plugin instead:[/dim]")
         console.print("[dim]  /plugin marketplace add tractorjuice/arc-kit[/dim]")
@@ -425,7 +573,7 @@ def init(
         )
 
         choice = typer.prompt("Enter choice", default="1")
-        ai_map = {"1": "codex", "2": "opencode", "3": "copilot"}
+        ai_map = {"1": "codex", "2": "opencode", "3": "copilot", "4": "kimi"}
         ai_assistant = ai_map.get(choice, "codex")
 
     if ai_assistant == "claude":
@@ -445,7 +593,7 @@ def init(
         console.print(
             "  [cyan]gemini extensions install https://github.com/tractorjuice/arckit-gemini[/cyan]"
         )
-        console.print("\nThe extension provides all 48 commands with zero config.")
+        console.print("\nThe extension provides every ArcKit command with zero config.")
         console.print("Updates via: [cyan]gemini extensions update arckit[/cyan]")
         raise typer.Exit(0)
 
@@ -461,19 +609,41 @@ def init(
             f"[cyan]Selected AI assistant:[/cyan] {AGENT_CONFIG[ai_assistant]['name']}"
         )
 
+    # Resolve the installed assets *before* anything is written, so a broken
+    # install fails with an error instead of leaving behind a project that
+    # announces itself as ready but has no commands in it (#730).
+    data_paths = get_data_paths()
+
+    console.print(f"[dim]Debug: Resolved data paths:[/dim]")
+    console.print(f"[dim]  templates: {data_paths['templates']}[/dim]")
+    console.print(f"[dim]  scripts: {data_paths['scripts']}[/dim]")
+
+    missing = missing_required_assets(data_paths, ai_assistant, all_ai)
+    if missing:
+        console.print(
+            f"\n[red]Error:[/red] ArcKit's installed files are incomplete, so a "
+            f"project for {AGENT_CONFIG[ai_assistant]['name']} cannot be created."
+        )
+        console.print(f"[dim]Data directory: {data_paths.get('data_root')}[/dim]")
+        console.print("\n[red]Missing:[/red]")
+        for key, path in missing:
+            console.print(f"  {key}: {path}")
+        console.print(
+            "\nReinstall ArcKit, or set ARCKIT_DATA_DIR to the directory "
+            "containing .arckit/templates. If you installed from a git "
+            "checkout, run [cyan]python scripts/converter.py[/cyan] first — the "
+            "extension formats are generated, not committed."
+        )
+        raise typer.Exit(1)
+
     # Create project structure
     create_project_structure(project_path, ai_assistant, all_ai)
 
     # Copy templates from installed package or source
     console.print("[cyan]Setting up templates...[/cyan]")
 
-    data_paths = get_data_paths()
     templates_src = data_paths["templates"]
     scripts_src = data_paths["scripts"]
-
-    console.print(f"[dim]Debug: Resolved data paths:[/dim]")
-    console.print(f"[dim]  templates: {templates_src}[/dim]")
-    console.print(f"[dim]  scripts: {scripts_src}[/dim]")
 
     templates_dst = project_path / ".arckit" / "templates"
     scripts_dst = project_path / ".arckit" / "scripts"
@@ -509,6 +679,31 @@ def init(
     else:
         console.print(f"[yellow]Warning: Scripts not found at {scripts_src}[/yellow]")
 
+    # Copy the document-ID generator and the registry it imports. These live in
+    # the core plugin rather than scripts/, so that MULTI_INSTANCE_TYPES,
+    # KNOWN_TYPES and SUBDIR_MAP exist in exactly one place (#723). The relative
+    # layout matters: generate-document-id.mjs resolves ../config/doc-types.mjs,
+    # so .arckit/scripts/ and .arckit/config/ must sit side by side.
+    docid_src = data_paths.get("docid_generator")
+    doctypes_src = data_paths.get("doctypes_config")
+    if docid_src and docid_src.exists() and doctypes_src and doctypes_src.exists():
+        docid_dst = project_path / ".arckit" / "scripts" / "generate-document-id.mjs"
+        doctypes_dst = project_path / ".arckit" / "config" / "doc-types.mjs"
+        docid_dst.parent.mkdir(parents=True, exist_ok=True)
+        doctypes_dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(docid_src, docid_dst)
+        shutil.copy2(doctypes_src, doctypes_dst)
+        console.print(
+            "[green]✓[/green] Copied document-ID generator to .arckit/scripts/ "
+            "and doc-type registry to .arckit/config/"
+        )
+    else:
+        console.print(
+            "[yellow]Warning: document-ID generator or doc-type registry not "
+            "found; .arckit/scripts/bash/generate-document-id.sh will not "
+            "resolve[/yellow]"
+        )
+
     # Copy references if they exist
     references_src = data_paths.get("codex_references")
     if references_src and references_src.exists():
@@ -516,6 +711,17 @@ def init(
         references_dst.mkdir(parents=True, exist_ok=True)
         shutil.copytree(references_src, references_dst, dirs_exist_ok=True)
         console.print(f"[green]✓[/green] References copied")
+
+    # Copy vendored reference data if it exists. Unconditional, like references
+    # above: the Codex, OpenCode and Copilot command bodies are all rewritten to
+    # read `.arckit/data/...`, so gating this on one target would leave the
+    # others pointing at a file that was never scaffolded.
+    data_src = data_paths.get("codex_data")
+    if data_src and data_src.exists():
+        data_dst = project_path / ".arckit" / "data"
+        data_dst.mkdir(parents=True, exist_ok=True)
+        shutil.copytree(data_src, data_dst, dirs_exist_ok=True)
+        console.print(f"[green]✓[/green] Reference data copied")
 
     # Copy slash commands
     # Copy Codex prompts (all_ai and single-AI both install codex)
@@ -710,6 +916,8 @@ def init(
         p = "$arckit-"  # skill invocation
     elif ai_assistant == "copilot":
         p = "/arckit-"  # copilot prompt invocation
+    elif ai_assistant == "kimi":
+        p = "/skill:arckit-"  # kimi agent skill invocation
     else:
         p = "/arckit."  # slash command
 
@@ -985,6 +1193,18 @@ export OPENCODE_HOME="$PWD/.opencode"
         next_steps.append("3. Open Copilot Chat and type: [cyan]/arckit-principles[/cyan]")
         next_steps.append(
             "4. Create your first project: [cyan]/arckit-requirements[/cyan]"
+        )
+    elif ai_assistant == "kimi":
+        next_steps.append("2. Start Kimi Code CLI and install the ArcKit plugin:")
+        next_steps.append("   [cyan]kimi[/cyan]")
+        next_steps.append(
+            "   [cyan]/plugins install https://github.com/tractorjuice/arckit-kimi.git[/cyan]"
+        )
+        next_steps.append(
+            "3. Establish architecture principles: [cyan]/skill:arckit-principles[/cyan]"
+        )
+        next_steps.append(
+            "4. Create your first project: [cyan]/skill:arckit-requirements[/cyan]"
         )
 
     console.print(Panel("\n".join(next_steps), title="Next Steps", border_style="cyan"))

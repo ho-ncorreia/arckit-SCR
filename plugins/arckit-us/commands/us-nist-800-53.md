@@ -1,5 +1,6 @@
 ---
 description: "[COMMUNITY] Tailor the NIST SP 800-53 Rev 5 control catalog against the Low / Moderate / High baseline for a US federal information system, recording implementation status, inheritance from cloud providers, parameter assignments, and compensating controls."
+doc-type: NIST
 argument-hint: "<project ID or system, e.g. '001', 'Agency Citizen Services Portal'>"
 effort: high
 keep-coding-instructions: true
@@ -62,11 +63,13 @@ For systems pursuing FedRAMP authorization, the FedRAMP Rev 5 Baselines (Low / M
    - **Then**, `.arckit/templates/us-nist-800-53-template.md`
    - **Fallback**, `${CLAUDE_PLUGIN_ROOT}/templates/us-nist-800-53-template.md`
 
-3. Use `scripts/bash/create-project.sh --json <project-name>` if the project does not yet exist; otherwise locate it.
+3. Use `scripts/bash/create-project.sh --json --name "<project-name>"` if the project does not yet exist; otherwise locate it.
 
-4. Use `scripts/bash/generate-document-id.sh <PROJECT_ID> NIST --filename` for the artefact filename. The type code for this command is `NIST`.
+4. Use `node scripts/generate-document-id.mjs <PROJECT_ID> NIST --filename` for the artefact filename. The type code for this command is `NIST`.
 
-5. Generate the following sections:
+5. Resolve the `<!-- DOC-CONTROL-HEADER -->` marker per `RENDERING.md` before writing the artefact. `RENDERING.md` hard-routes the US regime to `_partials/document-control-us.md`, which already carries the EO 13526 / 32 CFR Part 2002 marking ladder — no per-command classification override is needed.
+
+6. Generate the following sections:
 
    - **Baseline Selection** — derive the baseline from the FIPS 199 water-mark (Low / Moderate / High). If pursuing FedRAMP, record whether FedRAMP Low, Moderate, High, or LI-SaaS applies and cite the FedRAMP Rev 5 Baseline source.
    - **Inheritance Model** — identify FedRAMP-authorized CSPs in the boundary (e.g. AWS GovCloud, Azure Government, GCP Assured Workloads, Salesforce Government Cloud). For each, link to the CSP's Customer Responsibility Matrix (CRM) and list the control families wholly or partially inherited.
@@ -77,9 +80,10 @@ For systems pursuing FedRAMP authorization, the FedRAMP Rev 5 Baselines (Low / M
    - **CUI Overlay (if applicable)** — for systems handling Controlled Unclassified Information, layer NIST SP 800-171 Rev 3 requirements per 32 CFR Part 2002.
    - **OSCAL Readiness** — note whether the implementation is published in OSCAL machine-readable format (FedRAMP increasingly mandates OSCAL SSP submission); flag as a roadmap item if not yet.
 
-6. Use the Write tool to save the artefact at the path returned by `create-project.sh` + `generate-document-id.sh`.
+7. Before writing the file, read `${CLAUDE_PLUGIN_ROOT}/references/quality-checklist.md` and verify all **Common Checks** plus the **NIST** per-type checks pass. Fix any failures before proceeding.
+8. Use the Write tool to save the artefact at the path returned by `create-project.sh` + `generate-document-id.mjs`.
 
-7. Emit a short summary to the user — baseline selected, control counts (Implemented / Inherited / Hybrid / Planned / N/A), open compensating controls, and OSCAL readiness. Do not echo the full artefact.
+9. Emit a short summary to the user — baseline selected, control counts (Implemented / Inherited / Hybrid / Planned / N/A), open compensating controls, and OSCAL readiness. Do not echo the full artefact.
 
 ## Handoffs
 
