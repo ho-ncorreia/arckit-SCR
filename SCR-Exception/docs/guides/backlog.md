@@ -1,0 +1,60 @@
+# Product Backlog Quick Guide
+
+> **Guide Origin**: Official | **ArcKit Version**: [VERSION]
+
+Generate a sprint-ready backlog from existing ArcKit artefacts with `/arckit:backlog`. The command converts requirements into groomed stories, groups them into sprints, and exports markdown, CSV, and JSON for tooling.
+
+---
+
+## Input Readiness
+
+| Must Have | Why it matters |
+|-----------|----------------|
+| `ARC-<id>-REQ-v1.0.md` with BR/FR/NFR/INT/DR IDs | Feeds epics, stories, and non-functional tasks |
+| Approved HLD/DLD | Ensures stories reference actual components |
+| Stakeholder analysis | Provides personas for story wording |
+
+*Strongly recommended*: risk register (for priority), business case (for value), traceability matrix (for gaps).
+
+---
+
+## Command Patterns
+
+```bash
+/arckit:backlog                      # default: 8 sprints, 20 pts each
+/arckit:backlog VELOCITY=25 SPRINTS=12 FORMAT=all
+/arckit:backlog PRIORITY=risk        # other options: value, moscow, multi
+```
+
+Outputs land in `projects/<id>/ARC-<id>-BKLG-v1.0.*`.
+
+---
+
+## Backlog Workflow
+
+| Stage | Action |
+|-------|--------|
+| 1. Gather inputs | Confirm artefacts above are up to date |
+| 2. Run command | Choose velocity/sprint count that matches team capacity |
+| 3. Review exports | Check epic grouping, dependencies, and MoSCoW tags |
+| 4. Sprint slicing | Adjust sprint boundaries to respect change freeze / compliance windows |
+| 5. Tool import | Use CSV/JSON for Jira, Azure DevOps, or Trello |
+
+**Totals are checked.** The command always writes `ARC-*-BKLG-*.json` alongside the Markdown, and writes it first. In Claude Code a hook recomputes every total from the items when the JSON is saved (story count, points per epic and per MoSCoW category, sprint numbers) and sends any mismatch back to the model to fix. The same hook blocks a requirement delivered at a lower MoSCoW priority than the requirements document gives it, unless the reason is recorded as `priority_change` on its traceability row. When you re-run the command on an existing backlog, story points of unchanged items are kept and every re-estimate is listed in the Revision History.
+
+---
+
+## Sprint Planning Checklist
+
+- Stories tie back to requirement IDs in description.
+- Acceptance criteria reflect regulatory constraints (WCAG, GDPR, security).
+- Risks flagged as HIGH appear in Sprint 1–2 for mitigation.
+- Each sprint finishes a vertical slice (discovery, build, test).
+- Service management work (e.g., `/arckit:servicenow`) placed before go-live.
+
+---
+
+## Useful References
+
+- GOV.UK Service Manual on [Agile delivery](https://www.gov.uk/service-manual/agile-delivery) (estimation guidance).
+- `/arckit:traceability` to spot requirements without coverage before backlog generation.

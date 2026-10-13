@@ -1,9 +1,0 @@
-{
-  "bucket": "FHIR patient data",
-  "bucket_type": "query-variation",
-  "repositories": [],
-  "organisations": [
-    { "org": "nhsdigital", "org_type": "trusted-supplier", "citation_id": "NHSD-1" }
-  ],
-  "errors": []
-}

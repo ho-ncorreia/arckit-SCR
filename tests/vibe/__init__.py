@@ -1,1 +1,0 @@
-# ArcKit Vibe Extension Tests
