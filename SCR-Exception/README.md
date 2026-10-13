@@ -1,6 +1,6 @@
 # SCR-Exception
 
-Enterprise Architecture Governance Project
+Enterprise Architecture Governance Project SCR
 
 ## Getting Started
 
